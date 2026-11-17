@@ -41,7 +41,8 @@ jobs:
           test -n "$SSH_KNOWN_HOSTS"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          python3 -c 'import os,pathlib,base64,struct; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); tokens=raw.split(); keys=[t for t in tokens if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1, "SSH_KNOWN_HOSTS must contain exactly one ED25519 public host key"; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51, "Invalid ED25519 host key"; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
+          ssh-keygen -l -f ~/.ssh/known_hosts > /dev/null
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
       - name: Upload and activate release
         env:
