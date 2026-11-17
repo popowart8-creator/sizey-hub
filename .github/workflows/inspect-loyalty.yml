@@ -36,7 +36,7 @@ jobs:
               if name.endswith('controller.ts'):print('\n'.join(lines[:100]))
               else:
                   for i,line in enumerate(lines):
-                      if 'async list(' in line or 'async search(' in line or 'findAll(' in line:
+                      if 'async recent(' in line or 'async search(' in line or 'findAll(' in line:
                           print('\n'.join(lines[max(0,i-3):i+55]))
           # Aggregate counts only, no customer data exported.
           pg=json.loads(subprocess.check_output(['docker','inspect','sizey-prod-postgres']))[0]
