@@ -30,33 +30,16 @@ jobs:
           from pathlib import Path
           import subprocess,json
           base=Path('/opt/sizey/app/backend/src')
-          script = r"""
-          const {PrismaClient}=require('@prisma/client');const {JwtService}=require('@nestjs/jwt');
-          const db=new PrismaClient();
-          (async()=>{
-            const user=await db.user.findFirst({where:{status:'ACTIVE',role:'ADMIN'},select:{id:true,role:true}});
-            if(!user)throw Error('No active administrator');
-            const token=await new JwtService().signAsync({sub:user.id,role:user.role},{secret:process.env.JWT_SECRET,expiresIn:'60s'});
-            const clients=await db.client.findMany({where:{deletedAt:null},select:{id:true,phoneNormalized:true}});
-            const summary={};const errors=new Set();
-            for(const client of clients){
-              const r=await fetch('https://app.sizey.ru/api/customer-access/'+client.id,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(20000)});
-              summary[r.status]=(summary[r.status]||0)+1;
-              if(r.status!==200){const b=await r.json();if(typeof b.message==='string')errors.add(b.message);}
-            }
-            console.log(JSON.stringify({checkedClientCards:clients.length,statuses:summary,errors:[...errors]}));
-            const client=clients[0];const digits=client.phoneNormalized.replace(/\D/g,'');const wrongPhone='+'+digits.slice(0,-1)+((Number(digits.slice(-1))+1)%10);
-            const guard=await fetch('https://app.sizey.ru/api/customer-access/'+client.id,{method:'POST',headers:{Authorization:'Bearer '+token,Origin:'https://app.sizey.ru','Content-Type':'application/json'},body:JSON.stringify({identityChecked:true,expectedPhone:wrongPhone}),signal:AbortSignal.timeout(20000)});
-            const guardBody=await guard.json();console.log(JSON.stringify({passwordPostGuardStatus:guard.status,message:guardBody.message}));
-            if(guard.status!==409)throw Error('Unexpected password route result');
-
-            const r=await fetch('https://api.sizey.ru/api/clients?all=true',{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(20000)});
-            const body=await r.json(); console.log(JSON.stringify({directoryStatus:r.status,directoryCount:Array.isArray(body)?body.length:null,expectedCount:clients.length}));
-          })().catch(()=>{console.error('Authenticated diagnostic failed');process.exitCode=1}).finally(()=>db.$disconnect());
-          """
-          result=subprocess.run(['docker','exec','-i','sizey-prod-backend','node'],input=script,capture_output=True,text=True,timeout=300)
-          print(result.stdout)
-          assert result.returncode==0, 'Read-only authenticated diagnostic failed'
+          for name in ['bonus/bonus-ledger.service.ts','clients/clients.service.ts']:
+              p=base/name
+              print('LOGIC',name)
+              lines=p.read_text().splitlines()
+              if name.startswith('bonus/'):
+                  print('\n'.join(lines[:280]))
+              else:
+                  for i,line in enumerate(lines):
+                      if 'async get(' in line or 'async transactions(' in line or 'async getTransactions' in line:
+                          print('\n'.join(lines[i:i+45]))
           # Aggregate counts only, no customer data exported.
           pg=json.loads(subprocess.check_output(['docker','inspect','sizey-prod-postgres']))[0]
           env=dict(x.split('=',1) for x in pg['Config']['Env'])
