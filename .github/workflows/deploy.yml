@@ -1,0 +1,62 @@
+name: Build and deploy SIZEY
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sizey-production
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sizey-dist
+          path: dist/
+          retention-days: 14
+  deploy:
+    needs: build
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: sizey-dist
+          path: dist
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$SSH_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Upload and activate release
+        env:
+          DEPLOY_HOST: '95.181.213.9'
+          DEPLOY_USER: sizey-deploy
+        run: |
+          set -eu
+          release="/var/www/sizey-hub/releases/$GITHUB_SHA"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$release'"
+          rsync -az -e 'ssh -o BatchMode=yes -o StrictHostKeyChecking=yes' dist/ "$DEPLOY_USER@$DEPLOY_HOST:$release/"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "test -s '$release/index.html' && ln -sfn '$release' '/var/www/sizey-hub/.current-$GITHUB_SHA' && mv -Tf '/var/www/sizey-hub/.current-$GITHUB_SHA' /var/www/sizey-hub/current"
+      - name: Check published application
+        run: curl --fail --silent --show-error --retry 3 https://hub.sizey.ru/ > /dev/null
+      - name: Remove local SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
