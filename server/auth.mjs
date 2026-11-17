@@ -19,7 +19,7 @@ export function initializeDatabase(database){
  CREATE TABLE IF NOT EXISTS credential_audit(employee TEXT,customer TEXT,action TEXT,created INTEGER);
  CREATE INDEX IF NOT EXISTS auth_attempts_lookup ON auth_attempts(kind,subject,created);`);return db;
 }
-export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,staffAuth,now=Date.now}){
+export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,getLoyaltyClient,staffAuth,now=Date.now}){
  if(!secret||secret.length<32)throw new Error('AUTH_SECRET must contain at least 32 characters');
  const db=initializeDatabase(database),envelope=credentialEnvelope(secret),staffSessions=new Map();let passwordJobs=0;
  const run=(s,...a)=>db.prepare(s).run(...a),get=(s,...a)=>db.prepare(s).get(...a),all=(s,...a)=>db.prepare(s).all(...a);
@@ -34,12 +34,32 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
  function limit(kind,subject,max,window){run('DELETE FROM auth_attempts WHERE created<?',now()-86400000);if(get('SELECT COUNT(*) AS n FROM auth_attempts WHERE kind=? AND subject=? AND created>?',kind,subject,now()-window).n>=max)throw new ApiError(429,'Слишком много попыток. Попробуйте позже.',Math.ceil(window/1000));run('INSERT INTO auth_attempts VALUES(?,?,?)',kind,subject,now())}
  async function passwordWork(fn){if(passwordJobs>=4)throw new ApiError(429,'Сервис занят. Попробуйте через минуту.',60);passwordJobs++;try{return await fn()}finally{passwordJobs--}}
  async function body(req){let raw='';for await(const c of req){raw+=c;if(Buffer.byteLength(raw)>4096)throw new ApiError(413,'Запрос слишком большой')}try{const b=JSON.parse(raw);if(!b||typeof b!=='object'||Array.isArray(b))throw Error();return b}catch{throw new ApiError(400,'Некорректный запрос')}}
- async function employee(req){const t=readCookie(req,'__Host-sizey_staff'),s=t&&staffSessions.get(digest(t));if(!s||s.expires<=now()||!staffAuth)throw new ApiError(401,'Войдите как сотрудник');let me;try{me=await staffAuth.me(s.accessToken)}catch{staffSessions.delete(digest(t));throw new ApiError(401,'Сессия сотрудника истекла. Войдите снова.')}if(!me?.id||!me.role||(me.status&&me.status!=='ACTIVE'))throw new ApiError(403,'Доступ только сотрудникам');return me}
+ async function employee(req,bearerAllowed=false){
+  if(bearerAllowed&&req.headers.authorization){
+   const match=/^Bearer ([A-Za-z0-9._~-]{1,8192})$/.exec(String(req.headers.authorization));
+   if(!match||!staffAuth)throw new ApiError(401,'Требуется вход сотрудника');
+   let me;try{me=await staffAuth.me(match[1])}catch{throw new ApiError(401,'Сессия сотрудника истекла. Войдите снова.')}
+   if(!me?.id||!['ADMIN','CASHIER'].includes(me.role)||(me.status&&me.status!=='ACTIVE'))throw new ApiError(403,'Доступ только сотрудникам');
+   return me;
+  }
+  const t=readCookie(req,'__Host-sizey_staff'),s=t&&staffSessions.get(digest(t));if(!s||s.expires<=now()||!staffAuth)throw new ApiError(401,'Войдите как сотрудник');let me;try{me=await staffAuth.me(s.accessToken)}catch{staffSessions.delete(digest(t));throw new ApiError(401,'Сессия сотрудника истекла. Войдите снова.')}if(!me?.id||!me.role||(me.status&&me.status!=='ACTIVE'))throw new ApiError(403,'Доступ только сотрудникам');return me}
+ async function issueToCustomer(me,user,allowCreate=false){
+  let password,hash=user.password_hash;
+  if(user.temporary_encrypted)password=envelope.open(user.temporary_encrypted);else{password=temporaryPassword();hash=await passwordWork(()=>hashPassword(password))}
+  db.exec('BEGIN');try{
+   const fresh=findUser(user.phone);
+   if(!fresh&&allowCreate)run('INSERT INTO customers VALUES(?,?,?)',user.id,user.phone,now());
+   else if(!fresh||fresh.password_hash!==user.password_hash||fresh.temporary_encrypted!==user.temporary_encrypted)throw new ApiError(409,'Данные уже изменены. Обновите страницу.');
+   run('INSERT INTO credentials(customer,password_hash,must_change,phone_verified,issued_at) VALUES(?,?,1,1,?) ON CONFLICT(customer) DO UPDATE SET password_hash=excluded.password_hash,must_change=1,phone_verified=1,temporary_encrypted=NULL,issued_at=excluded.issued_at',user.id,hash,now());
+   run('DELETE FROM sessions WHERE customer=?',user.id);run('INSERT INTO credential_audit VALUES(?,?,?,?)',me.id,user.id,'issue-temporary-password',now());db.exec('COMMIT');
+  }catch(e){db.exec('ROLLBACK');throw e}
+  return{phone:user.phone,temporaryPassword:password,mustChangePassword:true};
+ }
  const server=createServer(async(req,res)=>{
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
   try{
    const path=new URL(req.url,'http://internal').pathname;
-   if(req.method==='GET'&&path==='/hub-api/health')return reply(200,{ok:true,authMethod:'password',loyaltyConfigured:!!loyalty});
+   if(req.method==='GET'&&path==='/hub-api/health')return reply(200,{ok:true,authMethod:'password',loyaltyConfigured:!!loyalty,employeeCabinetIntegration:!!getLoyaltyClient});
    if(req.method==='POST'){if(req.headers.origin!==origin)throw new ApiError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ApiError(415,'Ожидается JSON')}
    if(req.method==='POST'&&path==='/hub-api/auth/register'){
     limit('register-ip',ip(req),5,3600000);const b=await body(req),phone=normalizePhone(b.phone);
@@ -94,17 +114,21 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
     // No password or hash is returned in list responses.
     return reply(200,{employee:{name:me.name,role:me.role},customers:local.map(c=>({id:c.id,phone:c.phone,name:names.get(c.phone)||'Новый аккаунт SIZEY',temporaryPasswordPending:!!c.temporary_encrypted,mustChangePassword:!!c.must_change,issued:!!c.issued_at}))});
    }
+   const cabinetRoute=/^\/hub-api\/staff\/clients\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\/(access|issue)$/i.exec(path);
+   if(cabinetRoute&&((req.method==='GET'&&cabinetRoute[2]==='access')||(req.method==='POST'&&cabinetRoute[2]==='issue'))){
+    const me=await employee(req,true);if(!getLoyaltyClient)throw new ApiError(503,'Связь с бонусной системой временно недоступна');
+    const client=await getLoyaltyClient(cabinetRoute[1]);if(!client)throw new ApiError(404,'Клиент не найден');
+    const phone=normalizePhone(client.phone_normalized),user=findUser(phone);
+    if(req.method==='GET')return reply(200,{exists:!!user,phone,temporaryPasswordPending:!!user?.temporary_encrypted,mustChangePassword:!!user?.must_change,issued:!!user?.issued_at});
+    limit('staff-issue',me.id,50,3600000);const b=await body(req);
+    if(b.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
+    if(typeof b.expectedPhone!=='string'||normalizePhone(b.expectedPhone)!==phone)throw new ApiError(409,'Телефон клиента изменился. Обновите карточку и проверьте клиента заново.');
+    return reply(200,await issueToCustomer(me,user||{id:client.id,phone,password_hash:null,temporary_encrypted:null},!user));
+   }
    if(req.method==='POST'&&path==='/hub-api/staff/issue-password'){
     const me=await employee(req);limit('staff-issue',me.id,50,3600000);const b=await body(req);if(b.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
     const phone=normalizePhone(b.phone),user=findUser(phone);if(!user)throw new ApiError(404,'Аккаунт не найден');
-    let password,hash=user.password_hash;
-    if(user.temporary_encrypted)password=envelope.open(user.temporary_encrypted);else{password=temporaryPassword();hash=await passwordWork(()=>hashPassword(password))}
-    db.exec('BEGIN');try{
-     const fresh=findUser(phone);if(fresh?.password_hash!==user.password_hash||fresh?.temporary_encrypted!==user.temporary_encrypted)throw new ApiError(409,'Данные уже изменены. Обновите страницу.');
-     run('INSERT INTO credentials(customer,password_hash,must_change,phone_verified,issued_at) VALUES(?,?,1,1,?) ON CONFLICT(customer) DO UPDATE SET password_hash=excluded.password_hash,must_change=1,phone_verified=1,temporary_encrypted=NULL,issued_at=excluded.issued_at',user.id,hash,now());
-     run('DELETE FROM sessions WHERE customer=?',user.id);run('INSERT INTO credential_audit VALUES(?,?,?,?)',me.id,user.id,'issue-temporary-password',now());db.exec('COMMIT');
-    }catch(e){db.exec('ROLLBACK');throw e}
-    return reply(200,{phone,temporaryPassword:password,mustChangePassword:true});
+    return reply(200,await issueToCustomer(me,user));
    }
    reply(404,{message:'Не найдено'});
   }catch(e){if(e.retryAfter)res.setHeader('Retry-After',String(e.retryAfter));reply(e instanceof ApiError?e.status:500,{message:e instanceof ApiError?e.message:'Сервис временно недоступен'})}

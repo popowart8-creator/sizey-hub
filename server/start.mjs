@@ -5,6 +5,6 @@ import {staffBackend} from './staff.mjs';
 const directory=process.env.DATA_DIR||'/data';mkdirSync(directory,{recursive:true,mode:0o700});
 const database=directory+'/auth.sqlite';
 const pool=process.env.LOYALTY_DATABASE_URL?loyaltyPool(process.env.LOYALTY_DATABASE_URL):null;
-const app=createAuth({database,loyalty:pool?createLoyaltyReader(pool):null,listLoyaltyCustomers:pool?async()=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:null,staffAuth:staffBackend(),secret:process.env.AUTH_SECRET,origin:process.env.PUBLIC_ORIGIN||'https://hub.sizey.ru'});
+const app=createAuth({database,getLoyaltyClient:pool?async id=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE id=$1 AND deleted_at IS NULL',[id])).rows[0]||null:null,loyalty:pool?createLoyaltyReader(pool):null,listLoyaltyCustomers:pool?async()=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:null,staffAuth:staffBackend(),secret:process.env.AUTH_SECRET,origin:process.env.PUBLIC_ORIGIN||'https://hub.sizey.ru'});
 chmodSync(database,0o600);
 app.server.listen(8080,'0.0.0.0',()=>console.log('SIZEY password auth listening on 8080'));
