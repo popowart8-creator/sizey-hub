@@ -1,8 +1,14 @@
 """One-time root setup. Does not export customer records or database credentials."""
 from pathlib import Path
-import subprocess,json,secrets,os,re,urllib.parse,shutil
+import subprocess,json,secrets,os,re,urllib.parse,shutil,sqlite3,time
 base=Path('/opt/sizey/hub-api');base.mkdir(parents=True,exist_ok=True)
 source=Path(__file__).resolve().parent.parent
+if (base/'data/auth.sqlite').exists():
+    backups=base/'backups';backups.mkdir(exist_ok=True,mode=0o700)
+    name=backups/('auth-before-password-'+str(int(time.time()))+'.sqlite')
+    original=sqlite3.connect(base/'data/auth.sqlite');destination=sqlite3.connect(name)
+    original.backup(destination);destination.close();original.close();os.chmod(name,0o600)
+    print('Auth database snapshot saved on-server')
 
 def command(args,stdin=None):
     r=subprocess.run(args,input=stdin,capture_output=True,text=True)
@@ -39,7 +45,7 @@ GRANT SELECT(client_id,remaining_amount,expires_at) ON bonus_lots TO sizey_hub_r
 GRANT SELECT(id,client_id,type,balance_before,balance_after,created_at) ON transactions TO sizey_hub_reader;''')
 print('Read-only loyalty role prepared; no existing customer records changed')
 data=base/'data';data.mkdir(exist_ok=True,mode=0o700);os.chown(data,1000,1000)
-for name in ['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','import-customers.mjs']:
+for name in ['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs']:
     target=base/'server'/name;target.parent.mkdir(exist_ok=True);shutil.copy2(source/'server'/name,target)
 compose='''services:
   auth:
@@ -65,6 +71,7 @@ networks:
     name: sizey_prod
 '''
 (base/'docker-compose.yml').write_text(compose)
+(base/'.dockerignore').write_text('.env\ndata/\nbackups/\n')
 dc=['docker','compose','-f',str(base/'docker-compose.yml')]
 command(dc+['config','-q'])
 command(dc+['build','auth'])
@@ -72,6 +79,9 @@ command(dc+['build','auth'])
 result=command(dc+['run','--rm','--no-deps','auth','node','import-customers.mjs'])
 for line in result.splitlines():
     if line.startswith('{'):print('Customer identity import:',line)
+result=command(dc+['run','--rm','--no-deps','auth','node','provision-passwords.mjs'])
+for line in result.splitlines():
+    if line.startswith('{'):print('Password provisioning:',line)
 command(dc+['up','-d','--no-deps','auth'])
 health="fetch('http://127.0.0.1:8080/hub-api/health').then(async r=>{if(!r.ok)process.exit(1);console.log(JSON.stringify(await r.json()))}).catch(()=>process.exit(1))"
 import time
@@ -84,6 +94,10 @@ for attempt in range(15):
 # Verify only aggregates using read-only credentials; do not print balances or phones.
 smoke="""import {loyaltyPool,createLoyaltyReader} from './loyalty.mjs';const p=loyaltyPool(process.env.LOYALTY_DATABASE_URL);try{const {rows}=await p.query('SELECT phone_normalized FROM clients WHERE deleted_at IS NULL');let linked=0;for(const c of rows){if(!/^7\\d{10}$/.test(c.phone_normalized))continue;const data=await createLoyaltyReader(p)('+'+c.phone_normalized);if(data.linked&&Number.isFinite(data.balance))linked++;else throw Error('Lookup failed')}let denied=false;try{await p.query('SELECT password_hash FROM users LIMIT 0')}catch{denied=true}if(!denied)throw Error('Role permissions too broad');console.log(JSON.stringify({linkedCustomers:linked,employeeCredentialsAccessDenied:denied}));}finally{await p.end()}"""
 print('Loyalty verification:',command(['docker','exec','sizey-hub-api','node','--input-type=module','-e',smoke]).strip())
+# Verify real temporary credentials privately; do not change customer passwords or export them.
+password_smoke="""import{initializeDatabase,credentialEnvelope}from'./auth.mjs';import{verifyPassword}from'./passwords.mjs';const db=initializeDatabase('/data/auth.sqlite');const rows=db.prepare('SELECT c.phone,k.password_hash,k.temporary_encrypted FROM customers c JOIN credentials k ON k.customer=c.id WHERE k.temporary_encrypted IS NOT NULL').all();let verified=0;for(const r of rows){const password=credentialEnvelope(process.env.AUTH_SECRET).open(r.temporary_encrypted);if(!await verifyPassword(password,r.password_hash))throw Error('Invalid generated password');verified++}if(rows.length){const r=rows[0],password=credentialEnvelope(process.env.AUTH_SECRET).open(r.temporary_encrypted);const base='http://127.0.0.1:8080/hub-api';const login=await fetch(base+'/auth/login',{method:'POST',headers:{origin:'https://hub.sizey.ru','Content-Type':'application/json'},body:JSON.stringify({phone:r.phone,password})});if(login.status!==200||!(await login.json()).user.mustChangePassword)throw Error('Password login failed');const cookie=login.headers.get('set-cookie').split(';')[0];const protectedBonus=await fetch(base+'/loyalty',{headers:{cookie}});if(protectedBonus.status!==403)throw Error('Temporary-password protection failed');await fetch(base+'/auth/logout',{method:'POST',headers:{origin:'https://hub.sizey.ru','Content-Type':'application/json',cookie},body:'{}'})}const staff=await fetch('http://127.0.0.1:8080/hub-api/staff/customers');if(staff.status!==401)throw Error('Staff access not protected');db.close();console.log(JSON.stringify({temporaryHashesVerified:verified,temporaryPasswordGate:true,staffAccessProtected:true}));"""
+print('Password verification:',command(['docker','exec','sizey-hub-api','node','--input-type=module','-e',password_smoke]).strip())
+
 # Update only the internal SIZEY container; the bonus proxy and backend stay running.
 caddy=Path('/opt/sizey/hub/Caddyfile');previous=caddy.read_text()
 config=''':80 {
