@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && vite build",
-    "test:auth": "node --test server/*.test.mjs"
+    "test:auth": "node --test server/*.test.mjs",
+    "test:bonus-cabinet": "node --test integrations/bonus-cabinet/*.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
