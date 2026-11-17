@@ -1,14 +1,15 @@
-# Customer SMS authorization and existing loyalty
+# Customer phone/password authentication
 
-Node.js 24 service. Customer sessions use Secure HttpOnly SameSite cookies and server-side storage. SMS.ru delivers one-time codes (5 minutes, 5 attempts). Resends and send volumes are rate-limited. No development-code bypass exists. No configured SMS key means request-code returns 503 and no code is generated.
+Customers sign in with phone and password. The existing 13 customer identities are reserved, so public registration cannot overwrite their credentials. Existing active loyalty numbers not yet imported are also reserved using an exact lookup.
 
-The read-only PostgreSQL role `sizey_hub_reader` can select only required columns from clients, loyalty_levels, bonus_lots and transactions. Customer lookup uses an exact normalized phone from the verified session. Available balance sums positive, unexpired bonus lots, following the existing bonus ledger rules. History uses balance_after minus balance_before, with no employee notes exposed. Unknown numbers return linked=false with no fictitious balance. Duplicate matches fail closed.
+Passwords use individually salted scrypt (N=32768, r=8, p=1). Password work is concurrency-limited. Login/registration/password changes are rate-limited. Sessions are opaque Secure/HttpOnly/SameSite cookies, stored as hashes. New registrations have phone_verified=false and cannot read bonuses until an employee checks their identity. There is no SMS or phone-only password reset endpoint.
 
-`import-customers.mjs` imports active client IDs and normalized phones into the auth database on the server, without credentials or sessions. It does not copy balances or change the loyalty database. Access still requires an SMS proof of phone ownership. Invalid phone formats are skipped and reported as an aggregate count only.
+Initial individual passwords are generated on-server and stored as scrypt hashes with an AES-GCM-encrypted temporary delivery envelope. No password lists are exported. The staff screen is /?staff=1. It authenticates against the existing employee backend; its access token stays server-side in an expiring memory session and is checked against the backend on each privileged request. No employee login credentials or access tokens are sent to the customer browser.
 
-One-time deployment: deploy/install-auth.py is run as root through the manual GitHub installation workflow. It creates the least-privilege database role, keeps its random credentials and auth secret in a root-only server .env, builds the isolated API container, imports identities, verifies all linked customers without exporting their records, and reloads only the internal SIZEY Caddy container. The employee bonus system and outer proxy remain running.
+An employee confirms the customer's identity and phone before issuing a password. The initial password is delivered once; its encrypted envelope is deleted. Later issuance creates a new random password. Issuance revokes all customer sessions, marks the phone confirmed and requires a password change before bonus access. Issuance is audited locally with employee ID, customer ID and time, never passwords. Staff access is revoked when the existing backend no longer accepts the employee token.
 
-A persistent `/opt/sizey/hub-api/data` directory stores auth SQLite data. The API is internal-only on Docker networks proxy and sizey_prod; it publishes no host ports. `/hub-api/*` is routed by the internal hub Caddy with the client address supplied by the trusted outer proxy. Private API paths are excluded from PWA caching.
+Customers must enter the current/temporary password to change it. Password changes rotate sessions and reject concurrent password changes. Newly registered accounts do not gain access to bonus data from the number alone.
 
-Tests: npm ci --prefix server && npm run test:auth. Build: npm run build.
-Provider documentation: https://sms.ru/api/send . Do not commit SMS_RU_API_ID, AUTH_SECRET, database credentials or private SSH keys. Real SMS end-to-end validation requires a configured SMS.ru account and provider acceptance.
+Loyalty is read directly through the dedicated read-only role. Available points follow the existing unexpired-bonus-lot rules; balances and records in the original system are not modified. A local on-server SQLite snapshot is saved before migration. The setup reloads only the inner hub Caddy and updates only the customer API, not the employee bonus containers.
+
+Run npm ci --prefix server && npm run test:auth, then npm run build. Customer identity and password provisioning scripts are idempotent. Never store real passwords, AUTH_SECRET, database credentials or private SSH keys in Git, artifacts or chat.

@@ -1,9 +1,10 @@
 import {mkdirSync,chmodSync} from 'node:fs';
-import {createAuth,smsRu} from './auth.mjs';
+import {createAuth} from './auth.mjs';
 import {createLoyaltyReader,loyaltyPool} from './loyalty.mjs';
+import {staffBackend} from './staff.mjs';
 const directory=process.env.DATA_DIR||'/data';mkdirSync(directory,{recursive:true,mode:0o700});
 const database=directory+'/auth.sqlite';
 const pool=process.env.LOYALTY_DATABASE_URL?loyaltyPool(process.env.LOYALTY_DATABASE_URL):null;
-const app=createAuth({database,loyalty:pool?createLoyaltyReader(pool):null,secret:process.env.AUTH_SECRET,origin:process.env.PUBLIC_ORIGIN||'https://hub.sizey.ru',sendSms:process.env.SMS_RU_API_ID?smsRu(process.env.SMS_RU_API_ID):null});
+const app=createAuth({database,loyalty:pool?createLoyaltyReader(pool):null,listLoyaltyCustomers:pool?async()=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:null,staffAuth:staffBackend(),secret:process.env.AUTH_SECRET,origin:process.env.PUBLIC_ORIGIN||'https://hub.sizey.ru'});
 chmodSync(database,0o600);
-app.server.listen(8080,'0.0.0.0',()=>console.log('SIZEY customer auth listening on 8080'));
+app.server.listen(8080,'0.0.0.0',()=>console.log('SIZEY password auth listening on 8080'));
