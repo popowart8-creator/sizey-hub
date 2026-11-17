@@ -1,11 +1,6 @@
-name: Integrate password issuance in bonus cabinet
+name: Publish complete client directory
 on:
   workflow_dispatch:
-    inputs:
-      api_only:
-        description: Update only customer API; keep published employee frontend running
-        type: boolean
-        default: false
 permissions:
   contents: read
 concurrency:
@@ -18,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: b23c7cd0ad1d1809a3f74c1e9b4febe6776154f9
+          ref: fix/all-clients
       - name: Configure SSH
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
@@ -33,21 +28,17 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
       - name: Prepare password SSH client
         run: command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
-      - name: Install isolated customer API
+      - name: Publish all clients in employee cabinet
         env:
           SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
-          API_ONLY: ${{ inputs.api_only }}
         run: |
           set -euo pipefail
           test -n "$SSHPASS"
           target="/root/sizey-auth-setup-$GITHUB_RUN_ID"
           options=(-o ConnectTimeout=20 -o ServerAliveInterval=15 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes)
           sshpass -e ssh "${options[@]}" root@95.181.213.9 "umask 077; mkdir -p '$target'"
-          tar --exclude=node_modules --exclude=__pycache__ -czf - server deploy/install-auth.py deploy/install-bonus-cabinet.py integrations/bonus-cabinet | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
-          sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 '$target/deploy/install-auth.py'"
-          if [ "$API_ONLY" != true ]; then
-            sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 '$target/deploy/install-bonus-cabinet.py'"
-          fi
+          tar --exclude=__pycache__ -czf - deploy/install-all-clients.py integrations/bonus-cabinet/home-page.tsx | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
+          sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 '$target/deploy/install-all-clients.py'"
       - name: Verify public API and employee dashboard
         run: |
           python3 -c 'import json,urllib.request; d=json.load(urllib.request.urlopen("https://hub.sizey.ru/hub-api/health",timeout=20)); assert d.get("employeeCabinetIntegration") is True; print("Employee cabinet access integration ready")'
