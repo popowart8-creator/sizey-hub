@@ -6,7 +6,7 @@ import { customerAccessApi } from '@/lib/customer-access-api';
 type Access = { exists: boolean; phone: string; temporaryPasswordPending: boolean; mustChangePassword: boolean; issued: boolean };
 type Issued = { phone: string; temporaryPassword: string; mustChangePassword: boolean };
 
-export function CustomerAccess({ clientId, clientName, phone }: { clientId: string; clientName: string; phone: string }) {
+export function CustomerAccess({ clientId, clientName, phone, phoneNormalized }: { clientId: string; clientName: string; phone: string; phoneNormalized: string }) {
   const [access, setAccess] = useState<Access | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ export function CustomerAccess({ clientId, clientName, phone }: { clientId: stri
     event.preventDefault(); if (!checked) return;
     setBusy(true); setError('');
     try {
-      const result = await customerAccessApi<Issued>(clientId, { identityChecked: true, expectedPhone: phone });
+      const result = await customerAccessApi<Issued>(clientId, { identityChecked: true, expectedPhone: phoneNormalized });
       setIssued(result); setCopied(false); setConfirming(false); setChecked(false);
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : 'Не удалось выдать пароль'); }

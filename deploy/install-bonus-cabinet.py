@@ -64,7 +64,7 @@ try:
         text=original.replace(import_line,import_line+"\nimport { CustomerAccess } from '@/components/customer-access';")
         needle='\n      {isAdmin && ('
         assert text.count(needle)==2
-        text=text.replace(needle,'\n      {/* '+marker+' */}\n      {canOperateSales(user?.role) && <CustomerAccess clientId={client.id} clientName={client.name} phone={client.phone} />}\n'+needle,1)
+        text=text.replace(needle,'\n      {/* '+marker+' */}\n      {canOperateSales(user?.role) && <CustomerAccess clientId={client.id} clientName={client.name} phone={client.phone} phoneNormalized={client.phoneNormalized} />}\n'+needle,1)
         page.write_text(text)
     print('Building updated employee frontend; running cabinet remains available')
     command(dc+['build','--build-arg','NEXT_PUBLIC_API_URL=https://api.sizey.ru',service],timeout=900)
