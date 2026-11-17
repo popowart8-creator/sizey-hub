@@ -28,28 +28,25 @@ jobs:
         run: |
           sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'python3 -' <<'PY'
           from pathlib import Path
-          import re,json,subprocess,os
-          print('root_access',os.getuid()==0)
-          base=Path('/opt/sizey/app/backend')
-          s=(base/'prisma/schema.prisma').read_text()
-          for match in re.finditer(r'(?:model|enum)\s+(\w+)\s*\{([^}]+)\}',s):
-              if match.group(1) in ['Client','LoyaltyLevel','Transaction','BonusLot','TransactionType']:
-                  print('SCHEMA',match.group(1))
-                  print(match.group(2))
-          for p in (base/'src').rglob('*.ts'):
-              if any(x in str(p) for x in ['node_modules','.test.']):continue
-              text=p.read_text()
-              if 'normalizePhone' in text or 'phoneNormalized:' in text:
-                  print('PHONE_LOGIC_FILE',p.relative_to(base))
-                  lines=text.splitlines()
+          import subprocess,json
+          base=Path('/opt/sizey/app/backend/src')
+          for name in ['bonus/bonus-ledger.service.ts','clients/clients.service.ts']:
+              p=base/name
+              print('LOGIC',name)
+              lines=p.read_text().splitlines()
+              if name.startswith('bonus/'):
+                  print('\n'.join(lines[:280]))
+              else:
                   for i,line in enumerate(lines):
-                      if 'normalizePhone' in line or 'phoneNormalized:' in line:
-                          print('\n'.join(lines[max(0,i-2):i+8]))
-          for name in ['sizey-prod-postgres','sizey-prod-backend']:
-              data=json.loads(subprocess.check_output(['docker','inspect',name]))[0]
-              print('CONTAINER',name,'networks',list(data['NetworkSettings']['Networks']))
-              print('ENV_NAMES',[x.split('=',1)[0] for x in data['Config'].get('Env',[]) if x.split('=',1)[0].startswith(('DATABASE','POSTGRES','JWT'))])
-          print('existing_hub_api_env',Path('/opt/sizey/hub-api/.env').exists())
+                      if 'async get(' in line or 'async transactions(' in line or 'async getTransactions' in line:
+                          print('\n'.join(lines[i:i+45]))
+          # Aggregate counts only, no customer data exported.
+          pg=json.loads(subprocess.check_output(['docker','inspect','sizey-prod-postgres']))[0]
+          env=dict(x.split('=',1) for x in pg['Config']['Env'])
+          query="SELECT 'clients='||COUNT(*) FROM clients WHERE deleted_at IS NULL; SELECT 'duplicate_phone_groups='||COUNT(*) FROM (SELECT phone_normalized FROM clients WHERE deleted_at IS NULL GROUP BY phone_normalized HAVING COUNT(*)>1) x;"
+          r=subprocess.run(['docker','exec','sizey-prod-postgres','psql','-U',env['POSTGRES_USER'],'-d',env['POSTGRES_DB'],'-At','-c',query],capture_output=True,text=True)
+          print('AGGREGATE_STATUS',r.returncode)
+          if r.returncode==0:print(r.stdout)
           PY
       - name: Remove SSH key
         if: always()
