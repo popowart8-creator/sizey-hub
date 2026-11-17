@@ -1,4 +1,4 @@
-name: Inspect loyalty source paths
+name: Inspect loyalty integration readiness
 on:
   workflow_dispatch:
 permissions:
@@ -20,28 +20,36 @@ jobs:
           python3 -c 'import os,pathlib,base64,struct; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); tokens=raw.split(); keys=[t for t in tokens if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1, "SSH_KNOWN_HOSTS must contain exactly one ED25519 public host key"; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51, "Invalid ED25519 host key"; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
           ssh-keygen -l -f ~/.ssh/known_hosts > /dev/null
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Prepare password SSH client
+        run: command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
       - name: Inspect source locations without reading secrets or customer records
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
         run: |
-          ssh -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking=yes sizey-deploy@95.181.213.9 'python3 -' <<'PY'
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'python3 -' <<'PY'
           from pathlib import Path
-          import re,shutil,subprocess
+          import re,json,subprocess,os
+          print('root_access',os.getuid()==0)
           base=Path('/opt/sizey/app/backend')
           s=(base/'prisma/schema.prisma').read_text()
           for match in re.finditer(r'(?:model|enum)\s+(\w+)\s*\{([^}]+)\}',s):
-              print('SCHEMA',match.group(1))
-              for line in match.group(2).splitlines():
-                  fields=line.strip().split()
-                  if len(fields)>=2 and not fields[0].startswith(('@','//')):
-                      print('FIELD',fields[0],fields[1])
-          for folder in ['clients','sales','auth']:
-              for p in (base/'src'/folder).glob('*.ts'):
-                  print('MODULE',p.name)
-                  for line in p.read_text().splitlines():
-                      if re.match(r'\s*(?:@(Get|Post|Controller|UseGuards)|(?:async )?\w+\([^;]*\)\s*[:{])',line):
-                          print('METHOD',line.strip()[:220])
-          print('node_available',bool(shutil.which('node')))
-          r=subprocess.run(['sudo','-n','-l'],capture_output=True,text=True)
-          print('passwordless_sudo_status',r.returncode)
+              if match.group(1) in ['Client','LoyaltyLevel','Transaction','BonusLot','TransactionType']:
+                  print('SCHEMA',match.group(1))
+                  print(match.group(2))
+          for p in (base/'src').rglob('*.ts'):
+              if any(x in str(p) for x in ['node_modules','.test.']):continue
+              text=p.read_text()
+              if 'normalizePhone' in text or 'phoneNormalized:' in text:
+                  print('PHONE_LOGIC_FILE',p.relative_to(base))
+                  lines=text.splitlines()
+                  for i,line in enumerate(lines):
+                      if 'normalizePhone' in line or 'phoneNormalized:' in line:
+                          print('\n'.join(lines[max(0,i-2):i+8]))
+          for name in ['sizey-prod-postgres','sizey-prod-backend']:
+              data=json.loads(subprocess.check_output(['docker','inspect',name]))[0]
+              print('CONTAINER',name,'networks',list(data['NetworkSettings']['Networks']))
+              print('ENV_NAMES',[x.split('=',1)[0] for x in data['Config'].get('Env',[]) if x.split('=',1)[0].startswith(('DATABASE','POSTGRES','JWT'))])
+          print('existing_hub_api_env',Path('/opt/sizey/hub-api/.env').exists())
           PY
       - name: Remove SSH key
         if: always()
