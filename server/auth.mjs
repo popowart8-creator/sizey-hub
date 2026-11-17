@@ -123,7 +123,7 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
     limit('staff-issue',me.id,50,3600000);const b=await body(req);
     if(b.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
     if(typeof b.expectedPhone!=='string'||normalizePhone(b.expectedPhone)!==phone)throw new ApiError(409,'Телефон клиента изменился. Обновите карточку и проверьте клиента заново.');
-    return reply(200,await issueToCustomer(me,user||{id:client.id,phone,password_hash:null,temporary_encrypted:null},!user));
+    return reply(200,await issueToCustomer(me,user||{id:randomBytes(16).toString('hex'),phone,password_hash:null,temporary_encrypted:null},!user));
    }
    if(req.method==='POST'&&path==='/hub-api/staff/issue-password'){
     const me=await employee(req);limit('staff-issue',me.id,50,3600000);const b=await body(req);if(b.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
