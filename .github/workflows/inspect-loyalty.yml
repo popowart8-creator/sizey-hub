@@ -24,17 +24,24 @@ jobs:
         run: |
           ssh -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking=yes sizey-deploy@95.181.213.9 'python3 -' <<'PY'
           from pathlib import Path
-          import os
-          print('user:', os.getuid())
-          for name in ['/opt/sizey', '/opt/sizey/app', '/opt/sizey/backend', '/opt/sizey/proxy']:
-              p=Path(name)
-              print(name, 'exists=',p.exists(), 'readable=',os.access(p,os.R_OK), 'traversable=',os.access(p,os.X_OK))
-          for current,dirs,files in os.walk('/opt/sizey',onerror=lambda e:print('unreadable directory:',e.filename)):
-              dirs[:]=[d for d in dirs if d not in ['node_modules','.git','.next','data','backups'] and len(Path(current).relative_to('/opt/sizey').parts)<5]
-              for name in files:
-                  if name in ['package.json','schema.prisma','docker-compose.yml','compose.yml'] or name.endswith('.controller.ts'):
-                      p=Path(current)/name
-                      print('source:',str(p),'readable=',os.access(p,os.R_OK))
+          import re,shutil,subprocess
+          base=Path('/opt/sizey/app/backend')
+          s=(base/'prisma/schema.prisma').read_text()
+          for match in re.finditer(r'(?:model|enum)\s+(\w+)\s*\{([^}]+)\}',s):
+              print('SCHEMA',match.group(1))
+              for line in match.group(2).splitlines():
+                  fields=line.strip().split()
+                  if len(fields)>=2 and not fields[0].startswith(('@','//')):
+                      print('FIELD',fields[0],fields[1])
+          for folder in ['clients','sales','auth']:
+              for p in (base/'src'/folder).glob('*.ts'):
+                  print('MODULE',p.name)
+                  for line in p.read_text().splitlines():
+                      if re.match(r'\s*(?:@(Get|Post|Controller|UseGuards)|(?:async )?\w+\([^;]*\)\s*[:{])',line):
+                          print('METHOD',line.strip()[:220])
+          print('node_available',bool(shutil.which('node')))
+          r=subprocess.run(['sudo','-n','-l'],capture_output=True,text=True)
+          print('passwordless_sudo_status',r.returncode)
           PY
       - name: Remove SSH key
         if: always()
