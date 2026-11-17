@@ -51,12 +51,18 @@ jobs:
           DEPLOY_USER: sizey-deploy
         run: |
           set -eu
-          release="/var/www/sizey-hub/releases/$GITHUB_SHA"
+          release_id="$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          release="/var/www/sizey-hub/releases/$release_id"
+          printf '%s\n' "$release_id" > dist/version.txt
           ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$release'"
-          rsync -az -e 'ssh -o BatchMode=yes -o StrictHostKeyChecking=yes' dist/ "$DEPLOY_USER@$DEPLOY_HOST:$release/"
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "test -s '$release/index.html' && ln -sfn '$release' '/var/www/sizey-hub/.current-$GITHUB_SHA' && mv -Tf '/var/www/sizey-hub/.current-$GITHUB_SHA' /var/www/sizey-hub/current"
+          tar -C dist -czf - . | ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "tar -xzf - -C '$release'"
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" "test -s '$release/index.html' && ln -sfn 'releases/$release_id' '/var/www/sizey-hub/.current-$GITHUB_SHA' && mv -Tf '/var/www/sizey-hub/.current-$GITHUB_SHA' /var/www/sizey-hub/current"
       - name: Check published application
-        run: curl --fail --silent --show-error --retry 3 https://hub.sizey.ru/ > /dev/null
+        run: |
+          set -eu
+          curl --fail --silent --show-error --retry 3 https://hub.sizey.ru/ > /dev/null
+          actual=$(curl --fail --silent --show-error --retry 3 "https://hub.sizey.ru/version.txt?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT")
+          test "$actual" = "$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
       - name: Remove local SSH key
         if: always()
         run: rm -f ~/.ssh/id_ed25519
