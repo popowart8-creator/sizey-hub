@@ -30,16 +30,12 @@ jobs:
           from pathlib import Path
           import subprocess,json
           base=Path('/opt/sizey/app/backend/src')
-          for name in ['bonus/bonus-ledger.service.ts','clients/clients.service.ts']:
+          for name in ['auth/auth.service.ts','auth/jwt.strategy.ts','auth/auth.module.ts']:
               p=base/name
-              print('LOGIC',name)
-              lines=p.read_text().splitlines()
-              if name.startswith('bonus/'):
-                  print('\n'.join(lines[:280]))
-              else:
-                  for i,line in enumerate(lines):
-                      if 'async get(' in line or 'async transactions(' in line or 'async getTransactions' in line:
-                          print('\n'.join(lines[i:i+45]))
+              if p.exists(): print('SOURCE',name,'\n',p.read_text()[:14000])
+          for name in ['sizey-prod-frontend','sizey-hub-api']:
+              info=json.loads(subprocess.check_output(['docker','inspect',name]))[0]
+              print('NETWORKS',name,list(info['NetworkSettings']['Networks']))
           # Aggregate counts only, no customer data exported.
           pg=json.loads(subprocess.check_output(['docker','inspect','sizey-prod-postgres']))[0]
           env=dict(x.split('=',1) for x in pg['Config']['Env'])
