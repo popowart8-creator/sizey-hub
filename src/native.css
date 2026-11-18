@@ -206,3 +206,32 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
 /* Keep the favorite action over the product preview image. The generic haptic
    label uses relative positioning, which otherwise overrides .heart. */
 .productimage .heart.haptic-action{position:absolute;z-index:3}
+
+/* Product preview heart must stay visible above the image on all devices.
+   Override label/button defaults without depending on the generic haptic layout. */
+.productgrid .productimage > .heart,
+.search-screen .productimage > .heart{
+ position:absolute!important;
+ top:6px!important;
+ right:6px!important;
+ left:auto!important;
+ bottom:auto!important;
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ width:44px!important;
+ height:44px!important;
+ padding:0!important;
+ margin:0!important;
+ border:0!important;
+ border-radius:50%!important;
+ background:rgba(255,255,255,.92)!important;
+ color:#1b1b1b!important;
+ opacity:1!important;
+ visibility:visible!important;
+ transform:none!important;
+ z-index:10!important;
+}
+.productgrid .productimage > .heart svg{display:block;width:22px;height:22px;stroke:currentColor}
+.productgrid .productimage > .heart.saved{color:#d33a55!important}
+.productgrid .productimage > .heart .haptic-action-content{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
