@@ -33,3 +33,24 @@ body>.password-screen .password-card form{width:100%!important;max-width:none!im
 body>.password-screen .password-card form>input{box-sizing:border-box;width:100%!important;max-width:none!important}
 body>.password-screen .password-card form>.blackbtn{box-sizing:border-box;width:100%!important;max-width:none!important}
 @media(min-width:801px){body>.password-screen{padding-left:max(16px,calc((100vw - 1168px)/2))!important;padding-right:max(16px,calc((100vw - 1168px)/2))!important}}
+
+/* Guest authentication follows the same white, full-width tab-screen layout. */
+.authpage:has(.authlayout--native){max-width:none;width:100%;box-sizing:border-box;padding:0 16px calc(110px + env(safe-area-inset-bottom,0px))}
+.authlayout--native{display:flex;flex-direction:column;gap:0;margin:0 auto;max-width:680px;width:100%}
+.auth-native-header{padding:24px 0 20px}
+.auth-native-header h2{font-size:32px;line-height:1.15;letter-spacing:-1px;font-weight:650;margin:0 0 12px}
+.auth-native-header p{font-size:15px;line-height:1.5;color:#757575;margin:0}
+.authcard--native{padding:0;background:transparent;border:0;box-shadow:none;width:100%;min-width:0}
+.authcard--native .authtabs{display:flex;gap:0;border-bottom:1px solid #e6e6e8;margin:0 0 28px}
+.authcard--native .authtabs button{flex:1;text-align:center;padding:12px 8px;min-height:48px;border-bottom:2px solid transparent;color:#818181}
+.authcard--native .authtabs button.active{color:#171717;border-bottom-color:#171717}
+.authcard--native h3{font-size:24px;line-height:1.2;letter-spacing:-.5px;margin:0 0 26px;font-weight:650}
+.authcard--native form{width:100%;display:flex;flex-direction:column}
+.authcard--native form>label{font-size:14px;margin-bottom:9px;color:#303030}
+.authcard--native form>input{box-sizing:border-box;width:100%;min-height:54px;border:1px solid #dedee0;border-radius:14px;background:#f6f6f7;padding:14px 16px;margin:0 0 20px;font-size:16px;color:#181818}
+.authcard--native form>.blackbtn{box-sizing:border-box;width:100%;max-width:none;min-height:54px;margin-top:12px}
+.authcard--native form>.textbtn{align-self:flex-start;min-height:44px;padding-left:0}
+.authcard--native .authhint{color:#777;font-size:13px;line-height:1.5;margin-top:18px}
+.authcard--native .authconsent{font-size:13px;line-height:1.5}
+.auth-support-link{display:inline-flex;align-items:center;min-height:44px;font-size:14px;color:#4d4d4d;text-decoration:underline;text-underline-offset:4px;margin-top:18px}
+@media(min-width:801px){.auth-native-header{padding-top:32px}}
