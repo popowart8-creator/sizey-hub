@@ -98,3 +98,27 @@ body>nav.tabbar.tabbar--android{background:#f6f5f8eF;box-shadow:0 7px 30px #0000
 @keyframes sizey-tab-profile{0%{transform:translateY(5px) scale(.83)}45%{transform:translateY(-4px) scale(1.1)}75%{transform:translateY(1px) scale(.97)}100%{transform:none}}
 @keyframes sizey-tab-pop{0%{transform:scale(.85)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.tabbar .tab,.tabbar .tab-icon,.tabbar .tab .tab-icon svg,.tabbar .tab>span:last-child{transition:none!important;animation:none!important}}
+
+/* Native-feeling navigation: tabs and nested pages push in from the right. */
+.tab-screen{position:relative;min-height:100dvh;animation:sizey-tab-enter .32s cubic-bezier(.2,.8,.2,1) both}
+.product-screen{position:fixed;inset:0;z-index:45;overflow-y:auto;overscroll-behavior:contain;background:#fff;animation:sizey-screen-push .34s cubic-bezier(.22,.8,.22,1) both;-webkit-overflow-scrolling:touch}
+.product-screen .productmodal{display:block;max-width:100%;width:100%;max-height:none;height:auto;overflow:visible;border-radius:0;background:#fff;padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+.product-screen .detailgallery{width:100%}.product-screen .detail{max-width:680px;margin:auto}
+.product-back{position:fixed;z-index:6;top:calc(12px + env(safe-area-inset-top,0px));left:16px;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:#ffffffd9;color:#171717;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 2px 12px #00000012}
+@media(min-width:801px){.product-screen .productmodal{display:grid;grid-template-columns:1fr 1fr;align-items:start;max-width:1200px;margin:auto}.product-screen .detailgallery{position:sticky;top:0}.product-screen .detail{padding-top:80px}}
+/* Photo viewer is the modal layer: swipe between full-size images and show subtle dots. */
+.fullscreen-photo{display:block;animation:sizey-sheet-rise .34s cubic-bezier(.22,.8,.22,1) both;overflow:hidden}
+.fullscreen-track{width:100%;height:100%;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.fullscreen-track::-webkit-scrollbar{display:none}
+.fullscreen-slide{flex:0 0 100%;width:100%;height:100%;display:flex;align-items:center;justify-content:center;scroll-snap-align:start;overflow:hidden}
+.fullscreen-slide img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
+.fullscreen-pagination{position:absolute;z-index:3;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 12px;border-radius:20px;background:#0006}
+.fullscreen-pagination button{width:6px;height:6px;min-width:6px;min-height:6px;padding:0;border-radius:50%;background:#ffffff65;transition:background .2s,transform .2s}
+.fullscreen-pagination button.active{background:#fff;transform:scale(1.25)}
+/* Dialogs and bottom sheets rise instead of pushing sideways. */
+.overlay .sheet,.overlay .productmodal{animation:sizey-sheet-rise .35s cubic-bezier(.22,.8,.22,1) both}
+.search-screen{animation:sizey-screen-push .32s cubic-bezier(.22,.8,.22,1) both}
+@keyframes sizey-tab-enter{from{opacity:.6;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes sizey-screen-push{from{opacity:.8;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+@keyframes sizey-sheet-rise{from{opacity:.75;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.tab-screen,.product-screen,.fullscreen-photo,.overlay .sheet,.overlay .productmodal,.search-screen{animation:none!important}.fullscreen-pagination button{transition:none}}
