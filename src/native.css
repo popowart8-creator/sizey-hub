@@ -415,3 +415,45 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
  .tabbar .tab-icon.tab-favorite-pulse svg,
  .tabbar .tab-icon.tab-favorite-pulse::after{animation:none}
 }
+
+/* Final clean favorite treatment: no plate, glow, shadow or filter on ANY layer. */
+.productgrid .productimage > .heart,
+.search-screen .productimage > .heart,
+.productmodal .detailgallery > .preview-favorite{
+ top:-5px!important;right:-5px!important;
+ background:transparent!important;background-image:none!important;
+ border:0!important;border-radius:0!important;
+ box-shadow:none!important;
+ filter:none!important;
+ backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+ text-shadow:none!important;
+}
+.productmodal .detailgallery > .preview-favorite{top:0!important;right:0!important}
+.productgrid .productimage > .heart svg,
+.search-screen .productimage > .heart svg,
+.productmodal .detailgallery > .preview-favorite svg,
+.favorite-control .haptic-action-content,
+.favorite-control .haptic-action-content svg{
+ width:31px!important;height:31px!important;
+ filter:none!important;
+ -webkit-filter:none!important;
+ box-shadow:none!important;
+ text-shadow:none!important;
+}
+.favorite-control .haptic-action-content{background:transparent!important}
+.favorite-control .haptic-action-switch{box-shadow:none!important;filter:none!important}
+.favorite-control.favorite-burst::after{box-shadow:none!important;content:none!important;animation:none!important}
+
+/* Only a gentle heartbeat on the bottom Favorites tab; no ring or sparks. */
+.tabbar .tab-icon.tab-favorite-pulse::after{content:none!important;animation:none!important}
+.tabbar .tab-icon.tab-favorite-pulse svg{
+ animation:sizey-tab-favorite-soft .42s ease-out both!important;
+}
+@keyframes sizey-tab-favorite-soft{
+ 0%{transform:scale(1)}
+ 45%{transform:scale(1.17)}
+ 100%{transform:scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+ .tabbar .tab-icon.tab-favorite-pulse svg{animation:none!important}
+}
