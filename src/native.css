@@ -25,3 +25,4 @@ html{background:#292c30}html:not([data-hero-tone]){background:#fff}html[data-her
 .install-sheet:focus{outline:none}
 
 .install-sheet-top{display:block;height:68px;max-width:none}.install-sheet-top>.close{position:absolute;top:12px;right:0;width:48px;height:48px;min-height:48px;padding:7px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#faf9f6;color:#20201e;box-shadow:0 2px 12px #0001}
+.authpage>.profile-utilities{padding:8px 0 24px;margin-top:24px;max-width:none}.profile-utilities .profile-logout{color:#c33432;border-bottom:0;margin-top:8px}.profile-utilities .profile-logout:disabled{opacity:.5}.customer-name{font-size:28px;font-weight:600;letter-spacing:-.7px;margin:0 0 10px;line-height:1.25}.customerlayout>section:first-child{padding:8px 0}.customerlayout>section:first-child>p{margin-bottom:0}
