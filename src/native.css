@@ -137,3 +137,9 @@ body>.fullscreen-photo .fullscreen-close{z-index:5}
 
 /* Do not trap fixed nested account screens inside the animated tab stacking context. */
 .tab-screen:has(.password-screen){animation:none!important;transform:none!important}
+
+/* Match nested page and search back arrows to product detail. */
+.page-top:has(>.icon-control){position:relative;padding-top:calc(80px + env(safe-area-inset-top,0px))!important}
+.page-top>.icon-control{position:fixed!important;top:calc(12px + env(safe-area-inset-top,0px))!important;left:16px!important;z-index:60!important;min-width:44px!important;min-height:44px!important;width:44px!important;height:44px!important;margin:0!important;border-radius:50%;background:#ffffffd9;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 2px 12px #00000012}
+.search-top>.icon-control:first-child{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;flex:0 0 44px;border-radius:50%;background:#ffffffd9;box-shadow:0 2px 12px #00000012}
+.search-top{padding-top:calc(12px + env(safe-area-inset-top,0px))!important}

@@ -22,3 +22,14 @@
 @keyframes password-push{from{opacity:.85;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
 @keyframes password-pop{from{opacity:1;transform:translateX(0)}to{opacity:.85;transform:translateX(100%)}}
 @media(prefers-reduced-motion:reduce){.password-screen,.password-screen--leaving{animation:none!important}}
+
+/* Password screen shares the same full-screen route and back-button grid as product detail. */
+body>.password-screen{position:fixed!important;inset:0!important;z-index:110!important;box-sizing:border-box;max-width:none!important;margin:0!important;padding:calc(80px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))!important;background:#fff}
+body>.password-screen .password-screen-header{height:auto!important;min-height:0!important;display:block!important;padding:0!important;margin:0 0 28px!important;max-width:680px}
+body>.password-screen .password-screen-header h2{font-size:28px;line-height:1.2;letter-spacing:-.7px;margin:0}
+body>.password-screen .password-back{position:fixed!important;top:calc(12px + env(safe-area-inset-top,0px))!important;left:16px!important;width:44px!important;height:44px!important;z-index:115!important;background:#ffffffd9!important;box-shadow:0 2px 12px #00000012!important}
+body>.password-screen .password-card{width:100%!important;max-width:680px!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
+body>.password-screen .password-card form{width:100%!important;max-width:none!important;margin:0!important}
+body>.password-screen .password-card form>input{box-sizing:border-box;width:100%!important;max-width:none!important}
+body>.password-screen .password-card form>.blackbtn{box-sizing:border-box;width:100%!important;max-width:none!important}
+@media(min-width:801px){body>.password-screen{padding-left:max(16px,calc((100vw - 1168px)/2))!important;padding-right:max(16px,calc((100vw - 1168px)/2))!important}}
