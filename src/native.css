@@ -235,3 +235,16 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
 .productgrid .productimage > .heart svg{display:block;width:22px;height:22px;stroke:currentColor}
 .productgrid .productimage > .heart.saved{color:#d33a55!important}
 .productgrid .productimage > .heart .haptic-action-content{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+
+/* Favorite heart on the opened product preview, above the gallery images. */
+.productmodal .detailgallery{position:relative}
+.productmodal .detailgallery > .preview-favorite{
+ position:absolute;top:16px;right:16px;left:auto;bottom:auto;
+ display:flex;align-items:center;justify-content:center;
+ width:46px;height:46px;padding:0;margin:0;
+ border:0;border-radius:50%;background:rgba(255,255,255,.94);
+ color:#1b1b1b;box-shadow:0 2px 14px rgba(0,0,0,.12);
+ opacity:1;visibility:visible;z-index:20;cursor:pointer;
+}
+.productmodal .detailgallery > .preview-favorite.saved{color:#d33a55}
+.productmodal .detailgallery > .preview-favorite .haptic-action-content{display:flex;align-items:center;justify-content:center}
