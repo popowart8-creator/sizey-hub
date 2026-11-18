@@ -180,13 +180,9 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar{
   left:0!important;right:0!important;width:100%!important;max-width:none!important;
   margin:0!important;padding:5px 0 max(5px,env(safe-area-inset-bottom,0px))!important;
   height:calc(70px + env(safe-area-inset-bottom,0px))!important;
-  border:0!important;border-top:1px solid #dcdce2!important;
+  border:0!important;border-top:0!important;
   border-radius:0!important;box-shadow:0 -2px 12px #00000009!important;
   background:#f6f5f8!important;box-sizing:border-box!important;
   transform:none!important;animation:none!important;transition:none!important;
 }
 html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min-height:0}
-html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab+.tab::before{
-  content:"";position:absolute;left:0;top:19%;height:62%;width:1px;
-  background:#dcdce2;pointer-events:none;
-}
