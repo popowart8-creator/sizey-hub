@@ -374,3 +374,44 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
  .favorite-control.favorite-burst::after,
  .favorite-toast,.favorite-toast svg{animation:none!important}
 }
+
+/* Larger favorite glyph, no halo/blur, tighter top-right placement. */
+.productgrid .productimage > .heart,
+.search-screen .productimage > .heart{
+ top:0!important;right:0!important;
+ background:transparent!important;box-shadow:none!important;
+ filter:none!important;
+}
+.productmodal .detailgallery > .preview-favorite{
+ top:5px!important;right:5px!important;
+ background:transparent!important;box-shadow:none!important;
+ filter:none!important;
+}
+.productgrid .productimage > .heart svg,
+.search-screen .productimage > .heart svg{width:27px!important;height:27px!important;filter:none!important}
+.productmodal .detailgallery > .preview-favorite svg{width:29px!important;height:29px!important;filter:none!important}
+.favorite-control svg{filter:none!important}
+
+/* The favorites navigation tab acknowledges every save, even from another screen. */
+.tabbar .tab-icon.tab-favorite-pulse{color:#ff1744!important;position:relative}
+.tabbar .tab-icon.tab-favorite-pulse svg{
+ color:#ff1744!important;
+ animation:sizey-tab-favorite-pop .75s cubic-bezier(.18,.89,.32,1.28) both;
+}
+.tabbar .tab-icon.tab-favorite-pulse::after{
+ content:'';position:absolute;inset:-7px;border:2px solid #ff1744;
+ border-radius:50%;pointer-events:none;
+ animation:sizey-tab-favorite-ring .75s ease-out both;
+}
+@keyframes sizey-tab-favorite-pop{
+ 0%{transform:scale(1)} 25%{transform:scale(.72)}
+ 55%{transform:scale(1.5)} 80%{transform:scale(.94)} 100%{transform:scale(1)}
+}
+@keyframes sizey-tab-favorite-ring{
+ 0%{opacity:0;transform:scale(.35)}
+ 35%{opacity:.9} 100%{opacity:0;transform:scale(1.6)}
+}
+@media(prefers-reduced-motion:reduce){
+ .tabbar .tab-icon.tab-favorite-pulse svg,
+ .tabbar .tab-icon.tab-favorite-pulse::after{animation:none}
+}
