@@ -3,5 +3,13 @@ const tabs=[{id:'shop',label:'Главная',icon:House},{id:'catalog',label:'�
 export const platform=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'ios':/Android/.test(navigator.userAgent)?'android':'web';
 function hapticTabChange(){if(!/Android/i.test(navigator.userAgent))return;try{navigator.vibrate?.(10)}catch{/* Haptics are optional and must never block navigation. */}}
 export default function Navigation({page,count,onNavigate}:{page:string;count:number;onNavigate:(page:string)=>void}){
- return <nav className={'tabbar tabbar--'+platform()} aria-label="Основная навигация">{tabs.map(({id,label,icon:Icon})=><button key={id} className={'tab '+(page===id?'is-active':'')} aria-current={page===id?'page':undefined} onClick={()=>{if(page!==id){hapticTabChange()}onNavigate(id)}}><span className="tab-icon">{Icon?<Icon size={25} strokeWidth={1.7} aria-hidden="true"/>:<span className="brand-mark" aria-hidden="true"/>}{id==='cart'&&count>0&&<span className="tab-badge" aria-label={count+' товаров'}>{count>99?'99+':count}</span>}</span><span>{label}</span></button>)}</nav>
+ const os=platform();
+ return <nav className={'tabbar tabbar--'+os} aria-label="Основная навигация">{tabs.map(({id,label,icon:Icon})=>{
+  const content=<><span className="tab-icon"><Icon size={25} strokeWidth={1.7} aria-hidden="true"/>{id==='cart'&&count>0&&<span className="tab-badge" aria-label={count+' товаров'}>{count>99?'99+':count}</span>}</span><span>{label}</span></>;
+  const className='tab '+(page===id?'is-active':'');
+  // Real finger contact with a native switch is required for the experimental iOS haptic.
+  // Keep the input as the actual hit target; synthetic .click() does not trigger it.
+  if(os==='ios')return <label key={id} className={className+' tab--ios-switch'}><span className="tab-visual" aria-hidden="true">{content}</span><input type="checkbox" {...{switch:""}} className="tab-haptic-switch" aria-label={label} aria-current={page===id?'page':undefined} onChange={()=>{if(page!==id)onNavigate(id)}}/></label>;
+  return <button key={id} className={className} aria-current={page===id?'page':undefined} onClick={()=>{if(page!==id)hapticTabChange();onNavigate(id)}}>{content}</button>;
+ })}</nav>
 }

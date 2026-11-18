@@ -186,3 +186,13 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar{
   transform:none!important;animation:none!important;transition:none!important;
 }
 html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min-height:0}
+
+/* iOS 26 experiment: actual finger contact on a native switch, not a scripted click.
+   The switch is a real focusable touch target; visual tab content stays unchanged. */
+.tabbar--ios .tab--ios-switch{cursor:pointer;overflow:hidden}
+.tabbar--ios .tab--ios-switch .tab-visual{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none}
+.tabbar--ios .tab--ios-switch .tab-haptic-switch{
+ position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;
+ opacity:.01;z-index:2;cursor:pointer;touch-action:manipulation;
+}
+.tabbar--ios .tab--ios-switch:focus-within{outline:2px solid #777;outline-offset:-2px}
