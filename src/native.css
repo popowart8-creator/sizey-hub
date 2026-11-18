@@ -202,3 +202,7 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
 .haptic-action-content{display:inline-flex;align-items:center;justify-content:center;gap:inherit;pointer-events:none}
 .haptic-action-switch{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:.01;z-index:2;cursor:pointer;touch-action:manipulation}
 .haptic-action:focus-within{outline:2px solid #777;outline-offset:2px}
+
+/* Keep the favorite action over the product preview image. The generic haptic
+   label uses relative positioning, which otherwise overrides .heart. */
+.productimage .heart.haptic-action{position:absolute;z-index:3}
