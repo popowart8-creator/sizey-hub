@@ -155,3 +155,20 @@ body>nav.tabbar.tabbar--android{position:fixed!important;top:auto!important;bott
 }
 @keyframes sizey-android-tab-fade{from{opacity:.75}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){body:has(>nav.tabbar--android) .tab-screen,body:has(>nav.tabbar--android) .tab-screen--back{animation:none!important}}
+
+/* Android: scroll inside the screen, never the document. This keeps Chrome's
+   collapsing browser UI from relocating the fixed bottom navigation on tab switches. */
+html.sizey-android-shell,html.sizey-android-shell body{height:100%;overflow:hidden!important;overscroll-behavior:none}
+html.sizey-android-shell .tab-screen{height:100dvh!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;animation:none!important;transform:none!important}
+html.sizey-android-shell .tab-screen--back{animation:none!important}
+html.sizey-android-shell body>.nav-anchor{position:fixed!important;inset:0!important;z-index:1000!important;pointer-events:none!important;overflow:visible!important;transform:none!important}
+html.sizey-android-shell body>.nav-anchor>nav.tabbar{position:absolute!important;top:auto!important;bottom:8px!important;left:12px!important;right:12px!important;width:auto!important;max-width:580px!important;margin-inline:auto!important;transform:none!important;animation:none!important;transition:none!important;pointer-events:auto!important}
+html.sizey-android-shell body>.nav-anchor--hidden{visibility:hidden;pointer-events:none!important}
+@media(max-width:359px){html.sizey-android-shell body>.nav-anchor>nav.tabbar{left:8px!important;right:8px!important}}
+/* The persistent anchor also prevents nav remount and icon animations on each route. */
+body>.nav-anchor{display:contents}
+html.sizey-android-shell body>.nav-anchor{display:block}
+
+/* Preserve identical iOS/web geometry after introducing the persistent nav wrapper. */
+body>.nav-anchor>nav.tabbar{position:fixed!important;top:auto!important;left:var(--sizey-tab-inline)!important;right:var(--sizey-tab-inline)!important;bottom:var(--sizey-tab-bottom)!important;width:calc(100% - 2 * var(--sizey-tab-inline))!important;max-width:580px!important;margin-inline:auto!important;height:76px!important;padding:5px!important;box-sizing:border-box;transform:none!important}
+@media(min-width:801px){body>.nav-anchor>nav.tabbar{height:80px!important}}
