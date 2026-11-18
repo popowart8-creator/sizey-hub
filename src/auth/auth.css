@@ -6,3 +6,19 @@
 .authtabs{display:flex;gap:12px;border-bottom:1px solid #d0cec6;margin-bottom:28px}.authtabs button{min-height:48px;padding:10px 18px;font-size:16px;color:#6b6b63;border-bottom:2px solid transparent}.authtabs .active{border-bottom-color:#252622;color:#252622}.stafflabel{font-size:16px}.stafftoolbar{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:25px}.stafftoolbar p{margin:0 auto 0 0;font-size:16px}.staffsearch{margin:24px 0;padding:20px}.staffsearch>label{font-size:15px}.staffsearch>input{display:block;width:100%;min-height:52px;margin-top:10px;padding:12px;font-size:16px;border:1px solid #c5c4bc;background:#faf9f6}.staffclients article{display:flex;gap:24px;align-items:center;justify-content:space-between;padding:24px 0;border-bottom:1px solid #d7d5ce}.staffclients article h3{font-size:18px;margin-bottom:8px}.staffclients article p{font-size:16px;margin-bottom:8px}.staffclients article small{font-size:13px;color:#67685e}.staffclients .outlinebtn{width:auto;min-height:52px;font-size:15px;margin:0}.issuedpassword{position:relative;margin:28px 0;background:#e8e7db;padding:26px}.issuedpassword>.textbtn{position:absolute;right:12px;top:12px;min-width:44px;min-height:44px;justify-content:center}.issuedpassword h3{font-size:18px;padding-right:40px}.issuedpassword code{display:block;font-size:25px;overflow-wrap:anywhere;padding:16px;background:#faf9f6;letter-spacing:1px}.issuedpassword p{font-size:14px;margin:20px 0 0}.issuedpassword .outlinebtn{font-size:16px;min-height:52px;max-width:300px;background:#faf9f6}.staffclients{margin-bottom:40px}@media(max-width:600px){.staffclients article{align-items:stretch;flex-direction:column;gap:16px}.staffclients .outlinebtn{width:100%}.stafftoolbar{gap:16px}.stafftoolbar p{width:100%}.issuedpassword{padding:24px 18px}.issuedpassword code{font-size:22px}.stafflabel{font-size:14px}.staffsearch{padding:18px}.stafftoolbar .textbtn{font-size:15px;min-height:48px}.authintro a{color:inherit}}
 
 .profile-account-actions{padding-top:0;padding-bottom:40px}.profile-account-actions .profile-logout{color:#c33535}.customerlayout>section:first-child h3{margin-top:0}
+
+/* Password change is a nested full-screen route, not a profile card or dialog. */
+.password-screen{position:fixed;inset:0;z-index:70;background:#fff;overflow-y:auto;overscroll-behavior:contain;animation:password-push .32s cubic-bezier(.22,.8,.22,1) both;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,calc((100vw - 1168px)/2)) calc(24px + env(safe-area-inset-bottom,0px))}
+.password-screen--leaving{animation:password-pop .28s cubic-bezier(.4,0,.8,.3) both}
+.password-screen-header{height:auto!important;min-height:52px;display:flex;align-items:center;gap:12px;padding:0!important;margin:0 0 28px;background:transparent}
+.password-screen-header h2{font-size:26px;font-weight:650;letter-spacing:-.7px;margin:0}
+.password-back{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:50%;padding:0}
+.password-card{width:100%;max-width:none;background:transparent;padding:0}
+.password-card form{width:100%;display:flex;flex-direction:column}
+.password-card form>label{font-size:15px;margin-bottom:9px}
+.password-card form>input{width:100%;min-height:54px;border:1px solid #dedee0;border-radius:14px;background:#f6f6f7;padding:14px 16px;margin-bottom:20px}
+.password-card form>.blackbtn{width:100%;max-width:none;margin-top:12px}
+.password-card form>.textbtn{align-self:flex-start}
+@keyframes password-push{from{opacity:.85;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+@keyframes password-pop{from{opacity:1;transform:translateX(0)}to{opacity:.85;transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.password-screen,.password-screen--leaving{animation:none!important}}
