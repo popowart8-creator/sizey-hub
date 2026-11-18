@@ -134,3 +134,6 @@ body>.fullscreen-photo{position:fixed!important;inset:0!important;z-index:2000!i
 body>.fullscreen-photo .fullscreen-close{z-index:5}
 .product-screen .detail-gallery-slide{cursor:zoom-in;touch-action:pan-x}
 @media(prefers-reduced-motion:reduce){.product-screen--leaving,.tab-screen--back{animation:none!important}}
+
+/* Do not trap fixed nested account screens inside the animated tab stacking context. */
+.tab-screen:has(.password-screen){animation:none!important;transform:none!important}
