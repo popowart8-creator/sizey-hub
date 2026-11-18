@@ -20,6 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm ci --prefix server
+      - run: npm run test:startup
       - run: npm run test:auth
       - run: npm run test:bonus-cabinet
       - run: npm run build
@@ -69,6 +70,9 @@ jobs:
           curl --fail --silent --show-error --retry 3 https://hub.sizey.ru/ > /dev/null
           actual=$(curl --fail --silent --show-error --retry 3 "https://hub.sizey.ru/version.txt?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT")
           test "$actual" = "$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          curl --fail --silent --show-error --head https://hub.sizey.ru/ | grep -qi 'cache-control: no-cache'
+          missing=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://hub.sizey.ru/assets/startup-missing-check.js)
+          test "$missing" = 404
       - name: Remove local SSH key
         if: always()
         run: rm -f ~/.ssh/id_ed25519
