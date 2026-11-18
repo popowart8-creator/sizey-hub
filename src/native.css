@@ -168,3 +168,7 @@ html.sizey-android-shell body>.nav-anchor--hidden{visibility:hidden;pointer-even
 /* The persistent anchor also prevents nav remount and icon animations on each route. */
 body>.nav-anchor{display:contents}
 html.sizey-android-shell body>.nav-anchor{display:block}
+
+/* Preserve identical iOS/web geometry after introducing the persistent nav wrapper. */
+body>.nav-anchor>nav.tabbar{position:fixed!important;top:auto!important;left:var(--sizey-tab-inline)!important;right:var(--sizey-tab-inline)!important;bottom:var(--sizey-tab-bottom)!important;width:calc(100% - 2 * var(--sizey-tab-inline))!important;max-width:580px!important;margin-inline:auto!important;height:76px!important;padding:5px!important;box-sizing:border-box;transform:none!important}
+@media(min-width:801px){body>.nav-anchor>nav.tabbar{height:80px!important}}
