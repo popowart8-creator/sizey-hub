@@ -248,3 +248,69 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
 }
 .productmodal .detailgallery > .preview-favorite.saved{color:#d33a55}
 .productmodal .detailgallery > .preview-favorite .haptic-action-content{display:flex;align-items:center;justify-content:center}
+
+/* Favorite: no round plate; white heart with black outline until selected,
+   then a red filled heart with a springy pop and soft sparkles. */
+.productgrid .productimage > .heart,
+.search-screen .productimage > .heart,
+.productmodal .detailgallery > .preview-favorite{
+ background:transparent!important;
+ box-shadow:none!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+ border:0!important;
+ color:#171717!important;
+ overflow:visible;
+ -webkit-tap-highlight-color:transparent;
+}
+.productgrid .productimage > .heart.saved,
+.search-screen .productimage > .heart.saved,
+.productmodal .detailgallery > .preview-favorite.saved{color:#f12b50!important}
+.productgrid .productimage > .heart svg,
+.search-screen .productimage > .heart svg,
+.productmodal .detailgallery > .preview-favorite svg{
+ fill:white;
+ stroke:currentColor;
+ stroke-width:2.3;
+ overflow:visible;
+ filter:drop-shadow(0 1px 2px rgba(255,255,255,.75));
+ transform-origin:center;
+}
+.productgrid .productimage > .heart.saved svg,
+.search-screen .productimage > .heart.saved svg,
+.productmodal .detailgallery > .preview-favorite.saved svg{
+ fill:currentColor;
+ stroke:currentColor;
+ animation:sizey-heart-pop .56s cubic-bezier(.2,.85,.25,1.15) both;
+}
+.productgrid .productimage > .heart.saved::after,
+.search-screen .productimage > .heart.saved::after,
+.productmodal .detailgallery > .preview-favorite.saved::after{
+ content:'';
+ position:absolute;
+ width:8px;height:8px;
+ border-radius:50%;
+ pointer-events:none;
+ box-shadow:0 -24px 0 -1px #f12b50,19px -13px 0 -2px #ff7d92,23px 9px 0 -2px #f12b50,0 25px 0 -2px #ff7d92,-22px 9px 0 -2px #f12b50,-19px -13px 0 -2px #ff7d92;
+ animation:sizey-heart-spark .55s ease-out both;
+}
+@keyframes sizey-heart-pop{
+ 0%{transform:scale(1)}
+ 23%{transform:scale(.68) rotate(-10deg)}
+ 52%{transform:scale(1.38) rotate(7deg)}
+ 75%{transform:scale(.91) rotate(-3deg)}
+ 100%{transform:scale(1) rotate(0)}
+}
+@keyframes sizey-heart-spark{
+ 0%,20%{opacity:0;transform:scale(.35) rotate(-15deg)}
+ 48%{opacity:1;transform:scale(.9) rotate(5deg)}
+ 100%{opacity:0;transform:scale(1.45) rotate(20deg)}
+}
+@media(prefers-reduced-motion:reduce){
+ .productgrid .productimage > .heart.saved svg,
+ .search-screen .productimage > .heart.saved svg,
+ .productmodal .detailgallery > .preview-favorite.saved svg,
+ .productgrid .productimage > .heart.saved::after,
+ .search-screen .productimage > .heart.saved::after,
+ .productmodal .detailgallery > .preview-favorite.saved::after{animation:none}
+}
