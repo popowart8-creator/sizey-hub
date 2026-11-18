@@ -1,4 +1,4 @@
-const CACHE='sizey-v12';
+const CACHE='sizey-v13';
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['/','/brand/logo.svg'])));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
 async function remember(request,response){if(response.ok){const type=response.headers.get('content-type')||'';if(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(type)){const cache=await caches.open(CACHE);await cache.put(request,response.clone())}}return response}
