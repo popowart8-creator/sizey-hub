@@ -54,3 +54,25 @@ body>.tabbar:not(.tabbar--android){bottom:calc(10px + env(safe-area-inset-bottom
 .productgrid .productmeta{margin-top:7px;gap:2px;align-items:flex-start}.productgrid .productmeta button{font-size:13px;line-height:1.3;min-height:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-align:left}.productgrid .productmeta>span{font-size:14px;line-height:1.35;font-weight:600}
 /* Product image continues behind the system status bar; no opaque white band. */
 @media(max-width:800px){.overlay:has(.productmodal){padding:0;align-items:flex-end;background:transparent;backdrop-filter:none}.overlay .productmodal{max-height:100dvh;height:100dvh;border-radius:0;overflow-y:auto;background:#fff}.overlay .productmodal .detailgallery{padding-top:0}.overlay .productmodal>.close{top:calc(12px + env(safe-area-inset-top,0px));left:16px;right:auto;z-index:5;background:#ffffffdb;backdrop-filter:blur(10px)}.overlay .productmodal .image-loading-detail{height:58svh;min-height:320px}}
+
+/* Final viewport anchoring for every tab, matching iOS floating-tab safe-area behavior.
+   The bottom inset is intentionally reduced: the bar remains above the home indicator,
+   while left/right margins are symmetric on every device and screen. */
+:root{--sizey-tab-inline:12px;--sizey-tab-bottom:8px}
+@supports (padding-bottom:env(safe-area-inset-bottom)){
+  :root{--sizey-tab-bottom:max(8px,calc(env(safe-area-inset-bottom,0px) - 12px))}
+}
+body>nav.tabbar,body>nav.tabbar.tabbar--ios,body>nav.tabbar.tabbar--android{
+  position:fixed!important;top:auto!important;
+  left:var(--sizey-tab-inline)!important;right:var(--sizey-tab-inline)!important;
+  bottom:var(--sizey-tab-bottom)!important;
+  width:calc(100% - 2 * var(--sizey-tab-inline))!important;
+  max-width:580px!important;margin-left:auto!important;margin-right:auto!important;
+  height:76px!important;padding:5px!important;
+  border:1px solid #ffffff99!important;border-radius:30px!important;
+  transform:none!important;will-change:auto!important;
+  box-sizing:border-box;
+}
+body>nav.tabbar.tabbar--android{background:#f6f5f8eF;box-shadow:0 7px 30px #00000012}
+@media(max-width:359px){:root{--sizey-tab-inline:8px}}
+@media(min-width:801px){body>nav.tabbar,body>nav.tabbar.tabbar--ios,body>nav.tabbar.tabbar--android{height:80px!important}}
