@@ -529,3 +529,7 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
 @media(prefers-reduced-motion:reduce){
  .tabbar .tab-badge.tab-badge-pop,.cart-toast-top{animation:none!important}
 }
+
+body>.nav-anchor--product>nav.tabbar{z-index:70!important}
+.product-screen .detailgallery{position:relative}
+@media(min-width:801px){.product-screen .detailgallery{position:sticky}}
