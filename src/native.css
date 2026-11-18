@@ -632,3 +632,18 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 .search-screen .productimage .image-loading-wrap{border-radius:14px!important;overflow:hidden!important}
 .productgrid .productimage > .heart,
 .search-screen .productimage > .heart{overflow:visible!important}
+
+/* Consistent breathing room between the detail's content blocks. */
+.product-screen .detail h2{margin-bottom:14px!important}
+.product-screen .detail h3{margin-top:0!important;margin-bottom:14px!important}
+.product-screen .detail>p{margin-top:0!important;margin-bottom:14px!important}
+.product-screen .detail .sizes{margin-top:14px!important;margin-bottom:14px!important}
+/* The gallery photo should extend beneath the iOS status bar like the home hero. */
+@media(max-width:800px){
+ .product-screen{top:calc(-1 * env(safe-area-inset-top,0px))!important}
+ .product-screen .detail-gallery-slide .image-loading-detail,
+ .product-screen .detail-gallery-slide .detailphoto{
+  height:calc(58svh + env(safe-area-inset-top,0px))!important;
+  min-height:calc(320px + env(safe-area-inset-top,0px))!important;
+ }
+}
