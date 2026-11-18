@@ -122,3 +122,15 @@ body>nav.tabbar.tabbar--android{background:#f6f5f8eF;box-shadow:0 7px 30px #0000
 @keyframes sizey-screen-push{from{opacity:.8;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
 @keyframes sizey-sheet-rise{from{opacity:.75;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.tab-screen,.product-screen,.fullscreen-photo,.overlay .sheet,.overlay .productmodal,.search-screen{animation:none!important}.fullscreen-pagination button{transition:none}}
+
+/* Back is portaled to body, so transformed/scrolling product content cannot move it. */
+body>.product-back{position:fixed!important;z-index:100!important;top:calc(12px + env(safe-area-inset-top,0px))!important;left:16px!important;transform:none!important}
+.product-screen--leaving{animation:sizey-screen-pop .28s cubic-bezier(.4,0,.8,.3) both}
+.tab-screen--back{animation:sizey-tab-back .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sizey-screen-pop{from{opacity:1;transform:translateX(0)}to{opacity:.85;transform:translateX(100%)}}
+@keyframes sizey-tab-back{from{opacity:.75;transform:translateX(-22px)}to{opacity:1;transform:translateX(0)}}
+/* Photo viewer must always sit above every product/navigation stacking context. */
+body>.fullscreen-photo{position:fixed!important;inset:0!important;z-index:2000!important}
+body>.fullscreen-photo .fullscreen-close{z-index:5}
+.product-screen .detail-gallery-slide{cursor:zoom-in;touch-action:pan-x}
+@media(prefers-reduced-motion:reduce){.product-screen--leaving,.tab-screen--back{animation:none!important}}
