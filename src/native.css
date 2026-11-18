@@ -314,3 +314,63 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
  .search-screen .productimage > .heart.saved::after,
  .productmodal .detailgallery > .preview-favorite.saved::after{animation:none}
 }
+
+/* Favorite visual v2: the hit target is invisible, ONLY the heart is drawn. */
+.productgrid .productimage > .heart,
+.search-screen .productimage > .heart,
+.productmodal .detailgallery > .preview-favorite{
+ background:none!important;
+ background-color:transparent!important;
+ background-image:none!important;
+ box-shadow:none!important;
+ border:0!important;
+ border-radius:0!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+ outline-offset:3px;
+}
+.favorite-control .haptic-action-switch{
+ appearance:none!important;
+ -webkit-appearance:none!important;
+ background:transparent!important;
+ border:0!important;
+ border-radius:0!important;
+ box-shadow:none!important;
+ opacity:.001!important;
+}
+.productgrid .productimage > .heart:not(.saved),
+.search-screen .productimage > .heart:not(.saved),
+.productmodal .detailgallery > .preview-favorite:not(.saved){color:#080808!important}
+.productgrid .productimage > .heart.saved,
+.search-screen .productimage > .heart.saved,
+.productmodal .detailgallery > .preview-favorite.saved{color:#ff1744!important}
+.favorite-control svg{fill:white;stroke:currentColor;stroke-width:2.6;filter:drop-shadow(0 1px 1px rgba(255,255,255,.85))}
+.favorite-control.saved svg{fill:#ff1744;stroke:#ff1744}
+.favorite-control.saved:not(.favorite-burst) svg{animation:none!important}
+.favorite-control.saved:not(.favorite-burst)::after{animation:none!important;content:none!important}
+.favorite-control.favorite-burst svg{
+ animation:sizey-heart-pop .62s cubic-bezier(.18,.89,.32,1.28) both!important;
+}
+.favorite-control.favorite-burst::after{
+ content:''!important;position:absolute;left:50%;top:50%;width:7px;height:7px;
+ margin:-3.5px 0 0 -3.5px;border-radius:50%;pointer-events:none;
+ box-shadow:0 -26px #ff1744,22px -15px #ff4567,24px 12px #ff1744,0 26px #ff4567,-24px 12px #ff1744,-22px -15px #ff4567;
+ animation:sizey-heart-spark .65s ease-out both!important;
+}
+.favorite-toast{
+ display:flex;align-items:center;gap:10px;
+ background:#ff1744!important;color:white!important;
+ box-shadow:0 12px 30px rgba(255,23,68,.3)!important;
+ animation:sizey-favorite-toast .45s cubic-bezier(.18,.89,.32,1.28) both;
+}
+.favorite-toast svg{animation:sizey-heart-pop .62s ease-out both}
+@keyframes sizey-favorite-toast{
+ from{opacity:0;transform:translateY(28px) scale(.8)}
+ 65%{opacity:1;transform:translateY(-5px) scale(1.04)}
+ to{opacity:1;transform:translateY(0) scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+ .favorite-control.favorite-burst svg,
+ .favorite-control.favorite-burst::after,
+ .favorite-toast,.favorite-toast svg{animation:none!important}
+}
