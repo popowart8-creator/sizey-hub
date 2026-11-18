@@ -611,3 +611,10 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
  .product-favorite-toolbar.favorite-burst .haptic-action-content svg,
  .product-favorite-toolbar.favorite-burst::after{animation:none!important}
 }
+
+/* Refine detail rhythm: closer title, price and description; roomier size chips. */
+.product-screen .detail h2{margin-top:0!important;margin-bottom:4px!important}
+.product-screen .detail h3{margin-top:0!important;margin-bottom:6px!important}
+.product-screen .detail>p{margin-top:0!important;margin-bottom:6px!important}
+.product-screen .detail .sizes{margin-top:9px!important;margin-bottom:14px!important;gap:9px!important}
+.product-screen .detail .sizes button{padding:9px 21px!important;min-height:37px!important;font-size:14px!important}
