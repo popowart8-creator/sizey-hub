@@ -143,3 +143,15 @@ body>.fullscreen-photo .fullscreen-close{z-index:5}
 .page-top>.icon-control{position:fixed!important;top:calc(12px + env(safe-area-inset-top,0px))!important;left:16px!important;z-index:60!important;min-width:44px!important;min-height:44px!important;width:44px!important;height:44px!important;margin:0!important;border-radius:50%;background:#ffffffd9;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 2px 12px #00000012}
 .search-top>.icon-control:first-child{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;flex:0 0 44px;border-radius:50%;background:#ffffffd9;box-shadow:0 2px 12px #00000012}
 .search-top{padding-top:calc(12px + env(safe-area-inset-top,0px))!important}
+
+/* Android: the bottom bar is a persistent viewport layer, never part of tab transitions. */
+body>nav.tabbar.tabbar--android{position:fixed!important;top:auto!important;bottom:8px!important;left:12px!important;right:12px!important;width:auto!important;max-width:580px!important;margin-inline:auto!important;transform:none!important;transition:none!important;animation:none!important;contain:layout style;isolation:isolate;z-index:1000!important}
+@media(max-width:359px){body>nav.tabbar.tabbar--android{left:8px!important;right:8px!important}}
+/* Avoid moving the whole document horizontally on Android: that shifts fixed UI
+   and can make the Chrome browser toolbar jump during tab changes. */
+@media(hover:none) and (pointer:coarse){
+  body:has(>nav.tabbar--android) .tab-screen{animation:sizey-android-tab-fade .22s ease-out both;transform:none!important;will-change:opacity}
+  body:has(>nav.tabbar--android) .tab-screen--back{animation:sizey-android-tab-fade .22s ease-out both}
+}
+@keyframes sizey-android-tab-fade{from{opacity:.75}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){body:has(>nav.tabbar--android) .tab-screen,body:has(>nav.tabbar--android) .tab-screen--back{animation:none!important}}
