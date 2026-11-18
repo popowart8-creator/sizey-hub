@@ -9,7 +9,7 @@ export default function Navigation({page,count,onNavigate}:{page:string;count:nu
   const className='tab '+(page===id?'is-active':'');
   // Real finger contact with a native switch is required for the experimental iOS haptic.
   // Keep the input as the actual hit target; synthetic .click() does not trigger it.
-  if(os==='ios')return <label key={id} className={className+' tab--ios-switch'}><span className="tab-visual" aria-hidden="true">{content}</span><input type="checkbox" switch="" className="tab-haptic-switch" aria-label={label} aria-current={page===id?'page':undefined} onChange={()=>{if(page!==id)onNavigate(id)}}/></label>;
+  if(os==='ios')return <label key={id} className={className+' tab--ios-switch'}><span className="tab-visual" aria-hidden="true">{content}</span><input type="checkbox" {...{switch:""}} className="tab-haptic-switch" aria-label={label} aria-current={page===id?'page':undefined} onChange={()=>{if(page!==id)onNavigate(id)}}/></label>;
   return <button key={id} className={className} aria-current={page===id?'page':undefined} onClick={()=>{if(page!==id)hapticTabChange();onNavigate(id)}}>{content}</button>;
  })}</nav>
 }
