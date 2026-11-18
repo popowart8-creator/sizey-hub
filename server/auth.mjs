@@ -19,7 +19,7 @@ export function initializeDatabase(database){
  CREATE TABLE IF NOT EXISTS credential_audit(employee TEXT,customer TEXT,action TEXT,created INTEGER);
  CREATE INDEX IF NOT EXISTS auth_attempts_lookup ON auth_attempts(kind,subject,created);`);return db;
 }
-export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,getLoyaltyClient,staffAuth,now=Date.now}){
+export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,getLoyaltyClient,staffAuth,adminHandler,now=Date.now}){
  if(!secret||secret.length<32)throw new Error('AUTH_SECRET must contain at least 32 characters');
  const db=initializeDatabase(database),envelope=credentialEnvelope(secret),staffSessions=new Map();let passwordJobs=0;
  const run=(s,...a)=>db.prepare(s).run(...a),get=(s,...a)=>db.prepare(s).get(...a),all=(s,...a)=>db.prepare(s).all(...a);
@@ -59,6 +59,7 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
   try{
    const path=new URL(req.url,'http://internal').pathname;
+   if(adminHandler&&await adminHandler(req,res))return;
    if(req.method==='GET'&&path==='/hub-api/health')return reply(200,{ok:true,authMethod:'password',loyaltyConfigured:!!loyalty,employeeCabinetIntegration:!!getLoyaltyClient});
    if(req.method==='POST'){if(req.headers.origin!==origin)throw new ApiError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ApiError(415,'Ожидается JSON')}
    if(req.method==='POST'&&path==='/hub-api/auth/register'){

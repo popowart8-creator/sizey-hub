@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: cb2fef6e73559a4350e8fa0fc70af9526c16924b
+          ref: 17c106deaec7c3489b12ec80a5046040e158d105
       - name: Configure SSH
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}

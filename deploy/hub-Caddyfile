@@ -17,6 +17,13 @@
         header Cache-Control "public, max-age=86400"
         file_server
     }
+    @admin host admmm.sizey.ru
+    handle @admin {
+        root * /srv/current/admin
+        header Cache-Control "no-cache, max-age=0, must-revalidate"
+        try_files {path} /index.html
+        file_server
+    }
     handle {
         root * /srv/current
         header Cache-Control "no-cache, max-age=0, must-revalidate"
