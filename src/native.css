@@ -649,3 +649,5 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 }
 
 .search-screen{isolation:isolate}.search-screen .search-top{z-index:10;background:#fff}.search-screen .search-results{position:relative;z-index:0;isolation:isolate}
+
+.product-screen label.detail-cart-action{margin-top:0;font-size:17px;line-height:1.4}
