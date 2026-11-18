@@ -89,14 +89,12 @@ body>nav.tabbar.tabbar--android{background:#f6f5f8eF;box-shadow:0 7px 30px #0000
 .tabbar .tab:nth-child(4).is-active .tab-icon{animation-name:sizey-tab-heart}
 .tabbar .tab:nth-child(5).is-active .tab-icon{animation-name:sizey-tab-profile}
 .tabbar .tab.is-active .tab-icon svg{stroke-width:2}
-.tabbar .tab.is-active .tab-icon::before{content:"";position:absolute;width:38px;height:38px;border-radius:50%;background:currentColor;opacity:0;pointer-events:none;animation:sizey-tab-halo .48s ease-out both}
 .tabbar .tab>span:last-child{transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .24s ease}
 .tabbar .tab.is-active>span:last-child{transform:translateY(-1px)}
 @keyframes sizey-tab-home{0%{transform:translateY(7px) scale(.8);opacity:.55}48%{transform:translateY(-5px) scale(1.13);opacity:1}73%{transform:translateY(2px) scale(.97)}100%{transform:none}}
 @keyframes sizey-tab-sway{0%{transform:rotate(-14deg) scale(.84)}42%{transform:rotate(11deg) scale(1.12)}72%{transform:rotate(-5deg)}100%{transform:none}}
 @keyframes sizey-tab-bag{0%{transform:translateY(5px) rotate(-7deg) scale(.84)}42%{transform:translateY(-6px) rotate(5deg) scale(1.12)}70%{transform:translateY(1px) rotate(-2deg)}100%{transform:none}}
-@keyframes sizey-tab-heart{0%{transform:scale(.72)}35%{transform:scale(1.24)}62%{transform:scale(.93)}82%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes sizey-tab-heart{0%{transform:translateY(5px) rotate(-8deg)}45%{transform:translateY(-5px) rotate(7deg)}75%{transform:translateY(1px) rotate(-2deg)}100%{transform:none}}
 @keyframes sizey-tab-profile{0%{transform:translateY(5px) scale(.83)}45%{transform:translateY(-4px) scale(1.1)}75%{transform:translateY(1px) scale(.97)}100%{transform:none}}
 @keyframes sizey-tab-pop{0%{transform:scale(.85)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
-@keyframes sizey-tab-halo{0%{transform:scale(.55);opacity:.12}70%{opacity:.05}100%{transform:scale(1.5);opacity:0}}
-@media(prefers-reduced-motion:reduce){.tabbar .tab,.tabbar .tab-icon,.tabbar .tab .tab-icon svg,.tabbar .tab>span:last-child{transition:none!important;animation:none!important}.tabbar .tab.is-active .tab-icon::before{animation:none!important;opacity:0!important}}
+@media(prefers-reduced-motion:reduce){.tabbar .tab,.tabbar .tab-icon,.tabbar .tab .tab-icon svg,.tabbar .tab>span:last-child{transition:none!important;animation:none!important}}
