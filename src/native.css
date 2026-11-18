@@ -546,3 +546,43 @@ body>.nav-anchor--product>nav.tabbar{z-index:70!important}
  100%{transform:scale(1)}
 }
 @media(prefers-reduced-motion:reduce){.tabbar .tab-icon.tab-favorite-pulse svg{animation:none!important}}
+
+/* Detail polish: hide tabbar, keep a full-size safe tap target on the product. */
+body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:none!important}
+.product-screen{padding-bottom:env(safe-area-inset-bottom,0px)!important}
+.productgrid .productimage > .heart,
+.search-screen .productimage > .heart{top:4px!important;right:4px!important}
+.product-favorite-toolbar svg,
+.product-favorite-toolbar .haptic-action-content svg{
+ width:24px!important;height:24px!important;
+ stroke-width:1.7!important;
+}
+/* The image favorite gets its spring pop and little red sparkles back. */
+.productgrid .productimage > .heart.favorite-burst svg,
+.search-screen .productimage > .heart.favorite-burst svg{
+ animation:sizey-heart-pop .62s cubic-bezier(.18,.89,.32,1.28) both!important;
+ transform-origin:center;
+}
+.productgrid .productimage > .heart.favorite-burst::after,
+.search-screen .productimage > .heart.favorite-burst::after{
+ content:''!important;position:absolute;left:50%;top:50%;
+ width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
+ pointer-events:none;
+ box-shadow:0 -25px #ff1744,20px -13px #ff4567,22px 11px #ff1744,0 24px #ff4567,-22px 11px #ff1744,-20px -13px #ff4567!important;
+ animation:sizey-heart-spark .62s ease-out both!important;
+}
+.product-screen .detail .sizes button{
+ padding:5px 17px!important;
+ min-height:28px!important;
+ line-height:1.2!important;
+}
+.product-screen .detail-cart-action{
+ color:#fff!important;
+ -webkit-text-fill-color:#fff!important;
+}
+@media(prefers-reduced-motion:reduce){
+ .productgrid .productimage > .heart.favorite-burst svg,
+ .search-screen .productimage > .heart.favorite-burst svg,
+ .productgrid .productimage > .heart.favorite-burst::after,
+ .search-screen .productimage > .heart.favorite-burst::after{animation:none!important}
+}
