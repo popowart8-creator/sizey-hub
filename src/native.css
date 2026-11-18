@@ -586,3 +586,28 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
  .productgrid .productimage > .heart.favorite-burst::after,
  .search-screen .productimage > .heart.favorite-burst::after{animation:none!important}
 }
+
+/* Tighter hierarchy in the product detail content. */
+.product-screen .detail h2{font-size:23px!important;line-height:1.22!important;letter-spacing:-.5px!important;margin-bottom:8px!important}
+.product-screen .detail h3{font-size:19px!important;line-height:1.25!important;margin-bottom:12px!important}
+.product-screen .detail>p{font-size:13px!important;line-height:1.5!important;margin-bottom:10px!important}
+.product-screen .detail .sizes{margin-top:12px!important;margin-bottom:16px!important}
+.product-screen .detail .sizes button{padding:7px 19px!important;min-height:33px!important;font-size:13px!important}
+/* Match the thumbnail favorite animation on the fixed detail-toolbar heart. */
+.product-favorite-toolbar.favorite-burst svg,
+.product-favorite-toolbar.favorite-burst .haptic-action-content svg{
+ animation:sizey-heart-pop .62s cubic-bezier(.18,.89,.32,1.28) both!important;
+ transform-origin:center;
+}
+.product-favorite-toolbar.favorite-burst::after{
+ content:''!important;position:absolute;left:50%;top:50%;
+ width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
+ pointer-events:none;
+ box-shadow:0 -25px #ff1744,20px -13px #ff4567,22px 11px #ff1744,0 24px #ff4567,-22px 11px #ff1744,-20px -13px #ff4567!important;
+ animation:sizey-heart-spark .62s ease-out both!important;
+}
+@media(prefers-reduced-motion:reduce){
+ .product-favorite-toolbar.favorite-burst svg,
+ .product-favorite-toolbar.favorite-burst .haptic-action-content svg,
+ .product-favorite-toolbar.favorite-burst::after{animation:none!important}
+}
