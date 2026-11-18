@@ -533,3 +533,16 @@ html.sizey-android-shell body>.nav-anchor>nav.tabbar .tab{border-radius:12px;min
 body>.nav-anchor--product>nav.tabbar{z-index:70!important}
 .product-screen .detailgallery{position:relative}
 @media(min-width:801px){.product-screen .detailgallery{position:sticky}}
+
+/* Smooth out the return phase of the Favorites tab icon. */
+.tabbar .tab-icon.tab-favorite-pulse svg{
+ animation:sizey-tab-favorite-smooth .72s cubic-bezier(.22,.65,.3,1) both!important;
+}
+@keyframes sizey-tab-favorite-smooth{
+ 0%{transform:scale(1)}
+ 32%{transform:scale(1.16)}
+ 58%{transform:scale(1.12)}
+ 80%{transform:scale(1.04)}
+ 100%{transform:scale(1)}
+}
+@media(prefers-reduced-motion:reduce){.tabbar .tab-icon.tab-favorite-pulse svg{animation:none!important}}
