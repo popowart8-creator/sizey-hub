@@ -1,0 +1,2 @@
+import{readdir,readFile,writeFile}from'node:fs/promises';import{brotliCompressSync,gzipSync,constants}from'node:zlib';
+for(const name of await readdir('dist/assets')){if(!/\.(js|css)$/.test(name))continue;const path='dist/assets/'+name,data=await readFile(path);await writeFile(path+'.br',brotliCompressSync(data,{params:{[constants.BROTLI_PARAM_QUALITY]:11}}));await writeFile(path+'.gz',gzipSync(data,{level:9}));}
