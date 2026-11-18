@@ -12,12 +12,12 @@ export function credentialEnvelope(secret){
 }
 export function initializeDatabase(database){
  const db=new DatabaseSync(database);db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
- CREATE TABLE IF NOT EXISTS customers(id TEXT PRIMARY KEY,phone TEXT UNIQUE,created INTEGER);
+ CREATE TABLE IF NOT EXISTS customers(id TEXT PRIMARY KEY,phone TEXT UNIQUE,created INTEGER,name TEXT);
  CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,customer TEXT,expires INTEGER);
  CREATE TABLE IF NOT EXISTS credentials(customer TEXT PRIMARY KEY REFERENCES customers(id),password_hash TEXT NOT NULL,must_change INTEGER NOT NULL DEFAULT 0,phone_verified INTEGER NOT NULL DEFAULT 0,temporary_encrypted TEXT,issued_at INTEGER);
  CREATE TABLE IF NOT EXISTS auth_attempts(kind TEXT,subject TEXT,created INTEGER);
  CREATE TABLE IF NOT EXISTS credential_audit(employee TEXT,customer TEXT,action TEXT,created INTEGER);
- CREATE INDEX IF NOT EXISTS auth_attempts_lookup ON auth_attempts(kind,subject,created);`);return db;
+ CREATE INDEX IF NOT EXISTS auth_attempts_lookup ON auth_attempts(kind,subject,created);`);if(!db.prepare('PRAGMA table_info(customers)').all().some(c=>c.name==='name'))db.exec('ALTER TABLE customers ADD COLUMN name TEXT');return db;
 }
 export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,getLoyaltyClient,staffAuth,now=Date.now}){
  if(!secret||secret.length<32)throw new Error('AUTH_SECRET must contain at least 32 characters');
@@ -26,9 +26,9 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
  const token=()=>randomBytes(32).toString('hex');
  const cookie=(name,value,age)=>`${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${age}`;
  const readCookie=(req,name)=>String(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='))?.split('=')[1];
- const publicUser=u=>({id:u.id,phone:u.phone,mustChangePassword:!!u.must_change,phoneVerified:!!u.phone_verified});
- const findUser=phone=>get('SELECT c.id,c.phone,k.* FROM customers c LEFT JOIN credentials k ON k.customer=c.id WHERE c.phone=?',phone);
- const current=req=>{const t=readCookie(req,'__Host-sizey_session');if(!t||!/^[a-f0-9]{64}$/.test(t))return null;return get('SELECT c.id,c.phone,k.* FROM sessions s JOIN customers c ON c.id=s.customer JOIN credentials k ON k.customer=c.id WHERE s.hash=? AND s.expires>?',digest(t),now())};
+ const publicUser=u=>({id:u.id,phone:u.phone,name:u.name||null,mustChangePassword:!!u.must_change,phoneVerified:!!u.phone_verified});
+ const findUser=phone=>get('SELECT c.id,c.phone,c.name,k.* FROM customers c LEFT JOIN credentials k ON k.customer=c.id WHERE c.phone=?',phone);
+ const current=req=>{const t=readCookie(req,'__Host-sizey_session');if(!t||!/^[a-f0-9]{64}$/.test(t))return null;return get('SELECT c.id,c.phone,c.name,k.* FROM sessions s JOIN customers c ON c.id=s.customer JOIN credentials k ON k.customer=c.id WHERE s.hash=? AND s.expires>?',digest(t),now())};
  const session=user=>{const t=token();run('INSERT INTO sessions VALUES(?,?,?)',digest(t),user.id,now()+2592000000);return cookie('__Host-sizey_session',t,2592000)};
  const ip=req=>String(req.headers['x-real-ip']||req.socket.remoteAddress);
  function limit(kind,subject,max,window){run('DELETE FROM auth_attempts WHERE created<?',now()-86400000);if(get('SELECT COUNT(*) AS n FROM auth_attempts WHERE kind=? AND subject=? AND created>?',kind,subject,now()-window).n>=max)throw new ApiError(429,'Слишком много попыток. Попробуйте позже.',Math.ceil(window/1000));run('INSERT INTO auth_attempts VALUES(?,?,?)',kind,subject,now())}
@@ -48,7 +48,7 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
   if(user.temporary_encrypted)password=envelope.open(user.temporary_encrypted);else{password=temporaryPassword();hash=await passwordWork(()=>hashPassword(password))}
   db.exec('BEGIN');try{
    const fresh=findUser(user.phone);
-   if(!fresh&&allowCreate)run('INSERT INTO customers VALUES(?,?,?)',user.id,user.phone,now());
+   if(!fresh&&allowCreate)run('INSERT INTO customers(id,phone,created) VALUES(?,?,?)',user.id,user.phone,now());
    else if(!fresh||fresh.password_hash!==user.password_hash||fresh.temporary_encrypted!==user.temporary_encrypted)throw new ApiError(409,'Данные уже изменены. Обновите страницу.');
    run('INSERT INTO credentials(customer,password_hash,must_change,phone_verified,issued_at) VALUES(?,?,1,1,?) ON CONFLICT(customer) DO UPDATE SET password_hash=excluded.password_hash,must_change=1,phone_verified=1,temporary_encrypted=NULL,issued_at=excluded.issued_at',user.id,hash,now());
    run('DELETE FROM sessions WHERE customer=?',user.id);run('INSERT INTO credential_audit VALUES(?,?,?,?)',me.id,user.id,'issue-temporary-password',now());db.exec('COMMIT');
@@ -63,6 +63,7 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
    if(req.method==='POST'){if(req.headers.origin!==origin)throw new ApiError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ApiError(415,'Ожидается JSON')}
    if(req.method==='POST'&&path==='/hub-api/auth/register'){
     limit('register-ip',ip(req),5,3600000);const b=await body(req),phone=normalizePhone(b.phone);
+    const name=typeof b.name==='string'?b.name.trim():'';if(name.length<2||name.length>80||/[<>\x00-\x1f]/.test(name))throw new ApiError(400,'Укажите имя от 2 до 80 символов');
     if(b.consent!==true)throw new ApiError(400,'Подтвердите согласие на обработку данных');
     if(!validPassword(b.password))throw new ApiError(400,'Пароль должен содержать от 10 до 128 символов');
     if(findUser(phone))throw new ApiError(409,'Номер уже зарегистрирован. Войдите или получите пароль у сотрудника магазина.');
@@ -71,7 +72,7 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
     let existing;try{existing=await loyalty(phone)}catch{throw new ApiError(503,'Регистрация временно недоступна')}
     if(existing.linked)throw new ApiError(409,'Номер уже зарегистрирован. Получите пароль у сотрудника магазина.');
     const hash=await passwordWork(()=>hashPassword(b.password)),id=randomBytes(16).toString('hex');
-    db.exec('BEGIN');try{if(findUser(phone))throw new ApiError(409,'Номер уже зарегистрирован');run('INSERT INTO customers VALUES(?,?,?)',id,phone,now());run('INSERT INTO credentials(customer,password_hash) VALUES(?,?)',id,hash);db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
+    db.exec('BEGIN');try{if(findUser(phone))throw new ApiError(409,'Номер уже зарегистрирован');run('INSERT INTO customers(id,phone,created,name) VALUES(?,?,?,?)',id,phone,now(),name);run('INSERT INTO credentials(customer,password_hash) VALUES(?,?)',id,hash);db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
     const user=findUser(phone);return reply(201,{user:publicUser(user)},session(user));
    }
    if(req.method==='POST'&&path==='/hub-api/auth/login'){
