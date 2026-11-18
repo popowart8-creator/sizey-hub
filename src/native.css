@@ -618,3 +618,17 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 .product-screen .detail>p{margin-top:0!important;margin-bottom:6px!important}
 .product-screen .detail .sizes{margin-top:9px!important;margin-bottom:14px!important;gap:9px!important}
 .product-screen .detail .sizes button{padding:9px 21px!important;min-height:37px!important;font-size:14px!important}
+
+/* Match the space below the photo to the detail's horizontal inset. */
+@media(max-width:800px){
+ .product-screen .productmodal .detail{padding-top:16px!important}
+}
+.product-screen .detail h2{margin-bottom:8px!important}
+.product-screen .detail .sizes button{padding:10px 23px!important;min-height:40px!important;font-size:14px!important}
+/* Let favorite particles escape the image boundary while keeping the photo rounded. */
+.productgrid .productimage,
+.search-screen .productimage{overflow:visible!important}
+.productgrid .productimage .image-loading-wrap,
+.search-screen .productimage .image-loading-wrap{border-radius:14px!important;overflow:hidden!important}
+.productgrid .productimage > .heart,
+.search-screen .productimage > .heart{overflow:visible!important}
