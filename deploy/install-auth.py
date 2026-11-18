@@ -100,23 +100,7 @@ print('Password verification:',command(['docker','exec','sizey-hub-api','node','
 
 # Update only the internal SIZEY container; the bonus proxy and backend stay running.
 caddy=Path('/opt/sizey/hub/Caddyfile');previous=caddy.read_text()
-config=''':80 {
-    handle /hub-api/* {
-        reverse_proxy sizey-hub-api:8080 {
-            header_up X-Real-IP {http.request.header.X-Forwarded-For}
-        }
-    }
-    handle {
-        root * /srv/current
-        encode gzip
-        header /index.html Cache-Control "no-cache"
-        header /sw.js Cache-Control "no-cache"
-        header /manifest.webmanifest Cache-Control "no-cache"
-        try_files {path} /index.html
-        file_server
-    }
-}
-'''
+config=Path(__file__).with_name('hub-Caddyfile').read_text()
 check=base/'Caddyfile.check';check.write_text(config)
 command(['docker','cp',str(check),'sizey-hub:/tmp/sizey-auth-Caddyfile'])
 command(['docker','exec','sizey-hub','caddy','validate','--config','/tmp/sizey-auth-Caddyfile','--adapter','caddyfile'])
