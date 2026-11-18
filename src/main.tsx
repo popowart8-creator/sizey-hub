@@ -19,8 +19,9 @@ const openSearch=()=>{setTabDirection('forward');setSearch(true)};const openPhot
 useLayerBack(search,'search',()=>setSearch(false));
 useLayerBack(page==='wardrobe','wardrobe',()=>go('profile'));
 useLayerBack(page==='catalog'&&!!catalogCategory,'catalog-category',()=>setCatalogCategory(null));
-useLayerBack(!!fullscreen,'photo-fullscreen',()=>setFullscreen(false));
-useLayerBack(!!selected&&!fullscreen&&!productLeaving,'product',closeProduct);
+/* Keep the product history layer mounted while photo viewer is open: removing it
+   on fullscreen entry triggered history.back() and immediately dismissed the photo. */
+useLayerBack(!!selected&&!productLeaving,'product',()=>{if(fullscreen)setFullscreen(false);else closeProduct()});
 useEffect(()=>{if(!selected)return;let active=true;setDetailError('');import('./catalog.json').then(module=>{if(active){const full=module.default.find(p=>p.id===selected.id);if(full)select(full)}}).catch(()=>{if(active)setDetailError('Не удалось загрузить описание и фотографии. Проверь соединение.')});return()=>{active=false}},[selected?.id,detailAttempt]);
 
 useEffect(()=>{if(!selected)return;const trigger=document.activeElement as HTMLElement|null;const frame=requestAnimationFrame(()=>document.querySelector<HTMLElement>('.product-screen')?.focus());return()=>{cancelAnimationFrame(frame);if(trigger?.isConnected)trigger.focus()}},[!!selected]);
