@@ -28,7 +28,7 @@ inner=Path('/opt/sizey/hub/Caddyfile');outer=Path('/opt/sizey/proxy/Caddyfile')
 old_inner=inner.read_text();old_outer=outer.read_text()
 (backup/'hub-Caddyfile').write_text(old_inner);(backup/'proxy-Caddyfile').write_text(old_outer)
 dc=['docker','compose','-f',str(base/'docker-compose.yml')]
-files=['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','admin.mjs','analytics.mjs','geo.mjs','content-store.mjs','ai-description.mjs','catalog-seed.json','categories-seed.json']
+files=['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','admin.mjs','loyalty-admin.mjs','analytics.mjs','geo.mjs','content-store.mjs','ai-description.mjs','catalog-seed.json','categories-seed.json']
 for name in files:shutil.copy2(source/'server'/name,base/'server'/name)
 canary='sizey-hub-admin-canary'
 inner_changed=False;outer_changed=False;api_changed=False
