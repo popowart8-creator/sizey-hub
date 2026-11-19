@@ -41,9 +41,10 @@ try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)
     run(dc+['config','-q'])
     run(dc+['build','auth'],timeout=900)
-    run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-e','OLLAMA_URL=http://sizey-local-ollama:11434','-e','OLLAMA_MODEL=qwen2.5:1.5b','-v',str(base/'data')+':/data','sizey-hub-api:local'])
+    run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-e','OLLAMA_URL=http://sizey-local-ollama:11434','-e','OLLAMA_MODEL=qwen2.5:1.5b','-v',str(base/'data')+':/data','--entrypoint','sleep','sizey-hub-api:local','300'])
     run(['docker','network','connect','sizey_prod',canary])
     run(['docker','network','connect','sizey_ai_internal',canary])
+    # Canary runs a sleeping container so app startup dependencies cannot mask Qwen connectivity.
     run(['docker','exec',canary,'node','--input-type=module','-e',probe],timeout=150)
     print('Canary generated a Qwen description successfully',flush=True)
     run(['docker','rm','-f',canary])
