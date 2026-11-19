@@ -28,7 +28,7 @@ export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients
    }
    if(path==='/hub-api/content'&&req.method==='GET'){reply(200,store.publicContent());return true}
    if(path.startsWith('/hub-api/media/')&&req.method==='GET'){const name=path.slice('/hub-api/media/'.length);if(!/^[a-f0-9]{64}\.(jpg|png|webp)$/.test(name))throw new ContentError(404,'Фотография не найдена');let data;try{data=readFileSync(join(mediaDirectory,name))}catch{throw new ContentError(404,'Фотография не найдена')}res.writeHead(200,{'Content-Type':name.endsWith('.jpg')?'image/jpeg':name.endsWith('.png')?'image/png':'image/webp','Cache-Control':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff'});res.end(data);return true}
-   if(req.method==='POST'){if(req.headers.origin!==origin)throw new ContentError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ContentError(415,'Ожидается JSON')}
+   if(['POST','PATCH','PUT','DELETE'].includes(req.method)){if(req.headers.origin!==origin)throw new ContentError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ContentError(415,'Ожидается JSON')}
    if(path==='/hub-api/admin/login'&&req.method==='POST'){
     const key=String(req.headers['x-real-ip']||req.socket.remoteAddress),list=(attempts.get(key)||[]).filter(t=>t>now()-900000);if(list.length>=10)throw new ContentError(429,'Слишком много попыток входа. Попробуйте позже.');list.push(now());attempts.set(key,list);for(const[k,v]of attempts)if(v.every(t=>t<=now()-900000))attempts.delete(k);
     const b=await body(req);if(typeof b.login!=='string'||typeof b.password!=='string'||b.login.length>128||b.password.length>256)throw new ContentError(400,'Укажите логин и пароль');let login;try{login=await staffAuth.login(b.login,b.password)}catch{throw new ContentError(401,'Неверный логин или пароль')};if(!login.accessToken||login.user?.role!=='ADMIN'||login.user.status&&login.user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');const sid=randomBytes(32).toString('hex');for(const[k,v]of sessions)if(v.expires<=now())sessions.delete(k);sessions.set(hash(sid),{accessToken:login.accessToken,expires:now()+900000});reply(200,{user:{id:login.user.id,name:login.user.name,role:'ADMIN'}},cookie(sid,900));return true;
@@ -42,7 +42,7 @@ export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients
     const sid=token(req),session=sid&&sessions.get(hash(sid));
     const subpath=path.slice('/hub-api/admin/loyalty'.length);
     const query=new URL(req.url,'http://internal').search;
-    const payload=['POST','PATCH','PUT','DELETE'].includes(req.method)?await body(req,32768):undefined;
+    const payload=['POST','PATCH','PUT'].includes(req.method)?await body(req,32768):undefined;
     const result=await loyaltyAdminRequest({path:subpath,method:req.method,query,accessToken:session.accessToken,body:payload});
     reply(result.status,result.data);return true;
    }
