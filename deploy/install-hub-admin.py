@@ -37,7 +37,12 @@ try:
     # Never mount the live writable SQLite directory into a canary.
     # The canary receives an isolated copy of the existing data and media.
     canary_data=backup/'canary-data'
-    shutil.copytree(base/'data',canary_data,symlinks=False)
+    shutil.copytree(base/'data',canary_data,symlinks=True)
+    # Reject symlinks in the canary tree: never follow them while changing ownership.
+    for root,dirs,files_in_dir in os.walk(canary_data,followlinks=False):
+        for entry in dirs+files_in_dir:
+            if (Path(root)/entry).is_symlink():
+                raise RuntimeError('Canary data contains symlink; refusing unsafe ownership changes')
     # Replace potentially inconsistent live SQLite file copies with atomic snapshots.
     for name in ['auth.sqlite', 'hub-content.sqlite']:
         snapshot=backup/name
