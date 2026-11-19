@@ -49,7 +49,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
   try{
    recent.push(time);attempts.set(id,recent);
    let response;
-   try{response=await fetchImpl('https://searchapi.api.cloud.yandex.net/v2/wordstat/topRequests',{method:'POST',headers:{Authorization:'Api-Key '+key,'Content-Type':'application/json'},body:JSON.stringify({phrase,numPhrases:30,devices:['DEVICE_ALL'],folderId}),signal:AbortSignal.timeout(15000)})}
+   try{response=await fetchImpl('https://searchapi.api.cloud.yandex.net/v2/wordstat/topRequests',{method:'POST',headers:{Authorization:'Api-Key '+key,'Content-Type':'application/json'},body:JSON.stringify({phrase,numPhrases:'30',devices:['DEVICE_ALL'],folderId}),signal:AbortSignal.timeout(15000)})}
    catch{throw new ContentError(503,'Не удалось связаться с Wordstat')}
    if(!response.ok)throw new ContentError(503,response.status===401||response.status===403?'Нет доступа к Wordstat: проверьте ключ и права':'Wordstat временно недоступен ('+response.status+')');
    const data=await json(response,100000);
