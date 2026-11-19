@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
 const token='employee-token';
 test('forwards only allowlisted routes with server employee token',async()=>{
@@ -79,4 +80,9 @@ test('bonus spend limit must be at least one percent',async()=>{
   assert.equal(result.status,400);
  }
  assert.equal(calls,0);
+});
+
+test('production Docker image includes loyalty admin adapter',()=>{
+ const dockerfile=readFileSync(new URL('./Dockerfile',import.meta.url),'utf8');
+ assert.match(dockerfile,/COPY[^\\n]*server\\/loyalty-admin\\.mjs/);
 });
