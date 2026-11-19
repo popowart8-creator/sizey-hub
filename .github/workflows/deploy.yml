@@ -88,7 +88,7 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
-      - name: Install isolated, resource-limited Ollama and verify DeepSeek
+      - name: Install isolated, resource-limited Ollama for Qwen
         env:
           SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
         run: |
@@ -121,10 +121,10 @@ jobs:
             if docker exec runner-ollama ollama list >/dev/null 2>&1; then break; fi
             sleep 2
           done
-          timeout 1200 docker exec runner-ollama ollama pull deepseek-r1:1.5b
+          timeout 1200 docker exec runner-ollama ollama pull qwen2.5:1.5b
           docker exec runner-ollama ollama list
           docker cp runner-ollama:/root/.ollama/. - | sshpass -e ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker cp - sizey-local-ollama:/root/.ollama'
-          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker exec sizey-local-ollama ollama list | grep -F deepseek-r1:1.5b'
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker exec sizey-local-ollama ollama list | grep -F qwen2.5:1.5b'
           echo 'Model transferred and verified; production API not restarted.'
       - name: Remove SSH key
         if: always()
