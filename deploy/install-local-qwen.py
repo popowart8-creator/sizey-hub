@@ -1,6 +1,6 @@
 """Deploy local Qwen only to SIZEY Hub API with rollback and an actual inference check."""
 from pathlib import Path
-import os, subprocess, shutil, time
+import os, subprocess, shutil, time, re
 assert os.getuid() == 0
 source = Path(__file__).resolve().parent.parent
 base = Path('/opt/sizey/hub-api')
@@ -52,9 +52,25 @@ try:
     run(dc+['up','-d','--no-deps','--no-build','--pull','never','auth'],timeout=180)
     networks=run(['docker','inspect','sizey-hub-api','--format','{{json .NetworkSettings.Networks}}'])
     if 'sizey_ai_internal' not in networks:run(['docker','network','connect','sizey_ai_internal','sizey-hub-api'])
+    # Verify that the real API stays alive after Compose recreates it.
+    state=run(['docker','inspect','sizey-hub-api','--format','{{.State.Status}} exit={{.State.ExitCode}} restart={{.RestartCount}}']).strip()
+    print('Production container state: '+state,flush=True)
+    if not state.startswith('running '): raise RuntimeError('Production API exited after Compose restart')
     result=run(['docker','exec','sizey-hub-api','node','--input-type=module','-e',probe],timeout=150)
     print('Production API generated Qwen description: '+result.strip(),flush=True)
 except Exception:
+    # Keep complete diagnostics private on the server; print only redacted, bounded startup errors.
+    diag=subprocess.run(['docker','logs','--tail','40','sizey-hub-api'],text=True,capture_output=True)
+    (backup/'production-container.log').write_text((diag.stdout+diag.stderr)[-16000:])
+    os.chmod(backup/'production-container.log',0o600)
+    state=subprocess.run(['docker','inspect','sizey-hub-api','--format','{{.State.Status}} exit={{.State.ExitCode}} restart={{.RestartCount}}'],text=True,capture_output=True)
+    print('Production state on failure: '+state.stdout.strip(),flush=True)
+    lines=[line for line in (diag.stdout+'\n'+diag.stderr).splitlines() if any(term in line.lower() for term in ['error','exception','eacces','enoent','sqlite','permission denied'])]
+    if lines:
+        last=lines[-1][:300]
+        last=re.sub(r'(?i)(password|secret|token|key|authorization)([=: ]+)\S+',r'\1\2[REDACTED]',last)
+        last=re.sub(r'(?i)postgres(?:ql)?://\S+','[REDACTED_DATABASE_URL]',last)
+        print('Last startup error (redacted): '+last,flush=True)
     subprocess.run(['docker','rm','-f',canary],capture_output=True)
     shutil.copytree(backup/'server',base/'server',dirs_exist_ok=True)
     if previous is None:override.unlink(missing_ok=True)
