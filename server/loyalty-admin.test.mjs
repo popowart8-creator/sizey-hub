@@ -25,3 +25,18 @@ test('rejects methods not supported by source API',async()=>{
  const r=await loyaltyAdminRequest({path:'/settings',method:'DELETE',accessToken:token});
  assert.equal(r.status,404);
 });
+
+test('rejects unapproved query controls',async()=>{
+ let called=false;
+ const fetcher=async()=>{called=true;throw Error('unexpected upstream call')};
+ const r=await loyaltyAdminRequest({path:'/clients',method:'GET',query:'?role=ADMIN',accessToken:token,fetcher});
+ assert.equal(r.status,400);assert.equal(called,false);
+});
+test('forwards settings PATCH without leaking browser headers',async()=>{
+ let seen;
+ const fetcher=async(url,options)=>{seen=options;return {status:200,headers:new Headers({'content-type':'application/json'}),json:async()=>({ok:true})}};
+ const r=await loyaltyAdminRequest({path:'/settings',method:'PATCH',accessToken:token,body:{companyName:'SIZEY'},fetcher});
+ assert.equal(r.status,200);assert.equal(seen.method,'PATCH');
+ assert.equal(JSON.parse(seen.body).companyName,'SIZEY');
+ assert.deepEqual(Object.keys(seen.headers).sort(),['Authorization','Content-Type'].sort());
+});
