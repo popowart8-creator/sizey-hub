@@ -17,7 +17,9 @@ jobs:
           npm ci
           npm ci --prefix server
           npm run test:auth
+          node --test server/loyalty-admin.test.mjs
           npm run build
+          docker build -f server/Dockerfile -t sizey-hub-api:preflight .
       - name: Configure pinned SSH connection
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
