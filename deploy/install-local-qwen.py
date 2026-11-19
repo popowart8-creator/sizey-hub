@@ -14,7 +14,10 @@ def run(args,timeout=240):
     with (backup/'deployment.log').open('a') as f:
         f.write(p.stdout+'\n'+p.stderr+'\n')
     os.chmod(backup/'deployment.log',0o600)
-    if p.returncode: raise RuntimeError('Command failed: '+args[0]+'; private logs saved on server')
+    if p.returncode:
+        if args[:2] == ['docker','exec']:
+            print('Qwen canary probe failed (last 1600 chars): '+(p.stderr or p.stdout)[-1600:],flush=True)
+        raise RuntimeError('Command failed: '+args[0]+'; private logs saved on server')
     return p.stdout
 files=['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','admin.mjs','analytics.mjs','geo.mjs','content-store.mjs','ai-description.mjs','catalog-seed.json','categories-seed.json']
 for name in files: assert (source/'server'/name).is_file()
@@ -41,13 +44,7 @@ try:
     run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-e','OLLAMA_URL=http://sizey-local-ollama:11434','-e','OLLAMA_MODEL=qwen2.5:1.5b','-v',str(base/'data')+':/data','sizey-hub-api:local'])
     run(['docker','network','connect','sizey_prod',canary])
     run(['docker','network','connect','sizey_ai_internal',canary])
-    for i in range(30):
-        try:
-            run(['docker','exec',canary,'node','--input-type=module','-e',probe],timeout=150)
-            break
-        except Exception:
-            if i==29:raise
-            time.sleep(2)
+    run(['docker','exec',canary,'node','--input-type=module','-e',probe],timeout=150)
     print('Canary generated a Qwen description successfully',flush=True)
     run(['docker','rm','-f',canary])
     live_changed=True
