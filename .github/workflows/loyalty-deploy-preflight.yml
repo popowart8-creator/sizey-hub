@@ -15,6 +15,12 @@ jobs:
           set -eu
           test -f server/loyalty-admin.mjs
           test -f deploy/install-hub-admin.py
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          ast.parse(Path('deploy/install-hub-admin.py').read_text())
+          print('Installer Python syntax: OK')
+          PY
           npm ci
           npm ci --prefix server
           npm run test:auth
