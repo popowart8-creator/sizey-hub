@@ -61,3 +61,17 @@ coverage only use new measured views/sessions, leaving legacy measurements blank
 Additive event_details and analytics_sessions tables preserve the original
 events layout so an old API process can keep inserting events during a canary
 check. No historical acquisition, engagement or geography values are fabricated.
+
+Simplified analytics overview
+-----------------------------
+The overview prioritizes visitors, sessions, the selected goal and conversion.
+Incomplete comparison baselines do not show warning badges or invented deltas.
+Only nonzero traffic channels are listed, with provider details on expansion;
+daily tables, operating systems, geography and methodology are collapsed.
+
+Reporting groups tablets with mobile throughout summary, daily and screen shares;
+raw device classification remains available in storage. Short collection histories
+(up to 48 hours) include hourly buckets beginning at collection time. Daily charts
+exclude dates before collection, and the expanded daily table marks those dates
+unavailable rather than presenting them as measured zeros. Smooth chart geometry
+is shape-preserving, with exact values in the tooltip and optional column mode.
