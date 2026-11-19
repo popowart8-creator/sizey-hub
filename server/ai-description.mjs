@@ -41,7 +41,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
   const name=text(input?.name||'',200,true);
   const phrase=text(input?.phrase||name,120,true);
   const key=process.env.YANDEX_WORDSTAT_API_KEY;
-  const folderId=process.env.YANDEX_WORDSTAT_FOLDER_ID||'b1g9cl63trdtshqe7phv';
+  const folderId=process.env.YANDEX_WORDSTAT_FOLDER_ID||'b1ga8p4geps80u8d95o0';
   if(!key)throw new ContentError(503,'Wordstat API ещё не настроен на сервере');
   const id='wordstat:'+String(actor),time=now(),recent=(attempts.get(id)||[]).filter(t=>t>time-3600000);
   if(running.has(id)||recent.length>=5)throw new ContentError(429,'Лимит запросов Wordstat: не более 5 в час');
