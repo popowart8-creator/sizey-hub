@@ -16,10 +16,10 @@ test('rejects unknown routes without upstream access',async()=>{
  const r=await loyaltyAdminRequest({path:'/auth/login',method:'POST',accessToken:token,fetcher});
  assert.equal(r.status,404);
 });
-test('does not retry failed financial mutations',async()=>{
+test('blocks unverified financial mutations before calling backend',async()=>{
  let count=0;
  const r=await loyaltyAdminRequest({path:'/sales/manual-accrual',method:'POST',accessToken:token,body:{},fetcher:async()=>{count++;throw Error('offline')}});
- assert.equal(count,1);assert.equal(r.status,503);
+ assert.equal(count,0);assert.equal(r.status,501);
 });
 test('rejects methods not supported by source API',async()=>{
  const r=await loyaltyAdminRequest({path:'/settings',method:'DELETE',accessToken:token});
@@ -39,4 +39,15 @@ test('forwards settings PATCH without leaking browser headers',async()=>{
  assert.equal(r.status,200);assert.equal(seen.method,'PATCH');
  assert.equal(JSON.parse(seen.body).companyName,'SIZEY');
  assert.deepEqual(Object.keys(seen.headers).sort(),['Authorization','Content-Type'].sort());
+});
+
+test('financial cancel is also blocked before upstream access',async()=>{
+ let called=false;
+ const r=await loyaltyAdminRequest({path:'/sales/11111111-1111-4111-8111-111111111111/cancel',method:'POST',accessToken:token,fetcher:async()=>{called=true;throw Error('unexpected')}});
+ assert.equal(r.status,501);assert.equal(called,false);
+});
+test('upstream errors preserve status for authorized read routes',async()=>{
+ const fetcher=async()=>({status:403,headers:new Headers({'content-type':'application/json'}),json:async()=>({message:'Недостаточно прав'})});
+ const r=await loyaltyAdminRequest({path:'/settings',method:'GET',accessToken:token,fetcher});
+ assert.equal(r.status,403);assert.equal(r.data.message,'Недостаточно прав');
 });
