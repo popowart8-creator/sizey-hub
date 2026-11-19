@@ -3,5 +3,5 @@ export type Banner={id:string;title:string;image:string;tone:string;category:str
 export type Choice={value:string;used:number;banners:number};
 export type Choices={revision:number;categories:Choice[];sizes:Choice[]};
 export type ChoiceKind='categories'|'sizes';
-export type AdminRequest=<T>(path:string,data?:unknown)=>Promise<T>;
+export type AdminRequest=<T>(path:string,data?:unknown,signal?:AbortSignal)=>Promise<T>;
 export type OptionResponse={options:Choices;selected?:string;affectedProducts:number;affectedBanners:number};

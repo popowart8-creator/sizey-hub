@@ -2,7 +2,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {ContentError,storeImage} from './content-store.mjs';
-export function createAdmin({store,analytics,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
+export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
  const sessions=new Map(),attempts=new Map(),hash=value=>createHash('sha256').update(value).digest('hex');
  const cookie=(value,age)=>`__Host-sizey_admin=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${age}`;
@@ -43,14 +43,18 @@ export function createAdmin({store,analytics,staffAuth,listClients,mediaDirector
     const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p]));
     reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'}))});
    }
+   else if(path==='/hub-api/admin/ai/status'&&req.method==='GET'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');reply(200,await descriptionAI.status())}
+   else if(path==='/hub-api/admin/ai/settings'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.configure(await body(req));store.audit(user.id,'configure-description-ai','OpenRouter');reply(200,result)}
+   else if(path==='/hub-api/admin/ai/description'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.generate(await body(req),user.id);store.audit(user.id,'generate-description-ai','description');reply(200,result)}
    else if(req.method==='GET'&&path==='/hub-api/admin/summary')reply(200,{...store.summary(),clients:(await listClients()).length});
    else if(req.method==='GET'&&path==='/hub-api/admin/clients')reply(200,{clients:(await listClients()).map(c=>({id:c.id,name:c.name,phone:'+'+c.phone_normalized,loyalty:c.hasLoyalty!==false}))});
    else if(path==='/hub-api/admin/options'&&req.method==='GET')reply(200,{options:store.options()});
    else if(path==='/hub-api/admin/options'&&req.method==='POST')reply(200,store.mutateOptions(await body(req),user.id));
+   else if(path==='/hub-api/admin/products/order'&&req.method==='POST')reply(200,store.moveProduct(await body(req),user.id));
    else if(req.method==='GET'&&path==='/hub-api/admin/orders')reply(200,{orders:store.orders()});
    else if(req.method==='GET'&&path==='/hub-api/admin/activity')reply(200,{activity:store.summary().recent});
    else if(req.method==='POST'&&path==='/hub-api/admin/images'){const value=storeImage(mediaDirectory,await body(req,4300000));store.audit(user.id,'upload-image',value.split('/').pop());reply(201,{url:value})}
-   else {const match=/^\/hub-api\/admin\/(products|banners)(?:\/([\w-]+))?$/.exec(path);if(!match)throw new ContentError(404,'Раздел не найден');const kind=match[1],id=match[2];if(req.method==='GET'&&!id)reply(200,{[kind]:store.list(kind)});else if(req.method==='POST'){const b=await body(req);reply(id?200:201,{item:store.save(kind,b,user.id,kind==='products'&&id?Number(id):id)})}else throw new ContentError(405,'Метод не поддерживается')}
+   else {const match=/^\/hub-api\/admin\/(products|banners)(?:\/([\w-]+))?$/.exec(path);if(!match)throw new ContentError(404,'Раздел не найден');const kind=match[1],id=match[2];if(req.method==='GET'&&!id)reply(200,{[kind]:store.list(kind),...(kind==='products'?{orderRevision:store.orderRevision()}:{})});else if(req.method==='POST'){const b=await body(req);reply(id?200:201,{item:store.save(kind,b,user.id,kind==='products'&&id?Number(id):id)})}else throw new ContentError(405,'Метод не поддерживается')}
   }catch(error){reply(error instanceof ContentError?error.status:500,{message:error instanceof ContentError?error.message:'Не удалось выполнить запрос. Попробуйте позже.'})}
   return true;
  };
