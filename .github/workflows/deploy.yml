@@ -111,6 +111,27 @@ jobs:
           done
           echo 'Ollama container is ready; model will be delivered from GitHub runner.'
           SH
+      - name: Remove obsolete DeepSeek model from production Ollama
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -eu
+          test -n "$SSHPASS"
+          command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'sh -s' <<'SH'
+          set -eu
+          echo 'Models before cleanup:'
+          docker exec sizey-local-ollama ollama list
+          if docker exec sizey-local-ollama ollama list | grep -Eq '^deepseek-r1:1\\.5b[[:space:]]'; then
+            docker exec sizey-local-ollama ollama rm deepseek-r1:1.5b
+          fi
+          echo 'Models after cleanup:'
+          docker exec sizey-local-ollama ollama list
+          if docker exec sizey-local-ollama ollama list | grep -Eq '^deepseek-r1:1\\.5b[[:space:]]'; then
+            echo 'DeepSeek removal verification failed' >&2
+            exit 1
+          fi
+          SH
       - name: Download model on GitHub runner and transfer via SSH
         env:
           SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
