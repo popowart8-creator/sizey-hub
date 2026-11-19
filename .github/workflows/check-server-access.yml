@@ -1,0 +1,41 @@
+name: SIZEY server access check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sizey-server-access-check
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Configure pinned SSH connection
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$SSH_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1, "Expected one ED25519 host key"; decoded=base64.b64decode(keys[0],validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51, "Invalid host key"; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+keys[0]+"\n")'
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Read-only server permissions check
+        run: |
+          set -eu
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 sizey-deploy@95.181.213.9 'sh -s' <<'REMOTE'
+          set -eu
+          echo "SSH connection: OK"
+          if sudo -n true >/dev/null 2>&1; then echo "Passwordless sudo: available"; else echo "Passwordless sudo: unavailable"; fi
+          if test -d /opt/sizey/hub-api; then echo "Hub API directory: present"; else echo "Hub API directory: missing"; fi
+          if test -f /opt/sizey/hub-api/docker-compose.yml; then echo "Hub API compose: present"; else echo "Hub API compose: missing"; fi
+          if test -f /opt/sizey/hub-api/.env; then echo "Hub API environment: present"; else echo "Hub API environment: missing"; fi
+          if test -r /opt/sizey/hub-api/docker-compose.yml; then echo "Hub API compose readable: yes"; else echo "Hub API compose readable: no"; fi
+          if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then echo "Docker access: available"; else echo "Docker access: unavailable"; fi
+          REMOTE
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
