@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix/ai-connectivity
+          ref: 4e6bc492ee43386f0444cbf2b6d4df71ed96e0b1
       - name: Configure SSH
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
