@@ -74,7 +74,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: inspect_local_ai
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 150
     steps:
       - name: Configure SSH
         env:
@@ -123,6 +123,7 @@ jobs:
           done
           timeout 1200 docker exec runner-ollama ollama pull qwen2.5:1.5b
           docker exec runner-ollama ollama list
+          echo 'Starting Qwen model transfer to production; large transfer may take over 45 minutes.'
           docker cp runner-ollama:/root/.ollama/. - | sshpass -e ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker cp - sizey-local-ollama:/root/.ollama'
           sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker exec sizey-local-ollama ollama list | grep -F qwen2.5:1.5b'
           echo 'Model transferred and verified; production API not restarted.'
