@@ -109,7 +109,17 @@ jobs:
             if docker exec sizey-local-ollama ollama list >/dev/null 2>&1; then break; fi
             sleep 2
           done
-          docker exec sizey-local-ollama ollama pull deepseek-r1:1.5b
+          for attempt in 1 2 3 4 5; do
+            echo "Model download attempt $attempt"
+            if timeout 360 docker exec sizey-local-ollama ollama pull deepseek-r1:1.5b; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              echo "Model download failed after five attempts" >&2
+              exit 1
+            fi
+            sleep 20
+          done
           docker exec sizey-local-ollama ollama list
           echo 'Isolated local model installed; production API not restarted.'
           SH
