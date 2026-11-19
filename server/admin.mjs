@@ -23,7 +23,7 @@ export function createAdmin({store,analytics,staffAuth,listClients,mediaDirector
     const rate=ingestRates.get(key);if(rate?.minute===minute&&rate.count>=120)throw new ContentError(429,'Слишком много событий');
     if(rate?.minute===minute)rate.count++;else ingestRates.set(key,{minute,count:1});
     if(ingestRates.size>10000)for(const[k,v]of ingestRates)if(v.minute!==minute)ingestRates.delete(k);
-    reply(202,{accepted:analytics.collect(await body(req))});return true;
+    reply(202,{accepted:analytics.collect(await body(req),{ip:String(req.headers['x-real-ip']||req.socket.remoteAddress)})});return true;
    }
    if(path==='/hub-api/content'&&req.method==='GET'){reply(200,store.publicContent());return true}
    if(path.startsWith('/hub-api/media/')&&req.method==='GET'){const name=path.slice('/hub-api/media/'.length);if(!/^[a-f0-9]{64}\.(jpg|png|webp)$/.test(name))throw new ContentError(404,'Фотография не найдена');let data;try{data=readFileSync(join(mediaDirectory,name))}catch{throw new ContentError(404,'Фотография не найдена')}res.writeHead(200,{'Content-Type':name.endsWith('.jpg')?'image/jpeg':name.endsWith('.png')?'image/png':'image/webp','Cache-Control':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff'});res.end(data);return true}
@@ -40,7 +40,7 @@ export function createAdmin({store,analytics,staffAuth,listClients,mediaDirector
    if(req.method==='GET'&&path==='/hub-api/admin/me')reply(200,{user:{id:user.id,name:user.name,role:user.role}});
    else if(req.method==='GET'&&path==='/hub-api/admin/analytics'){
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
-    const days=Number(new URL(req.url,'http://internal').searchParams.get('days')||30),report=analytics.report(days),catalog=new Map(store.list('products').map(p=>[p.id,p]));
+    const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p]));
     reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'}))});
    }
    else if(req.method==='GET'&&path==='/hub-api/admin/summary')reply(200,{...store.summary(),clients:(await listClients()).length});

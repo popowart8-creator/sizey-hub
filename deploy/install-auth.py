@@ -45,7 +45,7 @@ GRANT SELECT(client_id,remaining_amount,expires_at) ON bonus_lots TO sizey_hub_r
 GRANT SELECT(id,client_id,type,balance_before,balance_after,created_at) ON transactions TO sizey_hub_reader;''')
 print('Read-only loyalty role prepared; no existing customer records changed')
 data=base/'data';data.mkdir(exist_ok=True,mode=0o700);os.chown(data,1000,1000)
-for name in ['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','content-store.mjs','admin.mjs','analytics.mjs','catalog-seed.json','categories-seed.json']:
+for name in ['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','content-store.mjs','admin.mjs','analytics.mjs','geo.mjs','catalog-seed.json','categories-seed.json']:
     target=base/'server'/name;target.parent.mkdir(exist_ok=True);shutil.copy2(source/'server'/name,target)
 compose='''services:
   auth:

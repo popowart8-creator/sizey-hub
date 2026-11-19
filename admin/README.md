@@ -36,3 +36,28 @@ Events are pruned on startup and hourly after 90 days. Routine deployment backup
 do not archive analytics events. Delivery batches are bounded and nonblocking;
 analytics failures must not interrupt shopping. Browser Do Not Track and Global
 Privacy Control disable collection.
+
+Extended reports
+----------------
+Reports also support an inclusive from/to date range (up to 90 retained Moscow
+calendar days), and compare against the preceding equal-length period only when
+that entire baseline is available. A goal is a session with cart_add or a
+successful registration; demo checkout is never treated as a purchase.
+
+Session acquisition stores a known channel/provider or a sanitized base referral
+domain, never raw UTM values, full URLs, query strings or referrer paths. Legacy
+sessions have an explicit untracked source. Geography uses the bundled DB-IP
+Lite snapshot locally through mmdb-lib: only approximate country/city are saved,
+not IP or coordinates. The snapshot date and required DB-IP attribution appear
+in the report. Package updates refresh the snapshot; geolocation is approximate
+and may reflect VPN or carrier exit locations.
+
+Nested screens have random view IDs. Visible/focused active time is emitted in
+bounded chunks; reading stops after one idle minute. Scroll thresholds are
+recorded once per view and aggregated by distinct session. Screens without
+scrollable content do not emit scroll depth. Average active time and scroll
+coverage only use new measured views/sessions, leaving legacy measurements blank.
+
+Additive event_details and analytics_sessions tables preserve the original
+events layout so an old API process can keep inserting events during a canary
+check. No historical acquisition, engagement or geography values are fabricated.
