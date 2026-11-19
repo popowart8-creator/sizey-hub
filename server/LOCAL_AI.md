@@ -6,7 +6,7 @@ The admin editor calls the existing authenticated `/hub-api/admin/ai/status` and
 
 1. Check server memory, free disk, CPU and container memory limits. **Do not install a model on the production host until its spare capacity is confirmed.** Running inference on the same host as the shop and loyalty services may cause slowdowns.
 2. Install Ollama on a host with sufficient capacity (ideally a separate machine). Keep its API on a private network, never exposed to the public internet.
-3. Pull a model: `ollama pull deepseek-r1:1.5b` (small initial model; consider `deepseek-r1:7b` after measuring capacity).
+3. Pull a model: `ollama pull qwen2.5:1.5b` (small multilingual instruction model).
 4. Configure the API container's `OLLAMA_URL` (for example `http://ollama:11434` on a private Docker network) and `OLLAMA_MODEL=deepseek-r1:1.5b`. **Inside Docker, 127.0.0.1 is the API container, not the host.**
 5. Restart only the SIZEY hub API service, verify `/hub-api/admin/ai/status` while authenticated, then generate a draft description. Keep the original description until reviewed.
 6. Monitor CPU/RAM, latency and API errors. Roll back the hub API image if necessary.
