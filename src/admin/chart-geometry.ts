@@ -1,0 +1,3 @@
+type Point={x:number;y:number};
+// Shape-preserving interpolation keeps every segment within its measured endpoints.
+export function curve(points:Point[]){if(!points.length)return'';if(points.length===1)return`M${points[0].x},${points[0].y}`;const slopes=points.slice(1).map((p,i)=>(p.y-points[i].y)/(p.x-points[i].x));const tangent=points.map((_,i)=>i===0?slopes[0]:i===points.length-1?slopes.at(-1)!:slopes[i-1]*slopes[i]<=0?0:2/(1/slopes[i-1]+1/slopes[i]));return points.reduce((path,p,i)=>{if(!i)return`M${p.x},${p.y}`;const previous=points[i-1],dx=(p.x-previous.x)/3;return path+` C${previous.x+dx},${previous.y+tangent[i-1]*dx} ${p.x-dx},${p.y-tangent[i]*dx} ${p.x},${p.y}`},'')}
