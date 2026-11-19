@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/app-analytics
+          ref: 312734949b24544a993fbe7cd3b43e4c3005489b
       - name: Configure SSH
         env:
           SSH_KEY: ${{ secrets.SSH_KEY }}
