@@ -1,6 +1,6 @@
 """Install the isolated Hub editor; preserve the employee backend and database."""
 from pathlib import Path
-import subprocess, shutil, time, os, sqlite3, json, tempfile
+import subprocess, shutil, time, os, sqlite3, json
 assert os.getuid() == 0
 source = Path(__file__).resolve().parent.parent
 base = Path('/opt/sizey/hub-api')
@@ -38,6 +38,11 @@ try:
     # The canary receives an isolated copy of the existing data and media.
     canary_data=backup/'canary-data'
     shutil.copytree(base/'data',canary_data,symlinks=False)
+    # Node runs as UID 1000 in the image; make only the isolated copy writable.
+    for root,dirs,files_in_dir in os.walk(canary_data):
+        os.chown(root,1000,1000)
+        for entry in dirs+files_in_dir:
+            os.chown(os.path.join(root,entry),1000,1000)
     run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-v',str(canary_data)+':/data','sizey-hub-api:local'])
     run(['docker','network','connect','sizey_prod',canary])
     health="const base='http://127.0.0.1:8080/hub-api';const h=await fetch(base+'/health');if(!h.ok)throw Error('health');const c=await(await fetch(base+'/content')).json();if(!Array.isArray(c.products)||!c.products.length||!Array.isArray(c.banners))throw Error('catalog');if((await fetch(base+'/admin/me')).status!==401)throw Error('protection');console.log(JSON.stringify({products:c.products.length,banners:c.banners.length,protected:true}))"
