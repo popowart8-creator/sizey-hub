@@ -51,3 +51,22 @@ test('upstream errors preserve status for authorized read routes',async()=>{
  const r=await loyaltyAdminRequest({path:'/settings',method:'GET',accessToken:token,fetcher});
  assert.equal(r.status,403);assert.equal(r.data.message,'Недостаточно прав');
 });
+
+test('unverified employee and client mutations never reach upstream',async()=>{
+ let count=0;
+ const fetcher=async()=>{count++;throw Error('unexpected upstream call')};
+ for(const [path,method] of [['/clients','POST'],['/clients/11111111-1111-4111-8111-111111111111','PATCH'],['/users','POST'],['/users/11111111-1111-4111-8111-111111111111','DELETE']]){
+  const r=await loyaltyAdminRequest({path,method,body:{name:'Test'},accessToken:token,fetcher});
+  assert.equal(r.status,501);
+ }
+ assert.equal(count,0);
+});
+test('settings changes require recognized fields and bounded values',async()=>{
+ let count=0;
+ const fetcher=async()=>{count++;throw Error('unexpected upstream call')};
+ for(const body of [{role:'ADMIN'},{maxBonusSpendPercent:150},{birthdayMultiplier:-1},{companyName:''},{levels:[]},{}]){
+  const r=await loyaltyAdminRequest({path:'/settings',method:'PATCH',body,accessToken:token,fetcher});
+  assert.equal(r.status,400);
+ }
+ assert.equal(count,0);
+});
