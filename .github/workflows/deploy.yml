@@ -71,7 +71,8 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   provision_local_ai:
-    if: github.event_name == 'pull_request'
+    # Qwen was installed and verified in run 44569632640; never repeat the 2-hour transfer on PR updates.
+    if: false
     needs: inspect_local_ai
     runs-on: ubuntu-latest
     timeout-minutes: 150
