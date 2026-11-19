@@ -23,7 +23,7 @@ function validateSettings(body){
  const entries=Object.entries(body);
  if(!entries.length||entries.some(([key])=>!settingKeys.has(key)))return false;
  return entries.every(([key,value])=>{
-  if(key==='maxBonusSpendPercent')return typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
+  if(key==='maxBonusSpendPercent')return typeof value==='number'&&Number.isFinite(value)&&value>=1&&value<=100;
   if(key==='birthdayMultiplier')return typeof value==='number'&&Number.isFinite(value)&&value>=1&&value<=100;
   return typeof value==='string'&&value.trim().length>0&&value.length<=128;
  });
