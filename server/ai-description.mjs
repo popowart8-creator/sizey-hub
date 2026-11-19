@@ -51,7 +51,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
    let response;
    try{response=await fetchImpl('https://searchapi.api.cloud.yandex.net/v2/wordstat/topRequests',{method:'POST',headers:{Authorization:'Api-Key '+key,'Content-Type':'application/json'},body:JSON.stringify({phrase,numPhrases:'30',devices:['DEVICE_ALL'],folderId}),signal:AbortSignal.timeout(15000)})}
    catch{throw new ContentError(503,'Не удалось связаться с Wordstat')}
-   if(!response.ok)throw new ContentError(503,response.status===401||response.status===403?'Нет доступа к Wordstat: проверьте ключ и права':'Wordstat временно недоступен ('+response.status+')');
+   if(!response.ok){let code='unknown';try{const error=await json(response,8192);const candidate=String(error.code||error.status||error.error?.code||'');if(/^[A-Za-z0-9_.-]{1,64}$/.test(candidate))code=candidate}catch{}throw new ContentError(503,'Wordstat HTTP '+response.status+' (код '+code+'). Проверьте права сервисного аккаунта, область действия ключа и доступ к Search API')}
    const data=await json(response,100000);
    const normalize=rows=>(Array.isArray(rows)?rows:[]).filter(row=>typeof row.phrase==='string'&&/^\d+$/.test(String(row.count))).map(row=>({phrase:row.phrase.slice(0,160),count:Number(row.count)})).filter(row=>Number.isSafeInteger(row.count)).slice(0,30);
    return{phrase,totalCount:Number(data.totalCount)||0,results:normalize(data.results),associations:normalize(data.associations),source:'Yandex Wordstat API',statisticsThrough:'2026-10-07',historical:true};
