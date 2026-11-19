@@ -1,0 +1,45 @@
+name: SIZEY loyalty deployment preflight
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify package and automated tests
+        run: |
+          set -eu
+          test -f server/loyalty-admin.mjs
+          test -f deploy/install-hub-admin.py
+          npm ci
+          npm ci --prefix server
+          npm run test:auth
+          npm run build
+      - name: Configure pinned SSH connection
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$SSH_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1; decoded=base64.b64decode(keys[0],validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+keys[0]+"\n")'
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Verify root-owned preflight and stage directory
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 sizey-deploy@95.181.213.9 'sh -s' <<'REMOTE'
+          set -eu
+          sudo -n /usr/local/sbin/sizey-deploy-check
+          test -d /var/lib/sizey-deploy
+          test -w /var/lib/sizey-deploy
+          echo "SSH staging prerequisites: OK"
+          echo "DEPLOYMENT NOT EXECUTED"
+          REMOTE
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
