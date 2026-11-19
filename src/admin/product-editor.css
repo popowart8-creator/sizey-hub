@@ -4,3 +4,4 @@
 @media(prefers-reduced-motion:reduce){.pe-gallery{transition:none}.pe-upload-indicator{animation:none}}
 .pe-thumbnails{max-height:350px;overflow-y:auto;padding:2px}.pe-upload-queue{max-height:250px;overflow:auto}.pe-fields input:disabled,.pe-fields select:disabled,.pe-fields textarea:disabled{opacity:.65}
 .pe-save-status{margin-right:auto;color:#a0644c;font-size:10px;align-self:center;line-height:1.6;max-width:170px}@media(max-width:760px){.pe-editor footer:has(.pe-save-status){flex-wrap:wrap}.pe-save-status{flex-basis:100%;max-width:none;font-size:11px}}
+body:has(.pe-overlay) .admin-toast{bottom:94px;pointer-events:none}
