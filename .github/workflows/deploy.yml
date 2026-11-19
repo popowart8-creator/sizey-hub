@@ -74,7 +74,7 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: inspect_local_ai
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - name: Configure SSH
         env:
@@ -109,20 +109,23 @@ jobs:
             if docker exec sizey-local-ollama ollama list >/dev/null 2>&1; then break; fi
             sleep 2
           done
-          for attempt in 1 2 3 4 5; do
-            echo "Model download attempt $attempt"
-            if timeout 360 docker exec sizey-local-ollama ollama pull deepseek-r1:1.5b; then
-              break
-            fi
-            if [ "$attempt" -eq 5 ]; then
-              echo "Model download failed after five attempts" >&2
-              exit 1
-            fi
-            sleep 20
-          done
-          docker exec sizey-local-ollama ollama list
-          echo 'Isolated local model installed; production API not restarted.'
+          echo 'Ollama container is ready; model will be delivered from GitHub runner.'
           SH
+      - name: Download model on GitHub runner and transfer via SSH
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -eu
+          docker run -d --name runner-ollama -v runner-ollama-models:/root/.ollama ollama/ollama:latest
+          for i in $(seq 1 40); do
+            if docker exec runner-ollama ollama list >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          timeout 1200 docker exec runner-ollama ollama pull deepseek-r1:1.5b
+          docker exec runner-ollama ollama list
+          docker cp runner-ollama:/root/.ollama/. - | sshpass -e ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker cp - sizey-local-ollama:/root/.ollama'
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker exec sizey-local-ollama ollama list | grep -F deepseek-r1:1.5b'
+          echo 'Model transferred and verified; production API not restarted.'
       - name: Remove SSH key
         if: always()
         run: rm -f ~/.ssh/id_ed25519
