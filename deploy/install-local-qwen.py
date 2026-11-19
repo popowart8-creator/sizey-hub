@@ -58,6 +58,9 @@ try:
     if not state.startswith('running '): raise RuntimeError('Production API exited after Compose restart')
     result=run(['docker','exec','sizey-hub-api','node','--input-type=module','-e',probe],timeout=150)
     print('Production API generated Qwen description: '+result.strip(),flush=True)
+    wordstat_probe="""import {createDescriptionAI} from './ai-description.mjs';const ai=createDescriptionAI();const r=await ai.wordstat({name:'женское пальто'},'deployment-canary');if(!Array.isArray(r.results)||!r.results.length)throw Error('Wordstat returned no search phrases');console.log(JSON.stringify({wordstat:'ok',phrases:r.results.length,totalCount:r.totalCount}));"""
+    wordstat_result=run(['docker','exec','sizey-hub-api','node','--input-type=module','-e',wordstat_probe],timeout=40)
+    print('Production Wordstat API verified: '+wordstat_result.strip(),flush=True)
 except Exception:
     # Keep complete diagnostics private on the server; print only redacted, bounded startup errors.
     diag=subprocess.run(['docker','logs','--tail','40','sizey-hub-api'],text=True,capture_output=True)
