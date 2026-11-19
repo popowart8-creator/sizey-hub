@@ -45,6 +45,8 @@ export function createAdmin({store,analytics,staffAuth,listClients,mediaDirector
    }
    else if(req.method==='GET'&&path==='/hub-api/admin/summary')reply(200,{...store.summary(),clients:(await listClients()).length});
    else if(req.method==='GET'&&path==='/hub-api/admin/clients')reply(200,{clients:(await listClients()).map(c=>({id:c.id,name:c.name,phone:'+'+c.phone_normalized,loyalty:c.hasLoyalty!==false}))});
+   else if(path==='/hub-api/admin/options'&&req.method==='GET')reply(200,{options:store.options()});
+   else if(path==='/hub-api/admin/options'&&req.method==='POST')reply(200,store.mutateOptions(await body(req),user.id));
    else if(req.method==='GET'&&path==='/hub-api/admin/orders')reply(200,{orders:store.orders()});
    else if(req.method==='GET'&&path==='/hub-api/admin/activity')reply(200,{activity:store.summary().recent});
    else if(req.method==='POST'&&path==='/hub-api/admin/images'){const value=storeImage(mediaDirectory,await body(req,4300000));store.audit(user.id,'upload-image',value.split('/').pop());reply(201,{url:value})}

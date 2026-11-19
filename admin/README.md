@@ -75,3 +75,22 @@ raw device classification remains available in storage. Short collection histori
 exclude dates before collection, and the expanded daily table marks those dates
 unavailable rather than presenting them as measured zeros. Smooth chart geometry
 is shape-preserving, with exact values in the tooltip and optional column mode.
+
+Product editor and shared catalog options
+-----------------------------------------
+Products accept up to 20 JPG/PNG/WebP photographs (3 MiB each), selected together
+or dropped anywhere in the editor. Uploads remain per-file bounded API requests.
+The gallery previews every saved image, supports drag ordering and arrow controls,
+and keeps cover = first image. Only persisted media URLs reach the product body;
+failed uploads must be retried or removed before saving. Cancelling an editor
+revokes local object previews. Banner uploads remain a single photograph.
+
+Categories and sizes use shared hub_options dictionaries, seeded additively from
+existing product values. Editors can select, unassign and create values. The
+Products page has a Categories and Sizes manager for global deletion. Used values
+require an existing replacement; updates preserve product IDs, photos and all
+other fields and increment affected product/banners versions atomically. Removing
+a banner-only category defaults it to All when no replacement is selected.
+Dictionary revisions reject stale removals, and stale product editors cannot
+silently restore globally replaced assignments. Unused options can be removed
+without changing products. The existing optimistic product-version guard remains.
