@@ -7,7 +7,7 @@
     "test:auth": "node --test server/*.test.mjs",
     "test:bonus-cabinet": "node --test integrations/bonus-cabinet/*.test.mjs",
     "prebuild": "node deploy/catalog-preview.mjs",
-    "test:startup": "node --test tests/startup.test.mjs"
+    "test:startup": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

@@ -2,7 +2,8 @@ import {createHash,randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {ContentError,storeImage} from './content-store.mjs';
-export function createAdmin({store,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',now=Date.now}){
+export function createAdmin({store,analytics,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
+ const ingestRates=new Map();
  const sessions=new Map(),attempts=new Map(),hash=value=>createHash('sha256').update(value).digest('hex');
  const cookie=(value,age)=>`__Host-sizey_admin=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${age}`;
  const token=req=>String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('__Host-sizey_admin='))?.split('=')[1];
@@ -10,9 +11,20 @@ export function createAdmin({store,staffAuth,listClients,mediaDirectory,origin='
  async function actor(req){const sid=token(req),session=sid&&sessions.get(hash(sid));if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');let user;try{user=await staffAuth.me(session.accessToken)}catch{sessions.delete(hash(sid));throw new ContentError(401,'Сессия завершилась. Войдите снова.')}if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');return user}
  return async(req,res)=>{
   const path=new URL(req.url,'http://internal').pathname;
-  if(path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/'))return false;
+  if(path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/'))return false;
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
   try{
+   if(path==='/hub-api/events'){
+    if(!analytics)throw new ContentError(503,'Аналитика не подключена');
+    if(req.method!=='POST')throw new ContentError(405,'Метод не поддерживается');
+    if(req.headers.origin!==eventOrigin)throw new ContentError(403,'Недопустимый источник запроса');
+    if(!String(req.headers['content-type']).startsWith('application/json'))throw new ContentError(415,'Ожидается JSON');
+    const key=hash(String(req.headers['x-real-ip']||req.socket.remoteAddress)),minute=Math.floor(now()/60000);
+    const rate=ingestRates.get(key);if(rate?.minute===minute&&rate.count>=120)throw new ContentError(429,'Слишком много событий');
+    if(rate?.minute===minute)rate.count++;else ingestRates.set(key,{minute,count:1});
+    if(ingestRates.size>10000)for(const[k,v]of ingestRates)if(v.minute!==minute)ingestRates.delete(k);
+    reply(202,{accepted:analytics.collect(await body(req))});return true;
+   }
    if(path==='/hub-api/content'&&req.method==='GET'){reply(200,store.publicContent());return true}
    if(path.startsWith('/hub-api/media/')&&req.method==='GET'){const name=path.slice('/hub-api/media/'.length);if(!/^[a-f0-9]{64}\.(jpg|png|webp)$/.test(name))throw new ContentError(404,'Фотография не найдена');let data;try{data=readFileSync(join(mediaDirectory,name))}catch{throw new ContentError(404,'Фотография не найдена')}res.writeHead(200,{'Content-Type':name.endsWith('.jpg')?'image/jpeg':name.endsWith('.png')?'image/png':'image/webp','Cache-Control':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff'});res.end(data);return true}
    if(req.method==='POST'){if(req.headers.origin!==origin)throw new ContentError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ContentError(415,'Ожидается JSON')}
@@ -26,6 +38,11 @@ export function createAdmin({store,staffAuth,listClients,mediaDirectory,origin='
    if(path==='/hub-api/admin/logout'&&req.method==='POST'){const sid=token(req);if(sid)sessions.delete(hash(sid));reply(200,{ok:true},cookie('',0));return true}
    const user=await actor(req);
    if(req.method==='GET'&&path==='/hub-api/admin/me')reply(200,{user:{id:user.id,name:user.name,role:user.role}});
+   else if(req.method==='GET'&&path==='/hub-api/admin/analytics'){
+    if(!analytics)throw new ContentError(503,'Аналитика не подключена');
+    const days=Number(new URL(req.url,'http://internal').searchParams.get('days')||30),report=analytics.report(days),catalog=new Map(store.list('products').map(p=>[p.id,p]));
+    reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'}))});
+   }
    else if(req.method==='GET'&&path==='/hub-api/admin/summary')reply(200,{...store.summary(),clients:(await listClients()).length});
    else if(req.method==='GET'&&path==='/hub-api/admin/clients')reply(200,{clients:(await listClients()).map(c=>({id:c.id,name:c.name,phone:'+'+c.phone_normalized,loyalty:c.hasLoyalty!==false}))});
    else if(req.method==='GET'&&path==='/hub-api/admin/orders')reply(200,{orders:store.orders()});
