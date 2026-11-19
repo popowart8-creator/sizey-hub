@@ -17,9 +17,25 @@ const routes = [
 ];
 // Financial writes are deliberately disabled until upstream DTOs, idempotency and audit are verified.
 const financialWrites=new Set(['/sales','/sales/manual-accrual','/sales/manual-debit','/sales/refund']);
+const settingKeys=new Set(['companyName','timezone','currency','currencySymbol','maxBonusSpendPercent','birthdayMultiplier']);
+function validateSettings(body){
+ if(!body||typeof body!=='object'||Array.isArray(body))return false;
+ const entries=Object.entries(body);
+ if(!entries.length||entries.some(([key])=>!settingKeys.has(key)))return false;
+ return entries.every(([key,value])=>{
+  if(key==='maxBonusSpendPercent')return typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
+  if(key==='birthdayMultiplier')return typeof value==='number'&&Number.isFinite(value)&&value>=1&&value<=100;
+  return typeof value==='string'&&value.trim().length>0&&value.length<=128;
+ });
+}
 export async function loyaltyAdminRequest({path,method,query='',accessToken,body,fetcher=fetch,base='http://sizey-prod-backend:4000'}){
   if(financialWrites.has(path)&&method==='POST')return {status:501,data:{message:'Финансовые операции будут доступны после проверки контрактов и защиты от повторных списаний'}};
   if(/^\/sales\/[a-f0-9-]{36}\/cancel$/i.test(path)&&method==='POST')return {status:501,data:{message:'Отмена продажи временно недоступна до проверки контракта'}};
+  // Other write DTOs have not been verified against the production NestJS source.
+  if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!(path==='/sales/preview'&&method==='POST'))
+    return {status:501,data:{message:'Изменение данных ожидает проверки контракта действующей системы'}};
+  if(path==='/settings'&&method==='PATCH'&&!validateSettings(body))
+    return {status:400,data:{message:'Некорректные настройки программы лояльности'}};
   const route=routes.find(r=>r.pattern.test(path)&&r.methods.includes(method));
   if(!route)return {status:404,data:{message:'Операция бонусной системы не поддерживается'}};
   const match=route.pattern.exec(path);
