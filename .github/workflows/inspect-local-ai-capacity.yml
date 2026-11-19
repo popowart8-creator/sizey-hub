@@ -1,0 +1,48 @@
+name: Inspect SIZEY server capacity for local AI
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$SSH_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Prepare SSH client
+        run: command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
+      - name: Read-only host capacity inspection
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -eu
+          test -n "$SSHPASS"
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'sh -s' <<'SH'
+          set -eu
+          echo '=== CPU ==='
+          nproc
+          echo '=== RAM ==='
+          free -h
+          echo '=== DISK ==='
+          df -h /
+          echo '=== LOAD ==='
+          uptime
+          echo '=== DOCKER CONTAINERS (resource usage) ==='
+          docker stats --no-stream --format '{{.Name}}: CPU={{.CPUPerc}} MEM={{.MemUsage}}' || true
+          echo '=== OLLAMA (if installed) ==='
+          command -v ollama >/dev/null && ollama --version || echo 'not installed'
+          SH
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519

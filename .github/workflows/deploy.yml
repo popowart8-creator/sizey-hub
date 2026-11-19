@@ -30,6 +30,162 @@ jobs:
           name: sizey-dist
           path: dist/
           retention-days: 14
+  inspect_local_ai:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$SSH_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Inspect production capacity (read only)
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -eu
+          test -n "$SSHPASS"
+          command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'sh -s' <<'SH'
+          echo CPU_CORES=$(nproc)
+          echo MEMORY
+          free -m
+          echo DISK
+          df -h /
+          echo LOAD
+          uptime
+          echo CONTAINERS
+          docker stats --no-stream --format '{{.Name}} {{.CPUPerc}} {{.MemUsage}}' || true
+          echo OLLAMA
+          command -v ollama >/dev/null && ollama --version || echo not-installed
+          SH
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
+  provision_local_ai:
+    # Qwen was installed and verified in run 44569632640; never repeat the 2-hour transfer on PR updates.
+    if: false
+    needs: inspect_local_ai
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$SSH_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Install isolated, resource-limited Ollama for Qwen
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -eu
+          test -n "$SSHPASS"
+          command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'sh -s' <<'SH'
+          set -eu
+          available=$(awk '/MemAvailable:/{print $2}' /proc/meminfo)
+          disk=$(df -Pk / | awk 'NR==2{print $4}')
+          test "$available" -gt 1800000
+          test "$disk" -gt 6000000
+          if ! docker container inspect sizey-local-ollama >/dev/null 2>&1; then
+            docker run -d --name sizey-local-ollama --restart unless-stopped --cpus=1.5 --memory=2300m --memory-swap=2800m -e OLLAMA_NUM_PARALLEL=1 -e OLLAMA_MAX_LOADED_MODELS=1 -e OLLAMA_KEEP_ALIVE=0 -v sizey-ollama-models:/root/.ollama --network bridge ollama/ollama:latest
+          fi
+          docker start sizey-local-ollama >/dev/null
+          for i in $(seq 1 30); do
+            if docker exec sizey-local-ollama ollama list >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          echo 'Ollama container is ready; model will be delivered from GitHub runner.'
+          SH
+      - name: Remove obsolete DeepSeek model from production Ollama
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -eu
+          test -n "$SSHPASS"
+          command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'sh -s' <<'SH'
+          set -eu
+          echo 'Models before cleanup:'
+          docker exec sizey-local-ollama ollama list
+          if docker exec sizey-local-ollama ollama list | grep -Eq '^deepseek-r1:1\\.5b[[:space:]]'; then
+            docker exec sizey-local-ollama ollama rm deepseek-r1:1.5b
+          fi
+          echo 'Models after cleanup:'
+          docker exec sizey-local-ollama ollama list
+          if docker exec sizey-local-ollama ollama list | grep -Eq '^deepseek-r1:1\\.5b[[:space:]]'; then
+            echo 'DeepSeek removal verification failed' >&2
+            exit 1
+          fi
+          SH
+      - name: Download model on GitHub runner and transfer via SSH
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -eu
+          docker run -d --name runner-ollama -v runner-ollama-models:/root/.ollama ollama/ollama:latest
+          for i in $(seq 1 40); do
+            if docker exec runner-ollama ollama list >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          timeout 1200 docker exec runner-ollama ollama pull qwen2.5:1.5b
+          docker exec runner-ollama ollama list
+          echo 'Starting Qwen model transfer to production; large transfer may take over 45 minutes.'
+          docker cp runner-ollama:/root/.ollama/. - | sshpass -e ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker cp - sizey-local-ollama:/root/.ollama'
+          sshpass -e ssh -o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes root@95.181.213.9 'docker exec sizey-local-ollama ollama list | grep -F qwen2.5:1.5b'
+          echo 'Model transferred and verified; production API not restarted.'
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
+  deploy_qwen_api:
+    if: github.event_name == 'pull_request'
+    needs: [build, inspect_local_ai]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$SSH_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\x00\x00\x00\x0bssh-ed25519" and len(decoded)==51; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Deploy and verify production Qwen API with rollback
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$SSHPASS"
+          command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
+          target="/root/sizey-qwen-api-$GITHUB_RUN_ID"
+          options=(-o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes)
+          sshpass -e ssh "${options[@]}" root@95.181.213.9 "umask 077; mkdir -p '$target'"
+          tar --exclude=node_modules -czf - server deploy/install-local-qwen.py | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
+          sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 '$target/deploy/install-local-qwen.py'"
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: build

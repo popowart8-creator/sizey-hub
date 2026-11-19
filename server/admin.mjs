@@ -54,6 +54,7 @@ export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients
    }
    else if(path==='/hub-api/admin/ai/status'&&req.method==='GET'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');reply(200,await descriptionAI.status())}
    else if(path==='/hub-api/admin/ai/settings'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.configure(await body(req));store.audit(user.id,'configure-description-ai','OpenRouter');reply(200,result)}
+   else if(path==='/hub-api/admin/ai/seo'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.seo(await body(req),user.id);store.audit(user.id,'generate-seo-ai','seo');reply(200,result)}
    else if(path==='/hub-api/admin/ai/description'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.generate(await body(req),user.id);store.audit(user.id,'generate-description-ai','description');reply(200,result)}
    else if(req.method==='GET'&&path==='/hub-api/admin/summary')reply(200,{...store.summary(),clients:(await listClients()).length});
    else if(req.method==='GET'&&path==='/hub-api/admin/clients')reply(200,{clients:(await listClients()).map(c=>({id:c.id,name:c.name,phone:'+'+c.phone_normalized,loyalty:c.hasLoyalty!==false}))});
