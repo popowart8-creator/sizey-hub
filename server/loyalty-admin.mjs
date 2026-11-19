@@ -20,9 +20,15 @@ export async function loyaltyAdminRequest({path,method,query='',accessToken,body
   if(!route)return {status:404,data:{message:'Операция бонусной системы не поддерживается'}};
   const match=route.pattern.exec(path);
   const endpoint=route.upstream.replace(':id',match?.[1]||'');
-  // Query parameters are forwarded only for GET requests, with a strict length cap.
+  // Only documented query parameters are accepted; never forward arbitrary upstream controls.
   if(query.length>2048)return {status:400,data:{message:'Слишком длинный запрос'}};
-  const target=base+endpoint+(method==='GET'?query:'');
+  const allowed=path==='/clients'?['all']:path==='/clients/search'?['q']:[];
+  const params=new URLSearchParams(query);
+  if(method!=='GET'&&query)return {status:400,data:{message:'Параметры запроса не поддерживаются'}};
+  for(const [key,value] of params){
+    if(!allowed.includes(key)||value.length>256)return {status:400,data:{message:'Недопустимый параметр запроса'}};
+  }
+  const target=base+endpoint+(method==='GET'&&params.size?'?'+params.toString():'');
   try{
     const response=await fetcher(target,{method,headers:{Authorization:'Bearer '+accessToken,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000),redirect:'error',cache:'no-store'});
     const type=response.headers.get('content-type')||'';
