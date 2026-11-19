@@ -2,6 +2,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {ContentError,storeImage} from './content-store.mjs';
+import {loyaltyAdminRequest} from './loyalty-admin.mjs';
 export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
  const sessions=new Map(),attempts=new Map(),hash=value=>createHash('sha256').update(value).digest('hex');
@@ -37,6 +38,14 @@ export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients
    }
    if(path==='/hub-api/admin/logout'&&req.method==='POST'){const sid=token(req);if(sid)sessions.delete(hash(sid));reply(200,{ok:true},cookie('',0));return true}
    const user=await actor(req);
+   if(path.startsWith('/hub-api/admin/loyalty/')){
+    const sid=token(req),session=sid&&sessions.get(hash(sid));
+    const subpath=path.slice('/hub-api/admin/loyalty'.length);
+    const query=new URL(req.url,'http://internal').search;
+    const payload=['POST','PATCH','PUT','DELETE'].includes(req.method)?await body(req,32768):undefined;
+    const result=await loyaltyAdminRequest({path:subpath,method:req.method,query,accessToken:session.accessToken,body:payload});
+    reply(result.status,result.data);return true;
+   }
    if(req.method==='GET'&&path==='/hub-api/admin/me')reply(200,{user:{id:user.id,name:user.name,role:user.role}});
    else if(req.method==='GET'&&path==='/hub-api/admin/analytics'){
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
