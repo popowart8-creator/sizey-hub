@@ -1,6 +1,6 @@
 """Install the isolated Hub editor; preserve the employee backend and database."""
 from pathlib import Path
-import subprocess, shutil, time, os, sqlite3, json
+import subprocess, shutil, time, os, sqlite3, json, tempfile
 assert os.getuid() == 0
 source = Path(__file__).resolve().parent.parent
 base = Path('/opt/sizey/hub-api')
@@ -34,7 +34,11 @@ inner_changed=False;outer_changed=False;api_changed=False
 try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)
     run(dc+['config','-q']);run(dc+['build','auth']);print('Editor image built',flush=True)
-    run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-v',str(base/'data')+':/data','sizey-hub-api:local'])
+    # Never mount the live writable SQLite directory into a canary.
+    # The canary receives an isolated copy of the existing data and media.
+    canary_data=backup/'canary-data'
+    shutil.copytree(base/'data',canary_data,symlinks=False)
+    run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-v',str(canary_data)+':/data','sizey-hub-api:local'])
     run(['docker','network','connect','sizey_prod',canary])
     health="const base='http://127.0.0.1:8080/hub-api';const h=await fetch(base+'/health');if(!h.ok)throw Error('health');const c=await(await fetch(base+'/content')).json();if(!Array.isArray(c.products)||!c.products.length||!Array.isArray(c.banners))throw Error('catalog');if((await fetch(base+'/admin/me')).status!==401)throw Error('protection');console.log(JSON.stringify({products:c.products.length,banners:c.banners.length,protected:true}))"
     for attempt in range(20):
