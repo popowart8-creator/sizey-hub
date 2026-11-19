@@ -70,3 +70,13 @@ test('settings changes require recognized fields and bounded values',async()=>{
  }
  assert.equal(count,0);
 });
+
+test('bonus spend limit must be at least one percent',async()=>{
+ let calls=0;
+ const fetcher=async()=>{calls++;throw Error('unexpected upstream call')};
+ for(const value of [0,-1,101,NaN]){
+  const result=await loyaltyAdminRequest({path:'/settings',method:'PATCH',body:{maxBonusSpendPercent:value},accessToken:token,fetcher});
+  assert.equal(result.status,400);
+ }
+ assert.equal(calls,0);
+});
