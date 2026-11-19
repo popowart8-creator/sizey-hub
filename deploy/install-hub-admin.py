@@ -38,6 +38,11 @@ try:
     # The canary receives an isolated copy of the existing data and media.
     canary_data=backup/'canary-data'
     shutil.copytree(base/'data',canary_data,symlinks=False)
+    # Replace potentially inconsistent live SQLite file copies with atomic snapshots.
+    for name in ['auth.sqlite', 'hub-content.sqlite']:
+        snapshot=backup/name
+        if snapshot.is_file():
+            shutil.copy2(snapshot,canary_data/name)
     # Node runs as UID 1000 in the image; make only the isolated copy writable.
     for root,dirs,files_in_dir in os.walk(canary_data):
         os.chown(root,1000,1000)
