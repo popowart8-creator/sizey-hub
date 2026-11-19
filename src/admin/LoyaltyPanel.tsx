@@ -18,7 +18,7 @@ export default function LoyaltyPanel({onExpired}:Props){
  const[error,setError]=useState('');
  const[notice,setNotice]=useState('');
  const[editing,setEditing]=useState(false);
- const[form,setForm]=useState({companyName:'',timezone:'',currency:'',currencySymbol:'',maxBonusSpendPercent:0,birthdayMultiplier:1});
+ const[form,setForm]=useState({companyName:'',timezone:'',currency:'',currencySymbol:'',maxBonusSpendPercent:1,birthdayMultiplier:1});
  async function load(which=tab){
   setLoading(true);setError('');
   try{
@@ -32,7 +32,7 @@ export default function LoyaltyPanel({onExpired}:Props){
     const result=await request('/settings');
     setSettings(result);
     const source=result.settings||result;
-    setForm({companyName:source.companyName||'',timezone:source.timezone||'',currency:source.currency||'',currencySymbol:source.currencySymbol||'',maxBonusSpendPercent:source.maxBonusSpendPercent??0,birthdayMultiplier:source.birthdayMultiplier??1});
+    setForm({companyName:source.companyName||'',timezone:source.timezone||'',currency:source.currency||'',currencySymbol:source.currencySymbol||'',maxBonusSpendPercent:source.maxBonusSpendPercent??1,birthdayMultiplier:source.birthdayMultiplier??1});
    }
   }catch(e){const err=e as Error&{status?:number};if(err.status===401)onExpired();setError(err.message)}finally{setLoading(false)}
  }
@@ -46,7 +46,7 @@ export default function LoyaltyPanel({onExpired}:Props){
   {tab==='employees'&&<div className="table-wrap" style={{marginTop:20}}><table><thead><tr><th>Сотрудник</th><th>Роль</th><th>Статус</th></tr></thead><tbody>{employees.map((u,i)=><tr key={u.id||i}><td>{u.name||u.login||'—'}</td><td>{u.role||'—'}</td><td>{u.status||'—'}</td></tr>)}</tbody></table>{!loading&&!employees.length&&<p>Сотрудники не найдены.</p>}</div>}
   {tab==='settings'&&settings&&<form onSubmit={save} style={{display:'grid',gap:12,maxWidth:560,marginTop:20}}>{([
     ['companyName','Название компании'],['timezone','Часовой пояс'],['currency','Валюта'],['currencySymbol','Символ валюты'],['maxBonusSpendPercent','Максимальный процент оплаты бонусами'],['birthdayMultiplier','Множитель в день рождения']
-   ] as const).map(([key,label])=><label key={key} style={{display:'grid',gap:6}}>{label}<input disabled={!editing||loading} type={typeof form[key]==='number'?'number':'text'} min={typeof form[key]==='number'?0:undefined} step={typeof form[key]==='number'?'any':undefined} value={form[key]} onChange={e=>setForm(v=>({...v,[key]:typeof v[key]==='number'?Number(e.target.value):e.target.value}))}/></label>)}<p>Уровни лояльности сохраняются действующим backend; их редактирование будет добавлено после проверки формата ответа.</p><div style={{display:'flex',gap:8}}>{!editing?<button type="button" className="secondary" onClick={()=>setEditing(true)}>Редактировать</button>:<><button className="primary" disabled={loading}>Сохранить</button><button type="button" className="secondary" onClick={()=>{setEditing(false);void load('settings')}}>Отмена</button></>}</div></form>}
+   ] as const).map(([key,label])=><label key={key} style={{display:'grid',gap:6}}>{label}<input disabled={!editing||loading} type={typeof form[key]==='number'?'number':'text'} min={typeof form[key]==='number'?1:undefined} step={typeof form[key]==='number'?'any':undefined} value={form[key]} onChange={e=>setForm(v=>({...v,[key]:typeof v[key]==='number'?Number(e.target.value):e.target.value}))}/></label>)}<p>Уровни лояльности сохраняются действующим backend; их редактирование будет добавлено после проверки формата ответа.</p><div style={{display:'flex',gap:8}}>{!editing?<button type="button" className="secondary" onClick={()=>setEditing(true)}>Редактировать</button>:<><button className="primary" disabled={loading}>Сохранить</button><button type="button" className="secondary" onClick={()=>{setEditing(false);void load('settings')}}>Отмена</button></>}</div></form>}
   {loading&&<p role="status">Загрузка…</p>}
  </section>
 }
