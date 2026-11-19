@@ -29,6 +29,8 @@ function validateSettings(body){
  });
 }
 export async function loyaltyAdminRequest({path,method,query='',accessToken,body,fetcher=fetch,base='http://sizey-prod-backend:4000'}){
+  const route=routes.find(r=>r.pattern.test(path)&&r.methods.includes(method));
+  if(!route)return {status:404,data:{message:'Операция бонусной системы не поддерживается'}};
   if(financialWrites.has(path)&&method==='POST')return {status:501,data:{message:'Финансовые операции будут доступны после проверки контрактов и защиты от повторных списаний'}};
   if(/^\/sales\/[a-f0-9-]{36}\/cancel$/i.test(path)&&method==='POST')return {status:501,data:{message:'Отмена продажи временно недоступна до проверки контракта'}};
   // Other write DTOs have not been verified against the production NestJS source.
@@ -36,8 +38,6 @@ export async function loyaltyAdminRequest({path,method,query='',accessToken,body
     return {status:501,data:{message:'Изменение данных ожидает проверки контракта действующей системы'}};
   if(path==='/settings'&&method==='PATCH'&&!validateSettings(body))
     return {status:400,data:{message:'Некорректные настройки программы лояльности'}};
-  const route=routes.find(r=>r.pattern.test(path)&&r.methods.includes(method));
-  if(!route)return {status:404,data:{message:'Операция бонусной системы не поддерживается'}};
   const match=route.pattern.exec(path);
   const endpoint=route.upstream.replace(':id',match?.[1]||'');
   // Only documented query parameters are accepted; never forward arbitrary upstream controls.
