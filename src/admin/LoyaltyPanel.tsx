@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useState,type FormEvent} from 'react';
 type Props={onExpired:()=>void};
 async function request(path:string,method='GET',data?:unknown){
  const r=await fetch('/hub-api/admin/loyalty'+path,{method,credentials:'same-origin',cache:'no-store',...(data===undefined?{}:{headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})});
@@ -38,7 +38,7 @@ export default function LoyaltyPanel({onExpired}:Props){
  }
  useEffect(()=>{void load(tab)},[tab]);
  async function openClient(id:string){setLoading(true);setError('');setSelected(null);setTransactions([]);try{const [detail,history]=await Promise.all([request('/clients/'+encodeURIComponent(id)),request('/clients/'+encodeURIComponent(id)+'/transactions')]);setSelected(detail.client||detail);setTransactions(Array.isArray(history)?history:Array.isArray(history.transactions)?history.transactions:[])}catch(e){const err=e as Error&{status?:number};if(err.status===401)onExpired();setError(err.message)}finally{setLoading(false)}}
- async function save(e:React.FormEvent){e.preventDefault();setLoading(true);setError('');setNotice('');try{await request('/settings','PATCH',form);setEditing(false);setNotice('Настройки сохранены в действующей бонусной системе');await load('settings')}catch(e){setError((e as Error).message);setLoading(false)}}
+ async function save(e:FormEvent){e.preventDefault();setLoading(true);setError('');setNotice('');try{await request('/settings','PATCH',form);setEditing(false);setNotice('Настройки сохранены в действующей бонусной системе');await load('settings')}catch(e){setError((e as Error).message);setLoading(false)}}
  return <section className="panel" style={{padding:24}}>
   <div className="table-toolbar"><div style={{display:'flex',gap:8}}><button className="secondary" onClick={()=>setTab('clients')} aria-pressed={tab==='clients'}>Клиенты и бонусы</button><button className="secondary" onClick={()=>setTab('settings')} aria-pressed={tab==='settings'}>Настройки лояльности</button><button className="secondary" onClick={()=>setTab('employees')} aria-pressed={tab==='employees'}>Сотрудники</button></div><a className="secondary" href="https://app.sizey.ru" target="_blank" rel="noreferrer">Старый кабинет ↗</a></div>
   {error&&<div className="notice error" role="alert">{error}</div>}{notice&&<div className="notice" role="status">{notice}</div>}
