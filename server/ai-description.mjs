@@ -1,5 +1,5 @@
 import {ContentError} from './content-store.mjs';
-import {assistantAnswer} from './admin-assistant.mjs';
+import {assistantAnswer,shortTitleSubject} from './admin-assistant.mjs';
 
 const assistantContext=3072;
 const assistantKeepAlive='5m';
@@ -71,8 +71,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
 
  async function assistant(messages, actor, {onProgress,signal}={}){
   const question=messages.at(-1)?.content || '';
-  const shortTitle=/^(?:напиши|придумай|предложи|составь) (?:короткий |краткий )?заголовок(?: для | к |: )[^\n]{1,140}$/iu.test(question) &&
-   !/[;,]| и | также | потом /iu.test(question);
+  const shortTitle=shortTitleSubject(question);
   const id='assistant:'+String(actor), time=now();
   const recent=(attempts.get(id)||[]).filter(t=>t>time-60000);
   if(running.has(id)||recent.length>=5)throw new ContentError(429,'Дождитесь ответа ИИ-помощника и повторите запрос.');

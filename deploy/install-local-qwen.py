@@ -64,7 +64,7 @@ if(!answer.answer)throw Error('No assistant reply');
 const warmStart=Date.now();
 const next=await ai.assistant(messages,'qwen-deploy-smoke',{onProgress:()=>{}});
 if(!next.answer)throw Error('No warm assistant reply');
-console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,preloadMs,assistantMs,firstTextMs,warmAssistantMs:Date.now()-warmStart}));
+console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,preloadMs,promptCharacters:messages.reduce((sum,message)=>sum+message.content.length,0),assistantMs,firstTextMs,warmAssistantMs:Date.now()-warmStart}));
 """
 try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)
