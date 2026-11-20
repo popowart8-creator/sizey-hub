@@ -295,3 +295,12 @@ button.sizey-bonus-card:disabled{cursor:default}
 .sizey-grades-item small{margin-top:4px;font-size:12px;opacity:.65}
 .sizey-grades-dot{width:24px;height:24px;flex:none;border-radius:50%;background:#a77954}
 .sizey-grades-dot.silver{background:#aab4c1}.sizey-grades-dot.gold{background:#d8b44c}.sizey-grades-dot.platinum{background:#777b8d}
+
+/* Keep the tappable grade badge visually inside the card, aligned with its native badge slot. */
+.authpage:has(.customerlayout) .sizey-card-interactive{position:relative;isolation:isolate}
+.authpage:has(.customerlayout) .sizey-grade-info-trigger{top:23px;right:24px;z-index:5;max-width:55%;padding:7px 11px;border:1px solid color-mix(in srgb,var(--grade-ink,#d3d3d3) 36%,transparent);border-radius:999px;background:color-mix(in srgb,var(--grade-ink,#d3d3d3) 10%,transparent);color:var(--grade-ink,#d3d3d3);font-family:inherit;font-size:10px;font-weight:650;line-height:normal;letter-spacing:.09em;text-transform:uppercase;box-shadow:none;transform:none}
+.authpage:has(.customerlayout) .sizey-card-interactive:has(.sizey-bonus-card--bronze){--grade-ink:#e6b38c}
+.authpage:has(.customerlayout) .sizey-card-interactive:has(.sizey-bonus-card--silver){--grade-ink:#d4dce5}
+.authpage:has(.customerlayout) .sizey-card-interactive:has(.sizey-bonus-card--gold){--grade-ink:#f1d77d}
+.authpage:has(.customerlayout) .sizey-card-interactive:has(.sizey-bonus-card--platinum){--grade-ink:#e1e2e9}
+@media(max-width:390px){.authpage:has(.customerlayout) .sizey-grade-info-trigger{top:23px;right:23px}}
