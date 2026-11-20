@@ -21,7 +21,8 @@ const normalizedPhone=(value:string)=>value.replace(/\D/g,'').replace(/^8(?=\d{1
 const balance=(value?:number)=>typeof value==='number'?value.toLocaleString('ru-RU'):'—';
 
 function ClientDrawer({client,onClose,onExpired,onSaved}:{client:Client;onClose:()=>void;onExpired:()=>void;onSaved:()=>void}){
- const [birthDate,setBirthDate]=useState('');\n const [activating,setActivating]=useState(false),[activated,setActivated]=useState<Client|null>(null);
+ const [birthDate,setBirthDate]=useState('');
+ const [activating,setActivating]=useState(false),[activated,setActivated]=useState<Client|null>(null);
  const [editing,setEditing]=useState(false),[saving,setSaving]=useState(false),[form,setForm]=useState({name:client.name||'',phone:client.phone||client.phoneNormalized||''});
  const [detail,setDetail]=useState<Client|null>(null),[transactions,setTransactions]=useState<Transaction[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const root=useAdminDialog(onClose,false);
