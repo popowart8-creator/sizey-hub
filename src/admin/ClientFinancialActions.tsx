@@ -1,9 +1,9 @@
 import {useState,type FormEvent} from 'react';
 type Operation='manual-accrual'|'manual-debit'|'sale'|'refund'|'cancel';
-type Props={clientId:string;transactions:Array<{id?:string;type?:string;amount?:number;createdAt?:string}>;onComplete:()=>void;onExpired:()=>void};
+type Props={clientId:string;transactions:Array<{id?:string;type?:string;amount?:number;createdAt?:string}>;quickDebit?:boolean;onComplete:()=>void;onExpired:()=>void};
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
-export default function ClientFinancialActions({clientId,transactions,onComplete,onExpired}:Props){
- const [operation,setOperation]=useState<Operation>('manual-accrual');
+export default function ClientFinancialActions({clientId,transactions,onComplete,onExpired,quickDebit=false}:Props){
+ const [operation,setOperation]=useState<Operation>(quickDebit?'manual-debit':'manual-accrual');
  const [amount,setAmount]=useState(''),[spent,setSpent]=useState('0'),[note,setNote]=useState('');
  const [transactionId,setTransactionId]=useState(''),[pending,setPending]=useState(false),[error,setError]=useState(''),[success,setSuccess]=useState('');
  const [key,setKey]=useState(()=>crypto.randomUUID()),[completed,setCompleted]=useState(false);
