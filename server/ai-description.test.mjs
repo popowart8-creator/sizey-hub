@@ -98,3 +98,26 @@ test('assistant corrections survive reopening SQLite and stay private to their a
   rmSync(directory, {recursive: true, force: true});
  }
 });
+
+test('assistant exposes JSON answer text before Ollama finishes the response', async () => {
+ const encoder = new TextEncoder();
+ let feed;
+ const body = new ReadableStream({start(controller) { feed = controller; }});
+ const ai = createDescriptionAI({fetchImpl: async (_url, options) => {
+  assert.equal(JSON.parse(options.body).stream, true);
+  return new Response(body);
+ }});
+ const send = event => feed.enqueue(encoder.encode(JSON.stringify(event) + '\n'));
+ let notify;
+ const first = new Promise(resolve => { notify = resolve; });
+ const progress = [];
+ const result = ai.assistant([{role: 'user', content: 'Заголовок'}], 'admin', {
+  onProgress(text) { progress.push(text); notify(text); }
+ });
+ send({message: {content: '{"answer":"Пальто \\u04'}});
+ assert.equal(await first, 'Пальто ');
+ send({message: {content: '10","section":"products"}'}, done: true});
+ feed.close();
+ assert.deepEqual(await result, {answer: 'Пальто А', section: 'products'});
+ assert.deepEqual(progress, ['Пальто ', 'Пальто А']);
+});

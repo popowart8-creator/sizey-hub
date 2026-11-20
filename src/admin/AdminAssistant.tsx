@@ -6,6 +6,48 @@ import './admin-assistant.css';
 type Answer = {answer: string; section: string | null; source?: 'model' | 'learned'};
 type Turn = {role: 'user' | 'assistant'; content: string; section?: string | null; source?: Answer['source']};
 
+type AssistantEvent = {type: 'progress'; text: string} | {type: 'answer'; answer: Answer} | {type: 'error'; message: string};
+
+async function askAssistant(body: {section: string; history: Turn[]}, signal: AbortSignal, onProgress: (text: string) => void): Promise<Answer> {
+ const response = await fetch('/hub-api/admin/ai/assistant', {
+  method: 'POST', credentials: 'same-origin', cache: 'no-store', signal,
+  headers: {'Content-Type': 'application/json', Accept: 'application/x-ndjson, application/json'},
+  body: JSON.stringify(body)
+ });
+ if (!response.ok || !response.headers.get('content-type')?.includes('application/x-ndjson')) {
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data) {
+   throw Object.assign(new Error(data?.message || 'Сервис временно недоступен'), {status: response.status});
+  }
+  if (typeof data.answer === 'string') return data;
+  throw new Error('Сервис вернул некорректный ответ');
+ }
+ const reader = response.body?.getReader();
+ if (!reader) throw new Error('Модель вернула пустой ответ');
+ const decoder = new TextDecoder();
+ let buffer = '';
+ try {
+  while (true) {
+   const {value, done} = await reader.read();
+   if (done) break;
+   buffer += decoder.decode(value, {stream: true});
+   const lines = buffer.split('\n');
+   buffer = lines.pop() ?? '';
+   for (const line of lines) {
+    if (!line.trim()) continue;
+    const event: AssistantEvent = JSON.parse(line);
+    if (event.type === 'answer') return event.answer;
+    if (event.type === 'error') throw new Error(event.message);
+    if (event.type === 'progress') onProgress(event.text);
+   }
+  }
+  throw new Error('Ответ прервался. Повторите запрос.');
+ } finally {
+  await reader.cancel().catch(() => {});
+  reader.releaseLock();
+ }
+}
+
 export default function AdminAssistant({page, sections, request, navigate, onSessionError}: {
  page: string;
  sections: readonly {id: string; label: string}[];
@@ -17,6 +59,7 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
  const [turns, setTurns] = useState<Turn[]>([]);
  const [draft, setDraft] = useState('');
  const [busy, setBusy] = useState(false);
+ const [progress, setProgress] = useState('');
  const [error, setError] = useState('');
  const [correction, setCorrection] = useState<{index: number; answer: string} | null>(null);
  const active = useRef<AbortController | null>(null);
@@ -48,7 +91,7 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
  useEffect(() => {
   const list = transcript.current;
   if (list) list.scrollTop = list.scrollHeight;
- }, [turns, open, busy, error]);
+ }, [turns, open, busy, error, progress]);
 
  function close() {
   panel.current?.close();
@@ -69,7 +112,7 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
   setBusy(true);
   try {
    const history = pending.slice(-7).map(({role, content}) => ({role, content}));
-   const result = await request<Answer>('/ai/assistant', {section: page, history}, controller.signal);
+   const result = await askAssistant({section: page, history}, controller.signal, setProgress);
    setTurns([...pending, {role: 'assistant', content: result.answer, section: result.section, source: result.source}]);
   } catch (error) {
    if (controller.signal.aborted) return;
@@ -79,7 +122,10 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
    else setError((error as Error).message);
   } finally {
    active.current = null;
-   if (!controller.signal.aborted) setBusy(false);
+   if (!controller.signal.aborted) {
+    setProgress('');
+    setBusy(false);
+   }
   }
  }
 
@@ -147,7 +193,9 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
       </button>}
      </div>;
     })}
-    {busy && !correction && <p className="assistant-empty">Готовлю ответ…</p>}
+    {busy && !correction && (progress ?
+     <div className="assistant-message" aria-live="off"><span>Помощник</span><p>{progress}</p></div> :
+     <p className="assistant-empty">Готовлю ответ…</p>)}
    </div>
    {error && <p className="assistant-error" role="alert">{error}</p>}
    <form onSubmit={send}>

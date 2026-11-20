@@ -9,7 +9,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
  const base=new URL(endpoint);if(!['http:','https:'].includes(base.protocol)||base.username||base.password||base.search||base.hash||base.pathname!=='/' )throw Error('Invalid Ollama endpoint');
  if(!/^[a-zA-Z0-9_.:/-]{1,100}$/.test(model))throw Error('Invalid Ollama model');
  const attempts=new Map(),running=new Set();
- async function call(path,options={}){let response;try{response=await fetchImpl(new URL(path,base),{...options,signal:AbortSignal.timeout(options.timeout||10000)})}catch(error){if(error?.name==='TimeoutError')throw new ContentError(504,'Модель не успела ответить. Попробуйте отправить более короткий запрос.');throw new ContentError(503,'Локальная модель недоступна. Проверьте Ollama на сервере.')}return response}
+ async function call(path,options={}){let response;try{response=await fetchImpl(new URL(path,base),{...options,signal:options.signal ? AbortSignal.any([options.signal,AbortSignal.timeout(options.timeout||10000)]) : AbortSignal.timeout(options.timeout||10000)})}catch(error){if(error?.name==='TimeoutError')throw new ContentError(504,'Модель не успела ответить. Попробуйте отправить более короткий запрос.');throw new ContentError(503,'Локальная модель недоступна. Проверьте Ollama на сервере.')}return response}
  async function json(response,max=262144){const body=await response.text();if(body.length>max)throw new ContentError(502,'AI вернул слишком большой ответ');try{return JSON.parse(body)}catch{throw new ContentError(502,'AI вернул некорректный ответ')}}
  async function status(){try{const r=await call('/api/tags');if(!r.ok)throw Error('tags');const data=await json(r,2000000);const installed=(data.models||[]).some(m=>m.name===model||m.model===model);return{provider:'Ollama',configured:true,ready:installed,freeOnly:true,deepseekOnly:false,model:{id:model,name:model},availableModels:[{id:model,name:model}],reason:installed?'':'Модель '+model+' не загружена в Ollama. Администратору сервера нужно выполнить ollama pull '+model}}catch{return{provider:'Ollama',configured:true,ready:false,freeOnly:true,deepseekOnly:model.startsWith('deepseek'),model:{id:model,name:model},availableModels:[{id:model,name:model}],reason:'Ollama недоступна. Проверьте локальный сервис.'}}}
  async function configure(){throw new ContentError(405,'Модель настраивается на сервере через OLLAMA_MODEL')}
@@ -40,7 +40,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
 
  async function wordstat(){throw new ContentError(503,'Старый API Яндекс Wordstat закрыт. Для частотности требуется подключение Yandex Search API; используйте бесплатные поисковые подсказки Google и Яндекса без частотности.')}
 
- async function assistant(messages, actor){
+ async function assistant(messages, actor, {onProgress,signal}={}){
   const question=messages.at(-1)?.content || '';
   const shortTitle=/^(?:напиши|придумай|предложи|составь) (?:короткий |краткий )?заголовок(?: для | к |: )[^\n]{1,140}$/iu.test(question) &&
    !/[;,]| и | также | потом /iu.test(question);
@@ -55,12 +55,41 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
    const response=await call('/api/chat',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model,stream:false,format:'json',messages,keep_alive:'5m',options:{temperature:0.3,num_ctx:3072,num_predict:shortTitle?64:220},think:false}),
-    timeout:120000
+    body:JSON.stringify({model,stream:!!onProgress,format:'json',messages,keep_alive:'5m',options:{temperature:0.3,num_ctx:3072,num_predict:shortTitle?64:220},think:false}),
+    timeout:120000,signal
    });
    if(!response.ok)throw new ContentError(503,'Локальная модель не смогла обработать запрос');
-   const result=await json(response);
-   return assistantAnswer(result.message?.content);
+   if(!onProgress){
+    const result=await json(response);
+    return assistantAnswer(result.message?.content);
+   }
+   if(!response.body)throw new ContentError(502,'Модель вернула пустой ответ');
+   const decoder=new TextDecoder();
+   let raw='',shown='',buffer='';
+   try{
+    for await(const chunk of response.body){
+     buffer+=decoder.decode(chunk,{stream:true});
+     if(buffer.length>262144)throw new ContentError(502,'Модель вернула слишком большой ответ');
+     const lines=buffer.split('\n');
+     buffer=lines.pop();
+     for(const line of lines){
+      if(!line.trim())continue;
+      const item=JSON.parse(line);
+      if(item.error)throw new ContentError(503,'Модель прервала ответ');
+      if(typeof item.message?.content==='string')raw+=item.message.content;
+      if(raw.length>16000)throw new ContentError(502,'Модель вернула слишком большой ответ');
+      const head=raw.match(/^\s*\{\s*(?:"section"\s*:\s*(?:null|"[a-z]+")\s*,\s*)?"answer"\s*:\s*"((?:[^"\\\x00-\x1f]|\\(?:["\\/bfnrt]|u[\da-fA-F]{4}))*)/);
+      const progress=head ? JSON.parse('"'+head[1]+'"').trimStart().replace(/[\uD800-\uDBFF]$/,'') : '';
+      if(progress && progress!==shown){shown=progress;onProgress(progress)}
+      if(item.done)return assistantAnswer(raw);
+     }
+    }
+    throw new ContentError(502,'Модель не закончила ответ. Повторите запрос.');
+   }catch(error){
+    if(error?.name==='TimeoutError')throw new ContentError(504,'Модель не успела ответить. Попробуйте отправить более короткий запрос.');
+    if(error instanceof SyntaxError)throw new ContentError(502,'Модель вернула некорректный ответ');
+    throw error;
+   }
   }finally{running.delete(id)}
  }
 
