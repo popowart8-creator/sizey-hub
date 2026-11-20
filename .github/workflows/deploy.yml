@@ -165,7 +165,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy_qwen_api:
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_qwen_api == true
+    if: (github.event_name == 'workflow_dispatch' && inputs.deploy_qwen_api == true) || (github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Deploy blog pipeline to production'))
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
