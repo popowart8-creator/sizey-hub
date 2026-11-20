@@ -55,7 +55,7 @@ jobs:
                   print('FILE',path.relative_to(root))
                   for number,line in enumerate(path.read_text(errors='replace').splitlines(),1):
                       s=line.strip()
-                      if re.match(r'^@(Controller|Get|Post|Patch|Put|Delete|Roles|UseGuards|ApiOperation|ApiBody|ApiParam|ApiQuery|IsString|IsOptional|IsUUID|IsNumber|IsInt|IsEnum|Min|Max|ValidateNested|IsBoolean|IsArray)\\b',s) or re.match(r'^(export )?(class|enum)\\s+',s) or re.match(r'^(readonly )?[a-zA-Z_][a-zA-Z0-9_?]*\\s*[!:]\\s*[a-zA-Z_][a-zA-Z0-9_<>, |\[\]?]*\\s*;',s):
+                      if re.match(r'^@(Controller|Get|Post|Patch|Put|Delete|Roles|UseGuards|ApiOperation|ApiBody|ApiParam|ApiQuery|IsString|IsOptional|IsUUID|IsNumber|IsInt|IsEnum|Min|Max|ValidateNested|IsBoolean|IsArray)\b',s) or re.match(r'^(export )?(class|enum)\s+',s) or re.match(r'^(readonly )?[a-zA-Z_][a-zA-Z0-9_?]*\s*[!:]\s*[a-zA-Z_][a-zA-Z0-9_<>, |\[\]?]*\s*;',s):
                           print(f'{number}: {s[:180]}')
           PY
       - name: Clean SSH credentials
