@@ -47,7 +47,6 @@ export default function BlogScreen({products,initialSlug,onExplore,onProduct,onA
 
    </article>:
    <section className="sizey-blog-index">
-    <h2>Блог SIZEY</h2>
 
     {loading?<LoadingSkeleton variant="blog"/>:error?<div className="sizey-blog-state" role="alert">{error}<button onClick={()=>location.reload()}>Повторить</button></div>:
     articles.length===0?<div className="sizey-blog-empty"><BookOpen size={34}/><h3>Готовим полезные материалы</h3><p>Здесь появятся только проверенные статьи, которые помогут сделать выбор.</p></div>:
