@@ -57,6 +57,17 @@ function learnedExamples(db, actor, question) {
   .map(({entry}) => ({question: entry.question.slice(0, 200), answer: entry.answer.slice(0, 400)}));
 }
 
+function quickReply(question) {
+ const intent = question.toLocaleLowerCase('ru').replace(/[^а-яёa-z0-9 ]/g, '').replace(/ +/g, ' ');
+ if (/^(привет|здравствуйте|здравствуй|йоу|хай|hello|hi)$/.test(intent)) {
+  return {answer: 'Привет! ' + capabilities, section: null};
+ }
+ if (/^(?:(?:а|и) )?(?:ты )?(?:что (?:ты )?умеешь|как (?:ты )?можешь помочь|чем (?:ты )?можешь помочь)$/.test(intent)) {
+  return {answer: capabilities, section: null};
+ }
+ return null;
+}
+
 export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
  const {section, history} = input;
  if (!sections.includes(section) || !Array.isArray(history) || history.length < 1 || history.length > 7 ||
@@ -67,13 +78,8 @@ export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
   throw new ContentError(400, 'Проверьте сообщение для ИИ-помощника');
  }
  const question = history.at(-1).content.trim();
- const intent = question.toLocaleLowerCase('ru').replace(/[^а-яёa-z0-9 ]/g, '').replace(/ +/g, ' ');
- if (/^(привет|здравствуйте|здравствуй|йоу|хай|hello|hi)$/.test(intent)) {
-  return {answer: 'Привет! ' + capabilities, section: null};
- }
- if (/^(?:(?:а|и) )?(?:ты )?(?:что (?:ты )?умеешь|как (?:ты )?можешь помочь|чем (?:ты )?можешь помочь)$/.test(intent)) {
-  return {answer: capabilities, section: null};
- }
+ const quick = quickReply(question);
+ if (quick) return quick;
  const query = question.toLocaleLowerCase('ru');
  const products = store.list('products');
  const catalog = catalogReply(normalize(question), products);
@@ -98,10 +104,12 @@ export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
   articles: section === 'blog' || /стать|блог/.test(query) ? (blog?.list() || []).slice(0, 4).map(({title, published}) => ({title: title.slice(0, 100), published})) : undefined,
   analytics: report ? {from: report.from, to: report.to, startedAt: report.startedAt, metrics: report.metrics} : null
  };
+ const previous = history.slice(0, -1);
+ while (previous.length && quickReply(previous.at(-2).content.trim())) previous.splice(-2);
  return [
   {role: 'system', content: instructions + '\nДанные SIZEY: ' + JSON.stringify(context) +
    (examples.length ? '\nОдобренные примеры ответов. Используй только подходящие как справку, а текущие данные магазина имеют приоритет: ' + JSON.stringify(examples) : '')},
-  ...history.slice(-3, -1).map(({role, content}) => ({role, content: content.trim().slice(0, 360)})),
+  ...previous.slice(-2).map(({role, content}) => ({role, content: content.trim().slice(0, 360)})),
   {role: 'user', content: question}
  ];
 }

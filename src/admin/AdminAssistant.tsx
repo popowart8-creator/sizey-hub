@@ -71,6 +71,7 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
  useEffect(() => {
   const dialog = panel.current;
   if (!dialog) return;
+  void request('/ai/assistant/warm', {}).catch(() => {});
   const mobile = window.matchMedia('(max-width: 760px)');
   function showPanel() {
    if (!dialog) return;
@@ -87,7 +88,7 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
    mobile.removeEventListener('change', showPanel);
    if (dialog.open) dialog.close();
   };
- }, [open]);
+ }, [open, request]);
  useEffect(() => {
   const list = transcript.current;
   if (list) list.scrollTop = list.scrollHeight;
