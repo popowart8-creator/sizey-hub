@@ -1,3 +1,4 @@
+import {createKeywordSuggestions} from './keyword-suggestions.mjs';
 import {createDescriptionAI} from './ai-description.mjs';
 import {createGeoLookup} from './geo.mjs';
 import {DatabaseSync} from 'node:sqlite';
@@ -15,7 +16,8 @@ const store=contentStore(directory+'/hub-content.sqlite');chmodSync(directory+'/
 const geo=createGeoLookup();
 const analytics=analyticsStore(directory+'/analytics.sqlite',{geoLookup:geo.lookup,geoProvider:geo.provider});
 const descriptionAI=createDescriptionAI();
-const adminHandler=createAdmin({store,analytics,descriptionAI,staffAuth:staffBackend(),listClients:async()=>{const rows=pool?(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:[];const phones=new Set(rows.map(c=>c.phone_normalized));const auth=new DatabaseSync(database,{readOnly:true});try{for(const c of auth.prepare('SELECT id,phone FROM customers').all()){const phone=c.phone.replace(/^\+/, '');if(!phones.has(phone))rows.push({id:c.id,name:'Клиент SIZEY Hub',phone_normalized:phone,hasLoyalty:false})}}finally{auth.close()}return rows},mediaDirectory:directory+'/media'});
+const keywordSuggestions=createKeywordSuggestions();
+const adminHandler=createAdmin({store,analytics,descriptionAI,keywordSuggestions,staffAuth:staffBackend(),listClients:async()=>{const rows=pool?(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:[];const phones=new Set(rows.map(c=>c.phone_normalized));const auth=new DatabaseSync(database,{readOnly:true});try{for(const c of auth.prepare('SELECT id,phone FROM customers').all()){const phone=c.phone.replace(/^\+/, '');if(!phones.has(phone))rows.push({id:c.id,name:'Клиент SIZEY Hub',phone_normalized:phone,hasLoyalty:false})}}finally{auth.close()}return rows},mediaDirectory:directory+'/media'});
 const app=createAuth({database,adminHandler,getLoyaltyClient:pool?async id=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE id=$1 AND deleted_at IS NULL',[id])).rows[0]||null:null,loyalty:pool?createLoyaltyReader(pool):null,listLoyaltyCustomers:pool?async()=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:null,staffAuth:staffBackend(),secret:process.env.AUTH_SECRET,origin:process.env.PUBLIC_ORIGIN||'https://hub.sizey.ru'});
 chmodSync(database,0o600);
 app.server.listen(8080,'0.0.0.0',()=>console.log('SIZEY password auth listening on 8080'));
