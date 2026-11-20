@@ -63,11 +63,12 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
   const client=await getLoyaltyClient(clientId);
   if(!client)throw new ApiError(404,'Клиент не найден');
   const phone=normalizePhone(client.phone_normalized),user=findUser(phone);
-  if(!confirmation)return{exists:!!user,phone,phoneVerified:!!user?.phone_verified,temporaryPasswordPending:!!user?.temporary_encrypted,mustChangePassword:!!user?.must_change,issued:!!user?.issued_at};
+  const canConfirm=!!user?.password_hash&&!user.must_change&&!user.phone_verified;
+  if(!confirmation)return{...(allowConfirmation?{hasPassword:!!user?.password_hash,canConfirm}:{}),exists:!!user,phone,phoneVerified:!!user?.phone_verified,temporaryPasswordPending:!!user?.temporary_encrypted,mustChangePassword:!!user?.must_change,issued:!!user?.issued_at};
   limit('staff-issue',me.id,50,3600000);
   if(confirmation.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
   if(typeof confirmation.expectedPhone!=='string'||normalizePhone(confirmation.expectedPhone)!==phone)throw new ApiError(409,'Телефон клиента изменился. Обновите карточку и проверьте клиента заново.');
-  if(allowConfirmation&&user?.password_hash&&!user.must_change&&!user.phone_verified){
+  if(allowConfirmation&&canConfirm){
    const code=confirmation.verificationCode;
    if(typeof code!=='string'||!/^\d{8}$/.test(code))throw new ApiError(400,'Укажите код из профиля клиента');
    const window=proofWindow();

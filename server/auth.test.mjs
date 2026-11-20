@@ -79,11 +79,22 @@ test('an existing customer proves account access and keeps their password and se
  const customerPhone='+79990001122',origin='https://admmm.sizey.ru';
  const path='/hub-api/admin/clients/22222222-2222-4222-8222-222222222222/access';
  try{
+  const adminSession=cookie(await f.post('/hub-api/admin/login',{login:'employee',password:'employee-password'},null,origin));
+  const imported=initializeDatabase(f.database);
+  imported.prepare('INSERT INTO customers VALUES(?,?,?)').run('imported-client',customerPhone,1);
+  imported.close();
+  const accessWithoutPassword=await(await f.get(path,adminSession)).json();
+  assert.equal(accessWithoutPassword.exists,true);
+  assert.equal(accessWithoutPassword.hasPassword,false);
+  assert.equal(accessWithoutPassword.canConfirm,false);
+  const db=initializeDatabase(f.database);
+  db.prepare('DELETE FROM customers WHERE id=?').run('imported-client');
+  db.close();
   const registration=await f.post('/hub-api/auth/register',{phone:customerPhone,password:changed,consent:true});
   assert.equal(registration.status,201);
   const customerSession=cookie(registration);
   const {verificationCode}=await(await f.get('/hub-api/loyalty',customerSession)).json();
-  const adminSession=cookie(await f.post('/hub-api/admin/login',{login:'employee',password:'employee-password'},null,origin));
+  assert.equal((await(await f.get(path,adminSession)).json()).canConfirm,true);
   const proof={identityChecked:true,expectedPhone:customerPhone};
   assert.equal((await f.post(path,proof,adminSession,origin)).status,400);
   const wrong=verificationCode==='00000000'?'11111111':'00000000';
