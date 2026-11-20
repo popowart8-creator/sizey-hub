@@ -44,3 +44,12 @@
 .authpage .sizey-profile-loading .profile-menu-stack{margin-top:0;display:block}
 .authpage .sizey-profile-loading .sizey-qr-hint{margin:12px 0 18px;text-align:center;color:#888;font-size:12px}
 .authpage .sizey-profile-loading .sizey-bonus-history{width:100%}
+
+/* Profile loading: light, neutral placeholders; never a fake black loyalty card. */
+.authpage .sizey-profile-loading-card{background:linear-gradient(125deg,#f5f2f9 0%,#eee8f6 52%,#f8eef7 100%);border:1px solid #e8e0ed;box-shadow:none;border-radius:30px;min-height:252px;aspect-ratio:auto;padding:25px}
+.authpage .sizey-profile-loading-card .sizey-skeleton-bone{background:#ddd5e6}
+.authpage .sizey-profile-loading-card .sizey-skeleton-bone::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent)}
+.authpage .sizey-profile-loading-qr{background:#ddd5e6}
+.authpage .sizey-profile-loading-hint{background:#eceaf0}
+.authpage .sizey-profile-loading .profile-menu-stack .sizey-profile-loading-row{height:55px;border-radius:8px;background:#f0eff2}
+@media(max-width:600px){.authpage .sizey-profile-loading-card{min-height:225px}}
