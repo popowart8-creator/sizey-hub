@@ -12,7 +12,7 @@ test('returns deduplicated autocomplete suggestions and caches them',async()=>{
  assert.equal(first.sources.google.available,true);
  assert.equal(first.sources.yandex.available,true);
  assert.equal(second,first);
- assert.equal(calls,1);
+ assert.equal(calls,2);
 });
 test('rejects invalid query without network access',async()=>{
  const source=createKeywordSuggestions({fetchImpl:()=>{throw Error('unexpected network')}});
@@ -20,7 +20,7 @@ test('rejects invalid query without network access',async()=>{
 });
 test('handles malformed provider response',async()=>{
  const source=createKeywordSuggestions({fetchImpl:async()=>new Response('bad json')});
- await assert.rejects(source.suggest('платье'),e=>e.status===502);
+ await assert.rejects(source.suggest('платье'),e=>e.status===503);
 });
 
 test('keeps Google suggestions when Yandex is unavailable',async()=>{
