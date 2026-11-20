@@ -9,16 +9,17 @@ const slugPattern=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 function normalize(value){
  if(!value||typeof value!=='object'||Array.isArray(value))fail('Некорректная статья');
- const title=clean(value.title,140),summary=clean(value.summary,450),slug=clean(value.slug,100).toLowerCase();
+ const title=clean(value.title,140),slug=clean(value.slug,100).toLowerCase();
  const sections=value.sections,links=value.sources,productIds=value.productIds;
- if(title.length<12||summary.length<30||!slugPattern.test(slug))fail('Проверьте заголовок, описание и адрес статьи');
+ if(title.length<12||!slugPattern.test(slug))fail('Проверьте заголовок и адрес статьи');
  if(!Array.isArray(sections)||sections.length<2||sections.length>16||sections.some(s=>typeof s!=='string'||s.trim().length<50||s.length>2500))fail('Добавьте от 2 до 16 содержательных абзацев');
- if(!Array.isArray(links)||links.length<2||links.length>12)fail('Нужны минимум два независимых интернет-источника');
+ if(!Array.isArray(links)||links.length>12||(links.length===1))fail('Для статьи с источниками нужны минимум два независимых сайта');
  const sources=links.map(s=>{if(!s||typeof s!=='object')fail('Проверьте источники');let url;try{url=new URL(s.url)}catch{fail('Неверная ссылка на источник')}if(url.protocol!=='https:'||url.username||url.password||url.hostname.length>200)fail('Источники должны использовать HTTPS');const label=clean(s.title,180);if(label.length<5)fail('Укажите название источника');return{title:label,url:url.href}});
- if(new Set(sources.map(s=>new URL(s.url).hostname.replace(/^www\./,'').toLowerCase())).size<2)fail('Источники должны быть с разных сайтов');
+ if(sources.length&&new Set(sources.map(s=>new URL(s.url).hostname.replace(/^www\./,'').toLowerCase())).size<2)fail('Источники должны быть с разных сайтов');
  if(!Array.isArray(productIds)||productIds.length<1||productIds.length>12||productIds.some(x=>!Number.isSafeInteger(x)||x<=0))fail('Свяжите статью с товарами каталога');
  const score=Number(value.score);
  if(!Number.isInteger(score)||score<0||score>100)fail('Некорректный рейтинг');
+ const summary=sections[0].trim().slice(0,450);
  return{title,slug,summary,sections:sections.map(s=>s.trim()),sources,productIds:[...new Set(productIds)],score};
 }
 export function blogStore(path,{now=Date.now}={}){
@@ -52,7 +53,7 @@ export function blogStore(path,{now=Date.now}={}){
  function publish(id,published,products){
   const article=find(id);if(!article)fail('Статья не найдена',404);
   if(published){
-   if(article.score<85)fail('Статья не прошла фильтр конверсии: требуется минимум 85 баллов',409);
+   if(article.sources.length&&article.score<85)fail('Статья не прошла фильтр конверсии: требуется минимум 85 баллов',409);
    const available=new Set(products.filter(p=>p.published!==false).map(p=>p.id));
    if(!article.productIds.some(id=>available.has(id)))fail('В статье нет доступных товаров магазина',409);
   }

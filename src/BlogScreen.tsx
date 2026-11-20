@@ -27,7 +27,7 @@ export default function BlogScreen({products,initialSlug,onExplore,onProduct,onA
     <button className="sizey-blog-back" aria-label="Закрыть статью" onClick={()=>setActive(null)}><ArrowLeft size={22}/></button>
 
     <h2>{active.title}</h2>
-    <p className="sizey-blog-lead">{active.summary}</p>
+
     <div className="sizey-blog-prose">{active.sections.map((section,i)=><p key={i}>{section}</p>)}</div>
     {related(active).length>0&&<section className="sizey-blog-products" aria-label="Товары по теме">
       <h3>Подобрать образ в SIZEY</h3>
@@ -47,7 +47,7 @@ export default function BlogScreen({products,initialSlug,onExplore,onProduct,onA
     articles.length===0?<div className="sizey-blog-empty"><BookOpen size={34}/><h3>Готовим полезные материалы</h3><p>Здесь появятся только проверенные статьи, которые помогут сделать выбор.</p></div>:
     <div className="sizey-blog-grid">{articles.map(article=><a className="sizey-blog-card" href={'/?blog='+encodeURIComponent(article.slug)} key={article.id} onClick={event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();open(article)}}>
       {related(article)[0]&&<img src={related(article)[0].img} alt="" loading="lazy"/>}
-      <span className="sizey-blog-card-info"><strong>{article.title}</strong><span>{article.summary}</span></span>
+      <span className="sizey-blog-card-info"><strong>{article.title}</strong></span>
     </a>)}</div>}
    </section>}
  </main>;

@@ -45,3 +45,5 @@
 .blog-admin-drawer-head h3{margin:0;font-size:20px}.blog-admin-drawer-body{overflow-y:auto;padding:24px;flex:1}
 .blog-admin-drawer-body form{margin:22px 0}.blog-admin-delete{display:inline-flex;align-items:center;gap:8px;color:#b03535;margin-top:22px;padding:8px 0}
 @media(max-width:650px){.blog-admin-toolbar{align-items:stretch;flex-direction:column}.blog-admin-tabs button{padding:12px 10px}.blog-admin-drawer-head,.blog-admin-drawer-body{padding:18px}}
+
+.blog-admin-table tbody tr{cursor:pointer}.blog-admin-table tbody tr:hover{background:#f7f8f6}.blog-admin-table tbody tr:focus-visible{outline:2px solid #263d30;outline-offset:-2px}.blog-admin-mode{margin-bottom:20px}
