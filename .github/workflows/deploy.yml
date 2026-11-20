@@ -3,6 +3,17 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy_site:
+        description: 'Explicitly deploy website to production after API verification'
+        required: false
+        type: boolean
+        default: false
+      deploy_qwen_api:
+        description: 'Explicitly deploy Qwen API to production'
+        required: false
+        type: boolean
+        default: false
   pull_request:
 permissions:
   contents: read
@@ -23,6 +34,7 @@ jobs:
       - run: npm run test:startup
       - run: npm run test:auth
       - run: npm run test:bonus-cabinet
+      - run: node --test server/blog.test.mjs
       - run: npm run build
       - run: node deploy/precompress.mjs
       - uses: actions/upload-artifact@v4
@@ -153,8 +165,8 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy_qwen_api:
-    if: github.event_name == 'pull_request'
-    needs: [build, inspect_local_ai]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_qwen_api == true
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -187,7 +199,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.deploy_site == true
     needs: build
     runs-on: ubuntu-latest
     steps:

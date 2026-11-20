@@ -1,0 +1,31 @@
+.sizey-blog{padding:16px 20px 120px;max-width:1100px;margin:0 auto;min-height:55vh;color:#171717}
+.sizey-blog-eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;color:#7b7b7b;text-transform:uppercase;margin:0 0 14px}
+.sizey-blog h2{font-size:clamp(30px,5vw,48px);line-height:1.12;font-weight:650;letter-spacing:-1.5px;margin:0 0 20px}
+.sizey-blog-lead{font-size:17px;line-height:1.7;color:#6c6c6c;max-width:700px;margin:0 0 35px}
+.sizey-blog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.sizey-blog-card{display:flex;flex-direction:column;overflow:hidden;text-align:left;border:1px solid #ebebeb;background:#fff;border-radius:20px;padding:0}
+.sizey-blog-card>img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.sizey-blog-card-info{display:flex;flex-direction:column;gap:12px;padding:22px}
+.sizey-blog-card-info>strong{font-size:21px;line-height:1.35;font-weight:650}
+.sizey-blog-card-info>span:not(.sizey-blog-eyebrow):not(.sizey-blog-more){font-size:14px;color:#707070;line-height:1.6}
+.sizey-blog-more{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding-top:6px}
+.sizey-blog-empty,.sizey-blog-state{max-width:560px;border-radius:24px;background:#f6f6f7;padding:30px 24px;margin-top:25px}
+.sizey-blog-empty h3{font-size:22px;margin:16px 0 8px}
+.sizey-blog-empty p{color:#737373;font-size:15px;line-height:1.6;margin-bottom:18px}
+.sizey-blog-state{font-size:16px}.sizey-blog-state button{display:block;margin-top:14px;text-decoration:underline}
+.sizey-blog-back{display:flex;align-items:center;gap:12px;min-height:44px;margin:0 0 35px;font-size:15px}
+.sizey-blog-article{max-width:780px;margin:0 auto}
+.sizey-blog-prose{display:grid;gap:18px;margin-bottom:34px}
+.sizey-blog-prose p{font-size:17px;line-height:1.8;white-space:pre-line;color:#303030;margin:0}
+.sizey-blog-products{margin:42px 0}.sizey-blog-products h3{font-size:24px;letter-spacing:-.5px;margin-bottom:20px}
+.sizey-blog-productgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.sizey-blog-product{display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:9px;min-width:0}
+.sizey-blog-product img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px}
+.sizey-blog-product>span{font-size:14px;line-height:1.4}
+.sizey-blog-product strong{font-size:15px}
+.sizey-blog-product-action{display:flex;align-items:center;gap:6px;font-weight:650}
+.sizey-blog-cta{margin:28px 0 35px}
+.sizey-blog-sources{border-top:1px solid #e4e4e4;padding-top:24px;display:grid;gap:14px}
+.sizey-blog-sources h3{font-size:19px}.sizey-blog-sources p{font-size:13px;color:#787878;line-height:1.6}
+.sizey-blog-sources a{font-size:14px;text-decoration:underline;text-underline-offset:3px;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
+@media(max-width:600px){.sizey-blog-grid{grid-template-columns:1fr}.sizey-blog-productgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.sizey-blog{padding:14px 16px 110px}.sizey-blog-article h2{font-size:32px}.sizey-blog-prose p{font-size:16px}.sizey-blog-card-info{padding:18px}}
