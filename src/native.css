@@ -652,9 +652,37 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 
 .product-screen label.detail-cart-action{margin-top:0;font-size:17px;line-height:1.4}
 
-/* Increase the blur toward the bottom without tinting the photograph. */
-.home-intro .editorial-hero::before,
-.home-intro .editorial-hero::after {
+/* Feather the blurred image into the catalog at the lower edge. */
+.home-intro .editorial-hero {
+  background: #fff;
+}
+
+.home-intro .carousel-art {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 38px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 38px), transparent);
+}
+
+.home-intro .carousel-slide > img {
+  height: 50svh;
+  transform-origin: center top;
+}
+
+.home-intro .hero-bottom-content {
+  bottom: 18px;
+}
+
+.home-logo {
+  position: fixed;
+}
+
+html[data-hero-tone="dark"] .home-logo img {
+  filter: brightness(0) invert(1) drop-shadow(0 1px 3px #0009);
+}
+
+.home-intro .carousel-art::before,
+.home-intro .carousel-art::after {
   content: "";
   position: absolute;
   inset: auto 0 0;
@@ -662,7 +690,7 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
   pointer-events: none;
 }
 
-.home-intro .editorial-hero::before {
+.home-intro .carousel-art::before {
   height: clamp(80px, 15svh, 144px);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
@@ -670,7 +698,7 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
   mask-image: linear-gradient(transparent, #000 80%);
 }
 
-.home-intro .editorial-hero::after {
+.home-intro .carousel-art::after {
   height: clamp(40px, 8svh, 80px);
   -webkit-backdrop-filter: blur(28px);
   backdrop-filter: blur(28px);
@@ -689,12 +717,12 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
     transition: height 280ms cubic-bezier(.2, .8, .2, 1);
   }
 
-  .tab-screen:has(.home-intro) .home-logo {
-    transform: translateY(var(--hero-pull, 0px));
+  .home-intro .carousel-slide > img {
+    transform: scale(var(--hero-scale, 1));
     transition: transform 280ms cubic-bezier(.2, .8, .2, 1);
   }
 
-  .tab-screen[data-pulling] :is(.editorial-hero, .home-logo) {
+  .tab-screen[data-pulling] :is(.editorial-hero, .carousel-slide > img) {
     transition: none;
   }
 }
