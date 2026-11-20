@@ -5,6 +5,9 @@ import {ContentError,storeImage} from './content-store.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
 export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
+ const blogJobs=new Map();
+ const jobExpiry=30*60*1000;
+ const cleanBlogJobs=()=>{for(const [id,job] of blogJobs)if(job.created+jobExpiry<now()&&job.state!=='running')blogJobs.delete(id)};
  const sessions=new Map(),attempts=new Map(),hash=value=>createHash('sha256').update(value).digest('hex');
  const cookie=(value,age)=>`__Host-sizey_admin=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${age}`;
  const token=req=>String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('__Host-sizey_admin='))?.split('=')[1];
@@ -76,7 +79,29 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
    else if(path==='/hub-api/admin/blog/save'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);const article=blog.save(item.article,item.id);store.audit(user.id,'blog-save',article.slug);reply(200,{article})}
    else if(path==='/hub-api/admin/blog/publish'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);if(typeof item.id!=='string'||typeof item.published!=='boolean')throw new ContentError(400,'Неверное действие');const article=blog.publish(item.id,item.published,store.list('products'));store.audit(user.id,'blog-publish',article.slug);reply(200,{article})}
    else if(path==='/hub-api/admin/blog/ideas'&&req.method==='GET'){if(!blogAI)throw new ContentError(503,'Qwen недоступен');reply(200,{ideas:await blogAI.discover(store.list('products'))})}
-   else if(path==='/hub-api/admin/blog/generate'&&req.method==='POST'){if(!blogAI)throw new ContentError(503,'Qwen недоступен');const item=await body(req);const result=await blogAI.generate({topic:item.topic,products:store.list('products')});if(result.article){const article=blog.save(result.article);store.audit(user.id,'blog-ai-draft',article.slug);reply(200,{...result,article})}else reply(200,result)}
+   else if(path==='/hub-api/admin/blog/generate'&&req.method==='POST'){
+    if(!blogAI||!blog)throw new ContentError(503,'Qwen недоступен');
+    const item=await body(req),topic=item.topic;
+    if(typeof topic!=='string'||topic.trim().length<12||topic.length>140)throw new ContentError(400,'Тема должна содержать от 12 до 140 символов');
+    cleanBlogJobs();
+    if([...blogJobs.values()].some(j=>j.state==='running'&&j.owner===user.id))throw new ContentError(429,'Дождитесь завершения предыдущей генерации');
+    const id=randomBytes(24).toString('hex'),job={owner:user.id,created:now(),state:'running'};
+    blogJobs.set(id,job);
+    void (async()=>{try{
+     const result=await blogAI.generate({topic,products:store.list('products')});
+     if(result.article){const article=blog.save(result.article);store.audit(user.id,'blog-ai-draft',article.slug);job.result={...result,article}}
+     else job.result=result;
+     job.state='done';
+    }catch(e){job.state='failed';job.message=e instanceof ContentError?e.message:'Не удалось создать черновик. Проверьте доступность Qwen и повторите попытку.'}})();
+    reply(202,{jobId:id,state:'running'});
+   }
+   else if(path==='/hub-api/admin/blog/generate/status'&&req.method==='GET'){
+    cleanBlogJobs();
+    const id=new URL(req.url,'http://internal').searchParams.get('id');
+    const job=id&&blogJobs.get(id);
+    if(!job||job.owner!==user.id)throw new ContentError(404,'Задача не найдена или срок хранения истёк');
+    reply(200,{state:job.state,...(job.state==='done'?{result:job.result}:{}),...(job.state==='failed'?{message:job.message}:{})});
+   }
    else if(path==='/hub-api/admin/ai/status'&&req.method==='GET'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');reply(200,await descriptionAI.status())}
    else if(path==='/hub-api/admin/ai/settings'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.configure(await body(req));store.audit(user.id,'configure-description-ai','OpenRouter');reply(200,result)}
    else if(path==='/hub-api/admin/ai/keywords'&&req.method==='GET'){if(!keywordSuggestions)throw new ContentError(503,'Подсказки недоступны');const q=new URL(req.url,'http://internal').searchParams.get('q');reply(200,await keywordSuggestions.suggest(q))}

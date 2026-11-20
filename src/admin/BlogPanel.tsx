@@ -15,7 +15,19 @@ export default function BlogPanel({request}:{request:Request}){
  async function findIdeas(){setFinding(true);setError('');setNotice('');try{const result=await request<{ideas:{topic:string;score:number;sourceCount:number}[]}>('/blog/ideas');setIdeas(result.ideas);if(result.ideas.length===0)setNotice('Пока нет тем, прошедших порог 85/100 с подтверждёнными источниками.')}catch(e){setError((e as Error).message)}finally{setFinding(false)}}
  async function generate(e:FormEvent){e.preventDefault();await generateTopic(topic)}
  async function generateTopic(nextTopic:string){setTopic(nextTopic);setBusy(true);setError('');setNotice('');try{
-  const x=await request<{rejected:boolean;score:number;reason?:string;article?:Article}>('/blog/generate',{topic:nextTopic});
+  const started=await request<{jobId:string;state:string}>('/blog/generate',{topic:nextTopic});
+  if(!started.jobId)throw Error('Сервер не вернул номер задачи');
+  setNotice('Qwen готовит черновик. Это может занять до двух минут. Не закрывайте вкладку.');
+  let result:{state:string;result?:{rejected:boolean;score:number;reason?:string;article?:Article};message?:string}|undefined;
+  for(let attempt=0;attempt<100;attempt++){
+   await new Promise(resolve=>setTimeout(resolve,2000));
+   result=await request<typeof result>('/blog/generate/status?id='+encodeURIComponent(started.jobId));
+   if(result?.state!=='running')break;
+  }
+  if(!result||result.state==='running')throw Error('Генерация занимает слишком много времени. Обновите список статей позднее.');
+  if(result.state==='failed')throw Error(result.message||'Ошибка генерации Qwen');
+  const x=result.result;
+  if(!x)throw Error('Сервер не вернул результат генерации');
   if(x.rejected){setNotice('Тема отклонена ('+x.score+'/100): '+x.reason);return}
   if(x.article){open(x.article);setNotice('Qwen создал черновик. Проверьте все утверждения и источники до публикации.');await load()}
  }catch(e){setError((e as Error).message)}finally{setBusy(false)}}
