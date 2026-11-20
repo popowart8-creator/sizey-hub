@@ -37,7 +37,7 @@ export default function BlogPanel({request}:{request:Request}){
  async function save(e:FormEvent){e.preventDefault();setBusy(true);setError('');setNotice('');try{
   const parsed=sources.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map(s=>{const i=s.lastIndexOf(' | ');return{title:i>=0?s.slice(0,i):'',url:i>=0?s.slice(i+3):''}});
   const article={title,slug,summary,score:selected?.score??0,sections:sections.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean),sources:parsed,productIds:productIds.split(/[,;\s]+/).filter(Boolean).map(Number)};
-  const response=await request<{article:Article}>('/blog/save',{...(selected?{id:selected.id}:{}),article});open(response.article);setNotice('Черновик сохранён');await load();
+  const response=await request<{article:Article}>('/blog/save',{...(selected?{id:selected.id}:{}),article});setTab('drafts');open(response.article);setNotice('Черновик сохранён');await load();
  }catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  async function publish(item:Article,published:boolean){setBusy(true);setError('');setNotice('');try{const r=await request<{article:Article}>('/blog/publish',{id:item.id,published});if(selected?.id===item.id)open(r.article);setTab(published?'published':'drafts');setNotice(published?'Статья опубликована':'Статья скрыта');await load()}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  const visible=articles.filter(item=>item.published===(tab==='published'));
@@ -51,12 +51,12 @@ export default function BlogPanel({request}:{request:Request}){
   {drawer==='create'&&creationMode==='ai'?<><p className="blog-admin-note">Qwen исследует источники и подготовит неопубликованный черновик для проверки.</p><form onSubmit={generate}><label htmlFor="blog-topic">Тема статьи<input id="blog-topic" required minLength={12} maxLength={140} value={topic} onChange={e=>setTopic(e.target.value)} placeholder="Как выбрать платье на осень и с чем его носить"/></label><button className="primary" disabled={busy}><Sparkles size={17}/>{busy?'Создаём черновик…':'Исследовать и создать'}</button></form><button className="secondary" type="button" onClick={()=>void findIdeas()} disabled={finding||busy}>{finding?'Ищем темы…':'Подобрать темы автоматически'}</button>{ideas.length>0&&<div className="blog-admin-ideas">{ideas.map(idea=><button key={idea.topic} type="button" onClick={()=>void generateTopic(idea.topic)} disabled={busy||finding}><span>{idea.topic}<small>{idea.score}/100 · {idea.sourceCount} источников</small></span><ChevronRight size={17}/></button>)}</div>}</>:selected&&<><p className="blog-admin-note">{selected.published?'Статья опубликована. Снимите её с публикации для редактирования.':'Проверьте текст и источники перед публикацией.'}</p>
     <form onSubmit={save}>
     <label>Заголовок<input value={title} onChange={e=>setTitle(e.target.value)} required minLength={12} maxLength={140} disabled={selected?.published}/></label>
-    <label>Адрес статьи<input value={slug} onChange={e=>setSlug(e.target.value)} required maxLength={100} disabled={selected.published}/></label>
-    <label>Краткое описание<textarea rows={3} value={summary} onChange={e=>setSummary(e.target.value)} required disabled={selected.published}/></label>
-    <label>Абзацы — разделяйте пустой строкой<textarea rows={12} value={sections} onChange={e=>setSections(e.target.value)} required disabled={selected.published}/></label>
-    <label>Источники — «название | https://адрес», каждый с новой строки<textarea rows={5} value={sources} onChange={e=>setSources(e.target.value)} required disabled={selected.published}/></label>
-    <label>ID связанных товаров через запятую<input value={productIds} onChange={e=>setProductIds(e.target.value)} required disabled={selected.published}/></label>
-    {!selected?.published&&<button className="primary" disabled={busy}><Check size={17}/> Сохранить черновик</button>}
+    <label>Адрес статьи<input value={slug} onChange={e=>setSlug(e.target.value)} required maxLength={100} disabled={selected?.published}/></label>
+    <label>Краткое описание<textarea rows={3} value={summary} onChange={e=>setSummary(e.target.value)} required disabled={selected?.published}/></label>
+    <label>Абзацы — разделяйте пустой строкой<textarea rows={12} value={sections} onChange={e=>setSections(e.target.value)} required disabled={selected?.published}/></label>
+    <label>Источники (необязательно для ручной статьи) — «название | https://адрес»<textarea rows={5} value={sources} onChange={e=>setSources(e.target.value)} disabled={selected?.published}/></label>
+    <label>ID связанных товаров через запятую<input value={productIds} onChange={e=>setProductIds(e.target.value)} required disabled={selected?.published}/></label>
+    {!selected?.published&&<button className="primary" disabled={busy}><Check size={17}/> {selected?'Сохранить изменения':'Создать черновик'}</button>}
    </form>
 
  {selected&&<div className="blog-admin-publish"><span>{selected.sources.length?`Оценка ${selected.score}/100`:"Ручная статья"}</span><button className={selected.published?'secondary':'primary'} type="button" onClick={()=>void publish(selected,!selected.published)} disabled={busy||(!selected.published&&selected.sources.length>0&&selected.score<85)}>{selected.published?'Снять с публикации':'Опубликовать'}</button></div>}{selected&&!selected.published&&<button className="blog-admin-delete" type="button" disabled={busy} onClick={()=>void remove(selected)}><Trash2 size={16}/> Удалить черновик</button>}</>}
