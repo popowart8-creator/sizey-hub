@@ -652,7 +652,7 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 
 .product-screen label.detail-cart-action{margin-top:0;font-size:17px;line-height:1.4}
 
-/* Gradually soften the photograph before it meets the white catalog. */
+/* Increase the blur toward the bottom without tinting the photograph. */
 .home-intro .editorial-hero::before,
 .home-intro .editorial-hero::after {
   content: "";
@@ -676,5 +676,25 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
   backdrop-filter: blur(28px);
   -webkit-mask-image: linear-gradient(transparent, #000 75%);
   mask-image: linear-gradient(transparent, #000 75%);
-  background: linear-gradient(transparent 65%, #fff);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.home-intro),
+  html.sizey-android-shell .tab-screen:has(.home-intro) {
+    overscroll-behavior-y: none;
+  }
+
+  .home-intro .editorial-hero {
+    height: calc(50svh + var(--hero-pull, 0px));
+    transition: height 280ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .tab-screen:has(.home-intro) .home-logo {
+    transform: translateY(var(--hero-pull, 0px));
+    transition: transform 280ms cubic-bezier(.2, .8, .2, 1);
+  }
+
+  .tab-screen[data-pulling] :is(.editorial-hero, .home-logo) {
+    transition: none;
+  }
 }
