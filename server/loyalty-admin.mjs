@@ -28,6 +28,21 @@ function validateSettings(body){
   return typeof value==='string'&&value.trim().length>0&&value.length<=128;
  });
 }
+function validateEmployee(body,creating){
+ if(!body||typeof body!=='object'||Array.isArray(body))return false;
+ const entries=Object.entries(body);
+ const allowed=new Set(['name','phone','login','password','role','status']);
+ if(!entries.length||entries.some(([key])=>!allowed.has(key)))return false;
+ if(creating&&(!body.name||!body.login||!body.password||!body.role))return false;
+ return entries.every(([key,value])=>{
+  if(typeof value!=='string'||!value.trim()||value.length>160)return false;
+  if(key==='role')return ['ADMIN','CASHIER'].includes(value);
+  if(key==='status')return ['ACTIVE','BLOCKED'].includes(value);
+  if(key==='password')return value.length>=10&&value.length<=128;
+  if(key==='phone')return /^\\+?\\d[\\d\\s()-]{8,19}$/.test(value);
+  return true;
+ });
+}
 function validateClientPatch(body){
  if(!body||typeof body!=='object'||Array.isArray(body))return false;
  const entries=Object.entries(body);
@@ -42,8 +57,10 @@ export async function loyaltyAdminRequest({path,method,query='',accessToken,body
   // Production ClientsController and UpdateClientDto were verified by the read-only contract inspection.
   const clientPatch=method==='PATCH'&&/^\/clients\/[a-f0-9-]{36}$/i.test(path);
   if(clientPatch&&!validateClientPatch(body))return {status:400,data:{message:'Некорректные данные клиента'}};
+  const employeeWrite=(path==='/users'&&method==='POST')||(path.startsWith('/users/')&&route.upstream==='/api/users/:id'&&method==='PATCH');
+  if(employeeWrite&&!validateEmployee(body,method==='POST'))return {status:400,data:{message:'Некорректные данные сотрудника'}};
   // Other write DTOs have not been verified against the production NestJS source.
-  if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!clientPatch&&!(path==='/sales/preview'&&method==='POST'))
+  if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!clientPatch&&!employeeWrite&&!(path==='/sales/preview'&&method==='POST'))
     return {status:501,data:{message:'Изменение данных ожидает проверки контракта действующей системы'}};
   if(path==='/settings'&&method==='PATCH'&&!validateSettings(body))
     return {status:400,data:{message:'Некорректные настройки программы лояльности'}};
