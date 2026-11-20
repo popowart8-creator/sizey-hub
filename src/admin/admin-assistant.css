@@ -1,19 +1,18 @@
-.admin-assistant {
+.heading-actions { flex-wrap: wrap; }
+.admin-shell:has(.editor-overlay, .blog-admin-editor) .admin-assistant { display: none; }
+.admin-assistant .assistant-trigger {
+ white-space: nowrap;
+}
+#admin-assistant-panel[open] {
+ display: flex;
  position: fixed;
  z-index: 45;
- right: max(1rem, env(safe-area-inset-right));
- bottom: max(1rem, env(safe-area-inset-bottom));
- display: flex;
- flex-direction: column;
- align-items: flex-end;
- gap: .75rem;
-}
-.admin-assistant .assistant-trigger {
- border-radius: 999px;
- box-shadow: 0 5px 20px #20282026;
-}
-#admin-assistant-panel {
- display: flex;
+ inset: auto max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) auto;
+ margin: 0;
+ padding: 0;
+ max-width: none;
+ max-height: none;
+ color: inherit;
  flex-direction: column;
  width: min(420px, calc(100vw - 2rem));
  height: min(560px, calc(100dvh - 6rem));
@@ -50,3 +49,19 @@
  resize: none;
 }
 .assistant-error { margin: 0; padding: .55rem 1rem; color: #9a3329; }
+
+@media (max-width: 760px) {
+ #admin-assistant-panel[open] {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+ }
+ #admin-assistant-panel header { padding-top: max(.8rem, env(safe-area-inset-top)); }
+ #admin-assistant-panel form { padding-bottom: max(.8rem, env(safe-area-inset-bottom)); }
+ #admin-assistant-panel textarea { font-size: 16px; }
+ body:has(#admin-assistant-panel:modal) { overflow: hidden; }
+}
