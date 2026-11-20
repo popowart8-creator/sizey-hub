@@ -1,5 +1,7 @@
 name: Validate admin client integration
 on:
+  push:
+    branches: ['feat/clients-unified-sidebar']
   pull_request:
     paths:
       - 'src/admin/**'
