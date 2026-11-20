@@ -59,5 +59,11 @@ export function blogStore(path,{now=Date.now}={}){
   db.prepare('UPDATE blog_articles SET published=?,published_at=?,updated=? WHERE id=?').run(published?1:0,published?article.publishedAt||now():null,now(),id);
   return find(id);
  }
- return{list,publicList,publicOne,save,publish,close:()=>db.close()};
+ function remove(id){
+  const article=find(id);if(!article)fail('Статья не найдена',404);
+  if(article.published)fail('Сначала снимите статью с публикации',409);
+  db.prepare('DELETE FROM blog_articles WHERE id=?').run(id);
+  return article;
+ }
+ return{list,publicList,publicOne,save,publish,remove,close:()=>db.close()};
 }
