@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {ContentError,storeImage} from './content-store.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
-export function createAdmin({store,analytics,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
+export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
  const sessions=new Map(),attempts=new Map(),hash=value=>createHash('sha256').update(value).digest('hex');
  const cookie=(value,age)=>`__Host-sizey_admin=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${age}`;
@@ -12,7 +12,7 @@ export function createAdmin({store,analytics,descriptionAI,keywordSuggestions,st
  async function actor(req){const sid=token(req),session=sid&&sessions.get(hash(sid));if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');let user;try{user=await staffAuth.me(session.accessToken)}catch{sessions.delete(hash(sid));throw new ContentError(401,'Сессия завершилась. Войдите снова.')}if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');return user}
  return async(req,res)=>{
   const path=new URL(req.url,'http://internal').pathname;
-  if(path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/'))return false;
+  if(!path.startsWith('/hub-api/blog')&&path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/'))return false;
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
   try{
    if(path==='/hub-api/events'){
@@ -26,7 +26,9 @@ export function createAdmin({store,analytics,descriptionAI,keywordSuggestions,st
     if(ingestRates.size>10000)for(const[k,v]of ingestRates)if(v.minute!==minute)ingestRates.delete(k);
     reply(202,{accepted:analytics.collect(await body(req),{ip:String(req.headers['x-real-ip']||req.socket.remoteAddress)})});return true;
    }
-   if(path==='/hub-api/content'&&req.method==='GET'){reply(200,store.publicContent());return true}
+   if(path==='/hub-api/blog'&&req.method==='GET'){reply(200,{articles:blog?.publicList()||[]});return true}
+    if(path.startsWith('/hub-api/blog/')&&req.method==='GET'){const slug=path.slice('/hub-api/blog/'.length);const article=blog?.publicOne(slug);if(!article)throw new ContentError(404,'Статья не найдена');reply(200,{article});return true}
+    if(path==='/hub-api/content'&&req.method==='GET'){reply(200,store.publicContent());return true}
    if(path.startsWith('/hub-api/media/')&&req.method==='GET'){const name=path.slice('/hub-api/media/'.length);if(!/^[a-f0-9]{64}\.(jpg|png|webp)$/.test(name))throw new ContentError(404,'Фотография не найдена');let data;try{data=readFileSync(join(mediaDirectory,name))}catch{throw new ContentError(404,'Фотография не найдена')}res.writeHead(200,{'Content-Type':name.endsWith('.jpg')?'image/jpeg':name.endsWith('.png')?'image/png':'image/webp','Cache-Control':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff'});res.end(data);return true}
    if(['POST','PATCH','PUT','DELETE'].includes(req.method)){if(req.headers.origin!==origin)throw new ContentError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ContentError(415,'Ожидается JSON')}
    if(path==='/hub-api/admin/login'&&req.method==='POST'){
@@ -52,6 +54,10 @@ export function createAdmin({store,analytics,descriptionAI,keywordSuggestions,st
     const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p]));
     reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'}))});
    }
+   else if(path==='/hub-api/admin/blog'&&req.method==='GET'){if(!blog)throw new ContentError(503,'Блог недоступен');reply(200,{articles:blog.list()})}
+   else if(path==='/hub-api/admin/blog/save'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);const article=blog.save(item.article,item.id);store.audit(user.id,'blog-save',article.slug);reply(200,{article})}
+   else if(path==='/hub-api/admin/blog/publish'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);if(typeof item.id!=='string'||typeof item.published!=='boolean')throw new ContentError(400,'Неверное действие');const article=blog.publish(item.id,item.published,store.list('products'));store.audit(user.id,'blog-publish',article.slug);reply(200,{article})}
+   else if(path==='/hub-api/admin/blog/generate'&&req.method==='POST'){if(!blogAI)throw new ContentError(503,'Qwen недоступен');const item=await body(req);const result=await blogAI.generate({topic:item.topic,products:store.list('products')});if(result.article){const article=blog.save(result.article);store.audit(user.id,'blog-ai-draft',article.slug);reply(200,{...result,article})}else reply(200,result)}
    else if(path==='/hub-api/admin/ai/status'&&req.method==='GET'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');reply(200,await descriptionAI.status())}
    else if(path==='/hub-api/admin/ai/settings'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.configure(await body(req));store.audit(user.id,'configure-description-ai','OpenRouter');reply(200,result)}
    else if(path==='/hub-api/admin/ai/keywords'&&req.method==='GET'){if(!keywordSuggestions)throw new ContentError(503,'Подсказки недоступны');const q=new URL(req.url,'http://internal').searchParams.get('q');reply(200,await keywordSuggestions.suggest(q))}
