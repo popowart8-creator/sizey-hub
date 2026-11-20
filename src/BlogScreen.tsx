@@ -11,13 +11,17 @@ export type BlogArticle={
  sources:{title:string;url:string}[];productIds:number[];publishedAt:number|null;score:number
 };
 type Item={id:number;name:string;price:number;img:string};
+const BLOG_CACHE_KEY='sizey:blog:articles:v1';
+const BLOG_CACHE_TTL=5*60_000;
+function readBlogCache():{articles:BlogArticle[];time:number}|null{try{const raw=sessionStorage.getItem(BLOG_CACHE_KEY);if(!raw)return null;const data=JSON.parse(raw);return Array.isArray(data.articles)&&typeof data.time==='number'?data:null}catch{return null}}
+
 export default function BlogScreen({products,initialSlug,onExplore,onProduct,onArticleChange}:{
  products:Item[];initialSlug?:string;onExplore:(slug?:string)=>void;onProduct:(id:number,slug:string)=>void;onArticleChange:(slug:string)=>void
 }){
- const[articles,setArticles]=useState<BlogArticle[]>([]);
+ const[articles,setArticles]=useState<BlogArticle[]>(()=>readBlogCache()?.articles||[]);
  const[active,setActive]=useState<BlogArticle|null>(null);
- const[loading,setLoading]=useState(true),[error,setError]=useState('');
- useEffect(()=>{let alive=true;fetch('/hub-api/blog',{cache:'no-store',credentials:'omit'}).then(async response=>{if(!response.ok)throw Error('Блог временно недоступен');const data=await response.json();if(!Array.isArray(data.articles))throw Error('Неверные данные блога');return data.articles as BlogArticle[]}).then(items=>{if(alive){setArticles(items);const direct=initialSlug&&items.find(x=>x.slug===initialSlug);if(direct){setActive(direct);track('blog_article_open',{articleSlug:direct.slug})}}}).catch(()=>{if(alive)setError('Не удалось загрузить статьи')}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}},[]);
+ const[loading,setLoading]=useState(()=>!readBlogCache()),[error,setError]=useState('');
+ useEffect(()=>{let alive=true;const cached=readBlogCache();if(cached){setArticles(cached.articles);setLoading(false);const direct=initialSlug&&cached.articles.find(x=>x.slug===initialSlug);if(direct)setActive(direct);if(Date.now()-cached.time<BLOG_CACHE_TTL)return()=>{alive=false}}fetch('/hub-api/blog',{cache:'no-store',credentials:'omit'}).then(async response=>{if(!response.ok)throw Error('Блог временно недоступен');const data=await response.json();if(!Array.isArray(data.articles))throw Error('Неверные данные блога');return data.articles as BlogArticle[]}).then(items=>{if(alive){try{sessionStorage.setItem(BLOG_CACHE_KEY,JSON.stringify({articles:items,time:Date.now()}))}catch{}setArticles(items);const direct=initialSlug&&items.find(x=>x.slug===initialSlug);if(direct){setActive(direct);track('blog_article_open',{articleSlug:direct.slug})}}}).catch(()=>{if(alive&&!cached)setError('Не удалось загрузить статьи')}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}},[]);
  useEffect(()=>onArticleChange(active?.slug||''),[active?.slug,onArticleChange]);
  useEffect(()=>{if(!active)return;const oldTitle=document.title,meta=document.querySelector<HTMLMetaElement>('meta[name="description"]'),oldDescription=meta?.content;document.title=active.title+' — SIZEY';if(meta)meta.content=active.summary;return()=>{document.title=oldTitle;if(meta&&oldDescription!==undefined)meta.content=oldDescription}},[active?.slug]);
  useLayerBack(!!active,'blog-article',()=>setActive(null));
