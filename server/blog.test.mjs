@@ -73,9 +73,23 @@ test('Qwen blog creates a valid draft from compact inference and distinct source
  assert.equal(result.rejected,false,JSON.stringify({sources:await ai.collectSources('Как выбрать пальто'),rank:scoreTopic('Как выбрать пальто и с чем носить: гид по выбору одежды',products,await ai.collectSources('Как выбрать пальто'))}));
  assert.equal(result.article.sources.length,4);
  assert.equal(result.article.productIds[0],1);
- assert.equal(prompt.options.num_ctx,1536);
- assert.equal(prompt.options.num_predict,320);
+ assert.equal(prompt.options.num_ctx,1024);
+ assert.equal(prompt.options.num_predict,170);
  assert.equal(prompt.messages[1].content.length<1600,true);
  const dir=room(),blog=blogStore(join(dir,'blog.sqlite'));
  try{assert.equal(blog.save(result.article).published,false)}finally{blog.close();rmSync(dir,{recursive:true,force:true})}
+});
+
+test('Qwen outage still returns a complete unpublished editorial draft',async()=>{
+ const products=[{id:1,name:'Пальто',cat:'Пальто',categories:['Пальто'],published:true}];
+ const feed='<rss><channel>'+['one.example','two.example','three.example'].map((host,i)=>'<item><title>Советы по выбору пальто '+i+'</title><description>Практический материал о выборе и сочетании одежды.</description><link>https://'+host+'/style</link></item>').join('')+'</channel></rss>';
+ const ai=createBlogAI({fetchImpl:async url=>{
+  if(String(url).includes('bing.com'))return{ok:true,text:async()=>feed};
+  throw Error('Ollama unavailable');
+ }});
+ const result=await ai.generate({topic:'Как выбрать пальто и с чем носить: гид по выбору одежды',products});
+ assert.equal(result.rejected,false);
+ assert.match(result.warning,/Qwen недоступен/);
+ const dir=room(),blog=blogStore(join(dir,'blog.sqlite'));
+ try{const saved=blog.save(result.article);assert.equal(saved.published,false);assert.equal(saved.sections.length,3)}finally{blog.close();rmSync(dir,{recursive:true,force:true})}
 });

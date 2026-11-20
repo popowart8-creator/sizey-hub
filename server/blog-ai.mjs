@@ -47,31 +47,41 @@ export function createBlogAI({fetchImpl=fetch,endpoint=process.env.OLLAMA_URL||'
   if(typeof topic!=='string'||topic.trim().length<12||topic.length>140)fail('Тема должна содержать от 12 до 140 символов');
   const sources=await collectSources(topic.trim()),rank=scoreTopic(topic,products,sources);
   if(rank.score<85) return{rejected:true,score:rank.score,reason:sources.length<2?'Недостаточно независимых интернет-источников для проверенного материала':'Низкий коммерческий потенциал или нет подходящих товаров',sources};
-  // Keep inference small enough for a local 1.5B model; the complete sources stay in the draft.
-  const allowedProducts=products.filter(p=>rank.productIds.includes(p.id)).slice(0,2).map(p=>({name:String(p.name||'').slice(0,100),cat:String(p.cat||'').slice(0,60),description:String(p.description||'').slice(0,100)}));
-  const evidence=sources.slice(0,3).map(s=>({title:s.title.slice(0,130),description:s.description.slice(0,110)}));
-  const system='Ты редактор магазина одежды SIZEY. Ответь одним JSON-объектом: {"title":"...","summary":"...","sections":["...","...","..."]}. Заголовок 12-140 символов, summary 35-90 символов, 2 абзаца по 55-110 символов. Только проверяемые сведения из данных; не придумывай факты, скидки, составы, наличие и цифры. Пиши по-русски, без markdown.';
-  const request={model,stream:false,format:'json',messages:[{role:'system',content:system},{role:'user',content:JSON.stringify({topic,sources:evidence,products:allowedProducts})}],options:{temperature:0.15,num_predict:320,num_ctx:1536},think:false};
-  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),115000);
+  // A valid, editable draft must not depend on a small model returning perfect JSON.
+  const uniqueSources=[],domains=new Set();
+  for(const source of sources){
+   const host=new URL(source.url).hostname.replace(/^www\./,'').toLowerCase();
+   if(!domains.has(host)){uniqueSources.push({title:source.title,url:source.url});domains.add(host)}
+   if(uniqueSources.length>=6)break;
+  }
+  if(uniqueSources.length<2)return{rejected:true,score:rank.score,reason:'Недостаточно независимых интернет-источников',sources};
+  const matched=products.filter(p=>rank.productIds.includes(p.id)).slice(0,3);
+  const category=String(matched[0]?.cat||'одежды').trim().slice(0,80);
+  const title=topic.trim().slice(0,140);
+  const sections=[
+   'При выборе '+category.toLowerCase()+' начните с собственных задач: где и как часто вы планируете носить вещь, с чем будете её сочетать и насколько вам удобно в выбранном фасоне. Сравните несколько вариантов перед покупкой.',
+   'Оцените посадку и сочетаемость с уже имеющимся гардеробом. Сверяйте характеристики, размер и доступность с карточкой конкретного товара: они могут различаться даже у внешне похожих моделей.',
+   'Для дополнительной проверки советов изучите указанные ниже независимые материалы. Ссылки приведены для редакторской проверки; содержание источников необходимо сверить перед публикацией.'
+  ];
+  const article={slug:'sizey-'+Date.now().toString(36),title,summary:'Практический черновик о выборе '+category.toLowerCase()+': на что обратить внимание и как сопоставить варианты с каталогом SIZEY.',sections,sources:uniqueSources,productIds:rank.productIds,score:rank.score};
+  // Qwen only improves one paragraph. Its failure cannot destroy a useful draft.
+  let warning=null;
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),35000);
   try{
-   let response;
-   try{response=await fetchImpl(endpoint.replace(/\/$/,'')+'/api/chat',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(request)})}
-   catch(e){if(controller.signal.aborted)fail('Qwen превысил лимит времени (115 секунд). Попробуйте ещё раз.',504);fail('Нет соединения с локальной моделью Qwen',503)}
-   if(!response.ok)fail('Qwen отклонил запрос (HTTP '+response.status+')',503);
-   let data;
-   try{data=await response.json()}catch{fail('Qwen вернул повреждённый ответ',502)}
-   let article;
-   try{
-    const raw=String(data.message?.content||'').trim().replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'');
-    article=JSON.parse(raw);
-   }catch{fail('Qwen вернул некорректный JSON. Повторите генерацию.',502)}
-   if(!article||typeof article.title!=='string'||article.title.trim().length<12||typeof article.summary!=='string'||article.summary.trim().length<30||!Array.isArray(article.sections)||article.sections.length<2||article.sections.some(x=>typeof x!=='string'||x.trim().length<50))fail('Qwen создал неполный текст. Повторите генерацию.',502);
-   const uniqueSources=[],domains=new Set();
-   for(const source of sources){const host=new URL(source.url).hostname.replace(/^www\./,'').toLowerCase();if(!domains.has(host)){uniqueSources.push({title:source.title,url:source.url});domains.add(host)}if(uniqueSources.length>=6)break}
-   if(uniqueSources.length<2)fail('Недостаточно независимых источников',422);
-   return{rejected:false,article:{slug:'sizey-'+Date.now().toString(36),title:article.title.trim().slice(0,140),summary:article.summary.trim().slice(0,450),sections:article.sections.slice(0,8).map(x=>x.trim().slice(0,2500)),sources:uniqueSources,productIds:rank.productIds,score:rank.score},score:rank.score,reviewRequired:true};
+   const request={model,stream:false,messages:[
+    {role:'system',content:'Ты редактор магазина одежды. Верни только один абзац на русском языке (80–250 символов), без JSON, списков, выдуманных фактов, скидок и утверждений о наличии.'},
+    {role:'user',content:JSON.stringify({topic:title,productNames:matched.map(p=>String(p.name||'').slice(0,65)),sourceHeadlines:uniqueSources.slice(0,2).map(x=>x.title.slice(0,80))})}
+   ],options:{temperature:0.2,num_predict:170,num_ctx:1024},think:false};
+   const response=await fetchImpl(endpoint.replace(/\/$/,'')+'/api/chat',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
+   if(!response.ok)throw Error('ollama-http-'+response.status);
+   const data=await response.json();
+   const paragraph=String(data.message?.content||'').trim().replace(/^["']|["']$/g,'');
+   if(paragraph.length>=80&&paragraph.length<=500&&!/[\{\}\[\]]/.test(paragraph))article.sections[0]=paragraph;
+   else warning='Qwen вернул неподходящий текст; сохранён базовый черновик';
+  }catch(e){
+   warning=controller.signal.aborted?'Qwen не ответил за 35 секунд; сохранён базовый черновик':'Qwen недоступен; сохранён базовый черновик';
   }finally{clearTimeout(timeout)}
-
+  return{rejected:false,article,score:rank.score,reviewRequired:true,...(warning?{warning}:{})};
  }
  return{generate,discover,collectSources,scoreTopic};
 }
