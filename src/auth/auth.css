@@ -127,3 +127,26 @@ body>.password-screen .password-card form>.blackbtn{box-sizing:border-box;width:
 .customerbonus .sizey-bonus-number{font-size:clamp(40px,10vw,56px);font-weight:700;letter-spacing:-.055em}
 .customerbonus .sizey-bonus-level{font-size:11px;color:#aaa;margin-top:8px}
 @media(max-width:390px){.customerbonus .sizey-bonus-card{min-height:192px;padding:23px}.customerbonus .sizey-bonus-card-content{min-height:146px}}
+
+
+/* Profile layout: one shared outer grid, compact identity header, aligned menu edges. */
+.authpage:has(.customerlayout){width:100%;max-width:1200px;margin:0 auto;box-sizing:border-box}
+.authpage:has(.customerlayout) .customerlayout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:0;width:100%}
+.authpage:has(.customerlayout) .customerlayout>section{min-width:0;width:100%}
+.authpage:has(.customerlayout) .customer-profile-heading{padding:10px 0 4px}
+.authpage:has(.customerlayout) .customer-profile-heading h3{font-size:clamp(23px,4vw,30px);font-weight:700;line-height:1.15;letter-spacing:-.035em;margin:0 0 5px}
+.authpage:has(.customerlayout) .customer-profile-heading p{font-size:13px;line-height:1.4;margin:0;color:#888}
+.authpage:has(.customerlayout) .customerbonus{width:100%}
+.authpage:has(.customerlayout) .sizey-bonus-history{margin-top:10px}
+.authpage:has(.customerlayout) .profile-account-actions{width:100%;margin:0;padding:0 0 36px}
+.authpage:has(.customerlayout) .profilerow{padding-inline:0!important;margin-inline:0!important}
+.authpage:has(.customerlayout) .sizey-bonus-card{--grade-start:#242424;--grade-end:#0a0a0b;--grade-ink:#d3d3d3;min-height:184px;padding:23px 24px;border-radius:22px;background:linear-gradient(125deg,var(--grade-start),var(--grade-end));box-shadow:0 10px 26px rgba(0,0,0,.13)}
+.authpage:has(.customerlayout) .sizey-bonus-card-content{min-height:138px}
+.authpage:has(.customerlayout) .sizey-bonus-main{margin:19px 0 0}
+.authpage:has(.customerlayout) .sizey-bonus-card:after{display:none}
+.authpage:has(.customerlayout) .sizey-bonus-grade{color:var(--grade-ink);border-color:color-mix(in srgb,var(--grade-ink) 36%,transparent);background:color-mix(in srgb,var(--grade-ink) 10%,transparent)}
+.authpage:has(.customerlayout) .sizey-bonus-card--bronze{--grade-start:#593c30;--grade-end:#211815;--grade-ink:#e6b38c}
+.authpage:has(.customerlayout) .sizey-bonus-card--silver{--grade-start:#5b646e;--grade-end:#222831;--grade-ink:#e4edf7}
+.authpage:has(.customerlayout) .sizey-bonus-card--gold{--grade-start:#725823;--grade-end:#2b2314;--grade-ink:#ffdc84}
+.authpage:has(.customerlayout) .sizey-bonus-card--platinum{--grade-start:#414d63;--grade-end:#191e2c;--grade-ink:#d8e4ff}
+@media(max-width:800px){.authpage:has(.customerlayout){padding-inline:16px}.authpage:has(.customerlayout) .customerlayout{gap:12px}.authpage:has(.customerlayout) .customer-profile-heading{padding-top:4px}.authpage:has(.customerlayout) .profile-account-actions{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
