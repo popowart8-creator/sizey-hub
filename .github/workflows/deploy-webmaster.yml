@@ -1,0 +1,50 @@
+name: Deploy Yandex Webmaster analytics
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sizey-production
+  cancel-in-progress: false
+jobs:
+  deploy_webmaster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate server code
+        run: |
+          node --check server/admin.mjs
+          npm ci --prefix server
+          node --test server/admin.test.mjs
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$SSH_KEY" && test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          python3 -c 'import os,pathlib,base64; raw=os.environ["SSH_KNOWN_HOSTS"].replace("\\n","\n").replace("\r","").replace("\ufeff",""); keys=[t for t in raw.split() if t.startswith("AAAAC3NzaC1lZDI1NTE5")]; assert len(keys)==1; key=keys[0]; decoded=base64.b64decode(key,validate=True); assert decoded[:15]==b"\\x00\\x00\\x00\\x0bssh-ed25519" and len(decoded)==51; pathlib.Path.home().joinpath(".ssh/known_hosts").write_text("95.181.213.9 ssh-ed25519 "+key+"\n")'
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Deploy server integration
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
+          WEBMASTER_TOKEN: ${{ secrets.YANDEX_WEBMASTER_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SSHPASS" && test -n "$WEBMASTER_TOKEN"
+          command -v sshpass || (sudo apt-get update -qq && sudo apt-get install -y -qq sshpass)
+          options=(-o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes)
+          target="/root/sizey-webmaster-$GITHUB_RUN_ID"
+          sshpass -e ssh "${options[@]}" root@95.181.213.9 "umask 077; mkdir -p '$target'"
+          tar -czf - server/admin.mjs deploy/install-webmaster.py | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
+          printf '%s' "$WEBMASTER_TOKEN" | sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 -c 'import os,pathlib,re,sys; v=sys.stdin.read().strip(); assert re.fullmatch(r\"[A-Za-z0-9_.-]{16,4096}\",v); p=pathlib.Path(\"/opt/sizey/hub-api/webmaster.env\"); fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600); os.write(fd,(\"YANDEX_WEBMASTER_TOKEN=\"+v+\"\\n\").encode()); os.close(fd); os.chmod(p,0o600); print(\"Webmaster credential installed (hidden)\")'"
+          sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 '$target/deploy/install-webmaster.py'"
+      - name: Remove SSH key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
