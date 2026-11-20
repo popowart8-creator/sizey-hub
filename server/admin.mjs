@@ -78,6 +78,7 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
    }
    else if(path==='/hub-api/admin/blog'&&req.method==='GET'){if(!blog)throw new ContentError(503,'Блог недоступен');reply(200,{articles:blog.list()})}
    else if(path==='/hub-api/admin/blog/save'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);const article=blog.save(item.article,item.id);store.audit(user.id,'blog-save',article.slug);reply(200,{article})}
+   else if(path==='/hub-api/admin/blog/delete'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);if(typeof item.id!=='string'||!item.id)throw new ContentError(400,'Укажите черновик');const article=blog.remove(item.id);store.audit(user.id,'blog-delete',article.slug);reply(200,{ok:true})}
    else if(path==='/hub-api/admin/blog/publish'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);if(typeof item.id!=='string'||typeof item.published!=='boolean')throw new ContentError(400,'Неверное действие');const article=blog.publish(item.id,item.published,store.list('products'));store.audit(user.id,'blog-publish',article.slug);reply(200,{article})}
    else if(path==='/hub-api/admin/blog/ideas'&&req.method==='GET'){if(!blogAI)throw new ContentError(503,'Qwen недоступен');reply(200,{ideas:await blogAI.discover(store.list('products'))})}
    else if(path==='/hub-api/admin/blog/generate'&&req.method==='POST'){
