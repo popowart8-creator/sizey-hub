@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {ContentError,storeImage} from './content-store.mjs';
 import {prepareAssistantReply,saveAssistantAnswer} from './admin-assistant.mjs';
+import {ApiError} from './auth.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
 export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
@@ -14,7 +15,7 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
  const token=req=>String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('__Host-sizey_admin='))?.split('=')[1];
  async function body(req,limit=32768){let size=0,parts=[];for await(const part of req){size+=part.length;if(size>limit)throw new ContentError(413,'Запрос слишком большой');parts.push(part)}try{const data=JSON.parse(Buffer.concat(parts).toString());if(!data||typeof data!=='object'||Array.isArray(data))throw Error();return data}catch{throw new ContentError(400,'Некорректные данные')}}
  async function actor(req){const sid=token(req),session=sid&&sessions.get(hash(sid));if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');let user;try{user=await staffAuth.me(session.accessToken)}catch{sessions.delete(hash(sid));throw new ContentError(401,'Сессия завершилась. Войдите снова.')}if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');return user}
- return async(req,res)=>{
+ return async(req,res,customerAccess)=>{
   const path=new URL(req.url,'http://internal').pathname;
   if(!path.startsWith('/hub-api/blog')&&path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/'))return false;
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
@@ -44,6 +45,13 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
    }
    if(path==='/hub-api/admin/logout'&&req.method==='POST'){const sid=token(req);if(sid)sessions.delete(hash(sid));reply(200,{ok:true},cookie('',0));return true}
    const user=await actor(req);
+   const accessRoute=/^\/hub-api\/admin\/clients\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\/access$/i.exec(path);
+   if(accessRoute){
+    if(!customerAccess)throw new ContentError(503,'Доступ клиентов временно недоступен');
+    if(req.method!=='GET'&&req.method!=='POST')throw new ContentError(405,'Метод не поддерживается');
+    reply(200,await customerAccess(user,accessRoute[1],req.method==='POST'?await body(req,4096):undefined));
+    return true;
+   }
    if(path.startsWith('/hub-api/admin/loyalty/')){
     const sid=token(req),session=sid&&sessions.get(hash(sid));
     const subpath=path.slice('/hub-api/admin/loyalty'.length);
@@ -159,7 +167,7 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
    else if(req.method==='GET'&&path==='/hub-api/admin/activity')reply(200,{activity:store.summary().recent});
    else if(req.method==='POST'&&path==='/hub-api/admin/images'){const value=storeImage(mediaDirectory,await body(req,4300000));store.audit(user.id,'upload-image',value.split('/').pop());reply(201,{url:value})}
    else {const match=/^\/hub-api\/admin\/(products|banners)(?:\/([\w-]+))?$/.exec(path);if(!match)throw new ContentError(404,'Раздел не найден');const kind=match[1],id=match[2];if(req.method==='GET'&&!id)reply(200,{[kind]:store.list(kind),...(kind==='products'?{orderRevision:store.orderRevision()}:{})});else if(req.method==='POST'){const b=await body(req);reply(id?200:201,{item:store.save(kind,b,user.id,kind==='products'&&id?Number(id):id)})}else throw new ContentError(405,'Метод не поддерживается')}
-  }catch(error){reply(error instanceof ContentError?error.status:500,{message:error instanceof ContentError?error.message:'Не удалось выполнить запрос. Попробуйте позже.'})}
+  }catch(error){const known=error instanceof ContentError||error instanceof ApiError;reply(known?error.status:500,{message:known?error.message:'Не удалось выполнить запрос. Попробуйте позже.'})}
   return true;
  };
 }
