@@ -29,6 +29,7 @@ jobs:
       - run: npm run test:startup
       - run: npm run test:auth
       - run: npm run test:bonus-cabinet
+      - run: node --test server/blog.test.mjs
       - run: npm run build
       - run: node deploy/precompress.mjs
       - uses: actions/upload-artifact@v4
