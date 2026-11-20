@@ -40,6 +40,6 @@ test('loyalty BFF requires active admin session and same-origin writes',async()=
   const unknown=await fetch(base+'/loyalty/unknown',{headers:{Cookie:cookie}});
   assert.equal(unknown.status,404);
   const financial=await fetch(base+'/loyalty/sales/manual-accrual',{method:'POST',headers:{Cookie:cookie,Origin:'https://admmm.sizey.ru','Content-Type':'application/json'},body:'{}'});
-  assert.equal(financial.status,501);
+  assert.equal(financial.status,400);
  }finally{await new Promise(resolve=>server.close(resolve));x.close()}
 });

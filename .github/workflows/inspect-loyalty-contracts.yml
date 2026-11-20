@@ -46,6 +46,11 @@ jobs:
           root=Path('/opt/sizey/app/backend/src')
           assert root.is_dir(), 'Backend source directory unavailable'
           folders=('clients','users','sales','bonus','settings','auth')
+          for dto in sorted((root/'sales'/'dto').glob('*.ts')):
+              print('FINANCIAL_DTO',dto.name)
+              for line in dto.read_text(errors='replace').splitlines():
+                  if line.strip().startswith('import '): continue
+                  print(line[:240])
           for folder in folders:
               directory=root/folder
               if not directory.is_dir():

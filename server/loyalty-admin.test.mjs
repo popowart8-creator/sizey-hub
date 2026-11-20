@@ -16,10 +16,10 @@ test('rejects unknown routes without upstream access',async()=>{
  const r=await loyaltyAdminRequest({path:'/auth/login',method:'POST',accessToken:token,fetcher});
  assert.equal(r.status,404);
 });
-test('blocks unverified financial mutations before calling backend',async()=>{
+test('rejects invalid financial mutations before calling backend',async()=>{
  let count=0;
  const r=await loyaltyAdminRequest({path:'/sales/manual-accrual',method:'POST',accessToken:token,body:{},fetcher:async()=>{count++;throw Error('offline')}});
- assert.equal(count,0);assert.equal(r.status,501);
+ assert.equal(count,0);assert.equal(r.status,400);
 });
 test('rejects methods not supported by source API',async()=>{
  const r=await loyaltyAdminRequest({path:'/settings',method:'DELETE',accessToken:token});
@@ -41,10 +41,13 @@ test('forwards settings PATCH without leaking browser headers',async()=>{
  assert.deepEqual(Object.keys(seen.headers).sort(),['Authorization','Content-Type'].sort());
 });
 
-test('financial cancel is also blocked before upstream access',async()=>{
- let called=false;
- const r=await loyaltyAdminRequest({path:'/sales/11111111-1111-4111-8111-111111111111/cancel',method:'POST',accessToken:token,fetcher:async()=>{called=true;throw Error('unexpected')}});
- assert.equal(r.status,501);assert.equal(called,false);
+test('sale cancellation forwards only the verified path without a request body',async()=>{
+ let seen;
+ const id='11111111-1111-4111-8111-111111111111';
+ const fetcher=async(url,options)=>{seen={url,options};return {status:200,headers:new Headers({'content-type':'application/json'}),json:async()=>({ok:true})}};
+ const r=await loyaltyAdminRequest({path:'/sales/'+id+'/cancel',method:'POST',accessToken:token,fetcher});
+ assert.equal(r.status,200);assert.equal(seen.url,'http://sizey-prod-backend:4000/api/sales/'+id+'/cancel');assert.equal(seen.options.body,undefined);
+ assert.equal((await loyaltyAdminRequest({path:'/sales/'+id+'/cancel',method:'POST',body:{reason:'unapproved'},accessToken:token,fetcher})).status,400);
 });
 test('upstream errors preserve status for authorized read routes',async()=>{
  const fetcher=async()=>({status:403,headers:new Headers({'content-type':'application/json'}),json:async()=>({message:'Недостаточно прав'})});
@@ -105,4 +108,21 @@ test('employee mutations reject invalid DTOs without upstream access',async()=>{
   assert.equal((await loyaltyAdminRequest({path:'/users',method:'POST',body,accessToken:token,fetcher})).status,400);
  }
  assert.equal(calls,0);
+});
+
+test('financial writes require a stable idempotency key and verified DTO fields',async()=>{
+ const id='11111111-1111-4111-8111-111111111111',key='test-operation-key-0001';
+ const seen=[];const fetcher=async(url,options)=>{seen.push({url,options});return {status:201,headers:new Headers({'content-type':'application/json'}),json:async()=>({ok:true})}};
+ const cases=[
+  ['/sales/manual-accrual',{clientId:id,amount:50,note:'Корректировка',idempotencyKey:key}],
+  ['/sales/manual-debit',{clientId:id,amount:10,idempotencyKey:key}],
+  ['/sales',{clientId:id,purchaseAmount:120.5,bonusSpent:20,idempotencyKey:key}],
+  ['/sales/refund',{transactionId:id,note:'Возврат',idempotencyKey:key}]
+ ];
+ for(const [path,body] of cases)assert.equal((await loyaltyAdminRequest({path,method:'POST',body,accessToken:token,fetcher})).status,201);
+ assert.equal(seen.length,4);
+ for(const [path,body] of cases){
+  assert.equal((await loyaltyAdminRequest({path,method:'POST',body:{...body,idempotencyKey:undefined},accessToken:token,fetcher})).status,400);
+ }
+ assert.equal(seen.length,4);
 });

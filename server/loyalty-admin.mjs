@@ -15,8 +15,21 @@ const routes = [
   {pattern:/^\/users\/([a-f0-9-]{36})$/i, methods:['GET','PATCH','DELETE'], upstream:'/api/users/:id'},
   {pattern:/^\/settings$/, methods:['GET','PATCH'], upstream:'/api/settings'}
 ];
-// Financial writes are deliberately disabled until upstream DTOs, idempotency and audit are verified.
+// DTOs verified against production NestJS source; upstream enforces roles and idempotency.
+const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const financialWrites=new Set(['/sales','/sales/manual-accrual','/sales/manual-debit','/sales/refund']);
+function validateFinancial(path,body){
+ if(!body||typeof body!=='object'||Array.isArray(body))return false;
+ const manual=path==='/sales/manual-accrual'||path==='/sales/manual-debit';
+ const sale=path==='/sales';
+ const allowed=sale?['clientId','purchaseAmount','bonusSpent','idempotencyKey']:manual?['clientId','amount','note','idempotencyKey']:['transactionId','note','idempotencyKey'];
+ if(Object.keys(body).some(k=>!allowed.includes(k)))return false;
+ if(typeof body.idempotencyKey!=='string'||body.idempotencyKey.length<8||body.idempotencyKey.length>128)return false;
+ if(body.note!==undefined&&(typeof body.note!=='string'||body.note.length>500))return false;
+ if(sale)return uuid.test(body.clientId)&&typeof body.purchaseAmount==='number'&&Number.isFinite(body.purchaseAmount)&&body.purchaseAmount>0&&Math.abs(Math.round(body.purchaseAmount*100)-body.purchaseAmount*100)<1e-7&&Number.isSafeInteger(body.bonusSpent)&&body.bonusSpent>=0;
+ if(manual)return uuid.test(body.clientId)&&Number.isSafeInteger(body.amount)&&body.amount>0;
+ return uuid.test(body.transactionId);
+}
 const settingKeys=new Set(['companyName','timezone','currency','currencySymbol','maxBonusSpendPercent','birthdayMultiplier']);
 function validateSettings(body){
  if(!body||typeof body!=='object'||Array.isArray(body))return false;
@@ -52,15 +65,17 @@ function validateClientPatch(body){
 export async function loyaltyAdminRequest({path,method,query='',accessToken,body,fetcher=fetch,base='http://sizey-prod-backend:4000'}){
   const route=routes.find(r=>r.pattern.test(path)&&r.methods.includes(method));
   if(!route)return {status:404,data:{message:'Операция бонусной системы не поддерживается'}};
-  if(financialWrites.has(path)&&method==='POST')return {status:501,data:{message:'Финансовые операции будут доступны после проверки контрактов и защиты от повторных списаний'}};
-  if(/^\/sales\/[a-f0-9-]{36}\/cancel$/i.test(path)&&method==='POST')return {status:501,data:{message:'Отмена продажи временно недоступна до проверки контракта'}};
+  const financialWrite=financialWrites.has(path)&&method==='POST';
+  if(financialWrite&&!validateFinancial(path,body))return {status:400,data:{message:'Некорректные данные финансовой операции'}};
+  const cancelSale=route.upstream==='/api/sales/:id/cancel'&&method==='POST';
+  if(cancelSale&&body!==undefined)return {status:400,data:{message:'Отмена продажи не принимает тело запроса'}};
   // Production ClientsController and UpdateClientDto were verified by the read-only contract inspection.
   const clientPatch=method==='PATCH'&&/^\/clients\/[a-f0-9-]{36}$/i.test(path);
   if(clientPatch&&!validateClientPatch(body))return {status:400,data:{message:'Некорректные данные клиента'}};
   const employeeWrite=(path==='/users'&&method==='POST')||(path.startsWith('/users/')&&route.upstream==='/api/users/:id'&&method==='PATCH');
   if(employeeWrite&&!validateEmployee(body,method==='POST'))return {status:400,data:{message:'Некорректные данные сотрудника'}};
   // Other write DTOs have not been verified against the production NestJS source.
-  if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!clientPatch&&!employeeWrite&&!(path==='/sales/preview'&&method==='POST'))
+  if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!clientPatch&&!employeeWrite&&!financialWrite&&!cancelSale&&!(path==='/sales/preview'&&method==='POST'))
     return {status:501,data:{message:'Изменение данных ожидает проверки контракта действующей системы'}};
   if(path==='/settings'&&method==='PATCH'&&!validateSettings(body))
     return {status:400,data:{message:'Некорректные настройки программы лояльности'}};
