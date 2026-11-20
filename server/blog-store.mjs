@@ -2,6 +2,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {mkdirSync,chmodSync} from 'node:fs';
 import {dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {autoSlug} from './blog-auto.mjs';
 import {ContentError} from './content-store.mjs';
 
 const fail=(message,status=400)=>{throw new ContentError(status,message)};
@@ -9,7 +10,7 @@ const slugPattern=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 function normalize(value){
  if(!value||typeof value!=='object'||Array.isArray(value))fail('Некорректная статья');
- const title=clean(value.title,140),slug=clean(value.slug,100).toLowerCase();
+ const title=clean(value.title,140),slug=(clean(value.slug,100)||autoSlug(title)).toLowerCase();
  const sections=value.sections,links=value.sources,productIds=value.productIds;
  if(title.length<12||!slugPattern.test(slug))fail('Проверьте заголовок и адрес статьи');
  if(!Array.isArray(sections)||sections.length<2||sections.length>16||sections.some(s=>typeof s!=='string'||s.trim().length<50||s.length>2500))fail('Добавьте от 2 до 16 содержательных абзацев');
@@ -37,7 +38,8 @@ export function blogStore(path,{now=Date.now}={}){
  const publicList=()=>db.prepare('SELECT * FROM blog_articles WHERE published=1 ORDER BY published_at DESC LIMIT 100').all().map(decode);
  const publicOne=slug=>{if(typeof slug!=='string'||!slugPattern.test(slug))return null;return decode(db.prepare('SELECT * FROM blog_articles WHERE published=1 AND slug=?').get(slug))};
  function save(value,id){
-  const article=normalize(value),old=id?find(id):null;
+  const old=id?find(id):null;
+  const article=normalize({...value,slug:value?.slug||old?.slug});
   if(id&&!old)fail('Статья не найдена',404);
   if(old?.published)fail('Снимите статью с публикации перед редактированием',409);
   const used=db.prepare('SELECT id FROM blog_articles WHERE slug=?').get(article.slug);
