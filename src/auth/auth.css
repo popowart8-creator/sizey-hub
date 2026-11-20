@@ -322,7 +322,7 @@ button.sizey-bonus-card:disabled{cursor:default}
 .delivery-swipe-sheet .sizey-history-dialog-body{max-height:min(60dvh,540px);overflow-y:auto;padding:0;margin:0}
 
 /* Profile skeleton uses exactly the loaded loyalty card dimensions, but neutral grey. */
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-card{
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card{
  box-sizing:border-box;
  display:flex;
  flex-direction:column;
@@ -338,13 +338,13 @@ button.sizey-bonus-card:disabled{cursor:default}
  box-shadow:none;
  color:#444;
 }
-.authpage .sizey-profile-loading.customerlayout .sizey-profile-loading-card-bottom{
+.authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-card-bottom{
  margin-top:auto;
 }
-.authpage .sizey-profile-loading.customerlayout .sizey-profile-loading-card .sizey-skeleton-bone,
-.authpage .sizey-profile-loading.customerlayout .sizey-profile-loading-qr{
+.authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-card .sizey-skeleton-bone,
+.authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-qr{
  background:#d5d5d8!important;
 }
-.authpage .sizey-profile-loading.customerlayout .sizey-profile-loading-card .sizey-skeleton-bone::after{
+.authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-card .sizey-skeleton-bone::after{
  background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent)!important;
 }
