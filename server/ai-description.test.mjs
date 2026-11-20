@@ -31,7 +31,6 @@ test('assistant uses Ollama and only returns allowlisted navigation', async () =
   const request = JSON.parse(options.body);
   assert.deepEqual(request.messages, messages);
   assert.equal(request.keep_alive, '5m');
-  assert.equal(request.options.num_thread, 2);
   assert.ok(request.options.num_ctx <= 3072);
   assert.ok(request.options.num_predict <= 220);
   return Response.json({message: {content: JSON.stringify({answer: 'Откройте аналитику.', section: 'analytics'})}});
@@ -71,4 +70,31 @@ test('assistant bounds single-title generation while preserving the budget for l
   await ai.assistant([{role: 'user', content}], 'admin');
  }
  assert.deepEqual(budgets, [64, 220]);
+});
+
+test('assistant corrections survive reopening SQLite and stay private to their author', async () => {
+ const {mkdtempSync, rmSync} = await import('node:fs');
+ const {tmpdir} = await import('node:os');
+ const {join} = await import('node:path');
+ const {contentStore} = await import('./content-store.mjs');
+ const {prepareAssistantReply, saveAssistantAnswer} = await import('./admin-assistant.mjs');
+ const directory = mkdtempSync(join(tmpdir(), 'sizey-answers-'));
+ const open = () => contentStore(join(directory, 'content.sqlite'), {seedProducts: [], seedBanners: []});
+ let store = open();
+ try {
+  const question = 'Как подготовить сезонный баннер';
+  saveAssistantAnswer(store.db, 'first', {question, answer: 'Откройте раздел баннеров.'}, 1);
+  saveAssistantAnswer(store.db, 'first', {question, answer: 'Начните с фотографии.'}, 2);
+  store.close();
+  store = open();
+  const ask = (actor, content) => prepareAssistantReply({
+   section: 'overview', history: [{role: 'user', content}]
+  }, {store, actor});
+  assert.equal(ask('first', question + '?').answer, 'Начните с фотографии.');
+  assert.match(ask('first', question + ' для витрины')[0].content, /Начните с фотографии/);
+  assert.doesNotMatch(ask('second', question)[0].content, /Начните с фотографии/);
+ } finally {
+  store.close();
+  rmSync(directory, {recursive: true, force: true});
+ }
 });

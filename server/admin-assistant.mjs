@@ -25,7 +25,39 @@ function catalogReply(question, products) {
  return {answer: `${product.name} — ${details}.`, section: 'products'};
 }
 
-export function prepareAssistantReply(input, {store, blog, analytics}) {
+const questionKey = question => question.normalize('NFKC').toLocaleLowerCase('ru')
+ .replace(/ё/g, 'е').replace(/\s+/g, ' ').trim().replace(/[?!.]+$/, '').trim();
+
+export function saveAssistantAnswer(db, actor, input, now) {
+ const {question, answer, section} = input;
+ if (typeof question !== 'string' || question.length > 2000 || !questionKey(question) ||
+     typeof answer !== 'string' || !answer.trim() || answer.length > 4000 ||
+     section != null && !sections.includes(section)) {
+  throw new ContentError(400, 'Укажите вопрос и исправленный ответ');
+ }
+ const key = questionKey(question);
+ db.prepare(`INSERT INTO hub_assistant_answers(actor,question_key,question,answer,section,updated)
+  VALUES(?,?,?,?,?,?) ON CONFLICT(actor,question_key) DO UPDATE SET
+  question=excluded.question,answer=excluded.answer,section=excluded.section,updated=excluded.updated`)
+  .run(String(actor), key, question.trim(), answer.trim(), section ?? null, now);
+ return {answer: answer.trim(), section: section ?? null, source: 'learned'};
+}
+
+function learnedExamples(db, actor, question) {
+ const words = value => new Set(questionKey(value).match(/[\p{L}\p{N}]{3,}/gu) || []);
+ const query = words(question);
+ if (!db || query.size < 3) return [];
+ const entries = db.prepare(`SELECT question,answer FROM hub_assistant_answers WHERE actor=?
+  ORDER BY updated DESC,question_key LIMIT 60`).all(String(actor));
+ return entries.map(entry => {
+  const terms = words(entry.question);
+  const shared = [...query].filter(word => terms.has(word)).length;
+  return {entry, score: shared >= 3 ? shared / (query.size + terms.size - shared) : 0};
+ }).filter(item => item.score >= 0.5).sort((a, b) => b.score - a.score).slice(0, 2)
+  .map(({entry}) => ({question: entry.question.slice(0, 200), answer: entry.answer.slice(0, 400)}));
+}
+
+export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
  const {section, history} = input;
  if (!sections.includes(section) || !Array.isArray(history) || history.length < 1 || history.length > 7 ||
      history.length % 2 === 0 || history.some((turn, index) => !turn ||
@@ -46,6 +78,10 @@ export function prepareAssistantReply(input, {store, blog, analytics}) {
  const products = store.list('products');
  const catalog = catalogReply(normalize(question), products);
  if (catalog) return catalog;
+ const learned = store.db?.prepare('SELECT answer,section FROM hub_assistant_answers WHERE actor=? AND question_key=?')
+  .get(String(actor), questionKey(question));
+ if (learned) return {...learned, source: 'learned'};
+ const examples = learnedExamples(store.db, actor, question);
  const terms = query.match(/[\p{L}\p{N}]{3,}/gu) || [];
  const matches = products.map(product => {
   const name = product.name.toLocaleLowerCase('ru');
@@ -63,7 +99,8 @@ export function prepareAssistantReply(input, {store, blog, analytics}) {
   analytics: report ? {from: report.from, to: report.to, startedAt: report.startedAt, metrics: report.metrics} : null
  };
  return [
-  {role: 'system', content: instructions + '\nДанные SIZEY: ' + JSON.stringify(context)},
+  {role: 'system', content: instructions + '\nДанные SIZEY: ' + JSON.stringify(context) +
+   (examples.length ? '\nОдобренные примеры ответов. Используй только подходящие как справку, а текущие данные магазина имеют приоритет: ' + JSON.stringify(examples) : '')},
   ...history.slice(-3, -1).map(({role, content}) => ({role, content: content.trim().slice(0, 360)})),
   {role: 'user', content: question}
  ];
