@@ -37,24 +37,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
   }finally{running.delete(id)}
  }
 
- async function wordstat(input,actor){
-  const name=text(input?.name||'',200,true);
-  const phrase=text(input?.phrase||name,120,true);
-  const token=process.env.YANDEX_WORDSTAT_OAUTH_TOKEN;
-  if(!token)throw new ContentError(503,'OAuth-токен Wordstat не настроен на сервере');
-  const id='wordstat:'+String(actor),time=now(),recent=(attempts.get(id)||[]).filter(t=>t>time-3600000);
-  if(running.has(id)||recent.length>=5)throw new ContentError(429,'Лимит запросов Wordstat: не более 5 в час');
-  running.add(id);
-  try{
-   recent.push(time);attempts.set(id,recent);
-   let response;
-   try{response=await fetchImpl('https://api.wordstat.yandex.net/v1/topRequests',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({phrase,devices:['all']}),signal:AbortSignal.timeout(15000)})}
-   catch(error){const cause=error?.cause;const code=String(cause?.code||error?.code||error?.name||'unknown');const safe=/^[A-Za-z0-9_.-]{1,64}$/.test(code)?code:'unknown';throw new ContentError(503,'Не удалось связаться с Wordstat (сетевая ошибка: '+safe+')')}
-   if(!response.ok){let code='unknown';try{const error=await json(response,8192);const candidate=String(error.code||error.status||error.error?.code||'');if(/^[A-Za-z0-9_.-]{1,64}$/.test(candidate))code=candidate}catch{}throw new ContentError(503,'Wordstat HTTP '+response.status+' (код '+code+'). Проверьте OAuth-токен и одобрение доступа к Wordstat API')}
-   const data=await json(response,100000);
-   const normalize=rows=>(Array.isArray(rows)?rows:[]).filter(row=>typeof row.phrase==='string'&&/^\d+$/.test(String(row.count))).map(row=>({phrase:row.phrase.slice(0,160),count:Number(row.count)})).filter(row=>Number.isSafeInteger(row.count)).slice(0,30);
-   return{phrase,totalCount:0,results:normalize(data.topRequests),associations:[],source:'Yandex Wordstat API',statisticsThrough:null,historical:false};
-  }finally{running.delete(id)}
- }
+ async function wordstat(){throw new ContentError(503,'Старый API Яндекс Wordstat закрыт. Для частотности требуется подключение Yandex Search API; используйте бесплатные поисковые подсказки Google и Яндекса без частотности.')}
+
  return{status,configure,generate,seo,wordstat};
 }
