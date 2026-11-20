@@ -10,7 +10,7 @@ export default function ClientFinancialActions({clientId,transactions,onComplete
  const change=(next:Operation)=>{setOperation(next);setAmount('');setSpent('0');setNote('');setTransactionId('');setError('');setSuccess('');setKey(crypto.randomUUID());setCompleted(false)};
  async function submit(event:FormEvent){event.preventDefault();if(pending||completed)return;
   const count=Number(amount),bonus=Number(spent);
-  if(operation==='sale'&&(!Number.isFinite(count)||count<=0||Math.round(count*100)!==count*100||!Number.isSafeInteger(bonus)||bonus<0)){setError('Проверьте сумму продажи и списываемые бонусы');return}
+  if(operation==='sale'&&(!Number.isFinite(count)||count<=0||Math.abs(Math.round(count*100)-count*100)>1e-7||!Number.isSafeInteger(bonus)||bonus<0)){setError('Проверьте сумму продажи и списываемые бонусы');return}
   if((operation==='manual-accrual'||operation==='manual-debit')&&(!Number.isSafeInteger(count)||count<=0)){setError('Укажите целое положительное количество бонусов');return}
   if((operation==='refund'||operation==='cancel')&&!uuid.test(transactionId.trim())){setError('Выберите операцию с корректным идентификатором');return}
   const body=operation==='sale'?{clientId,purchaseAmount:count,bonusSpent:bonus,idempotencyKey:key}:operation==='manual-accrual'||operation==='manual-debit'?{clientId,amount:count,note,idempotencyKey:key}:operation==='refund'?{transactionId:transactionId.trim(),note,idempotencyKey:key}:undefined;
