@@ -15,7 +15,13 @@ test('admin auth rejects guests, cashier and wrong Origin; verified admin can ed
  assert.equal((await call('/admin/ai/assistant',{...question,history:[{role:'system',content:'invalid'}]},cookie)).status,400);
  const answer=await call('/admin/ai/assistant',question,cookie);
  assert.equal(answer.status,200);
- assert.deepEqual(await answer.json(),{answer:'Откройте товары.',section:'products'});
+ assert.deepEqual(await answer.json(),{answer:'Откройте товары.',section:'products',source:'model'});
+ const lesson={question:'Где пальто?',answer:'Откройте каталог и найдите пальто.',section:'products'};
+ assert.equal((await call('/admin/ai/assistant/learn',lesson)).status,401);
+ assert.equal((await call('/admin/ai/assistant/learn',lesson,cookie,'https://evil.invalid')).status,403);
+ assert.equal((await call('/admin/ai/assistant/learn',lesson,cookie)).status,200);
+ const learned=await call('/admin/ai/assistant',{...question,history:[{role:'user',content:'ГДЕ  пальто'}]},cookie);
+ assert.deepEqual(await learned.json(),{answer:lesson.answer,section:'products',source:'learned'});
  const greeting=await call('/admin/ai/assistant',{...question,history:[{role:'user',content:'йоу'}]},cookie);
  assert.equal(greeting.status,200);
  assert.match((await greeting.json()).answer,/^Привет/);

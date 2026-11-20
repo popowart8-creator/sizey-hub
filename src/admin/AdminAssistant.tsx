@@ -3,8 +3,8 @@ import {ArrowUpRight, Send, Sparkles, X} from 'lucide-react';
 import type {AdminRequest} from './editor-types';
 import './admin-assistant.css';
 
-type Turn = {role: 'user' | 'assistant'; content: string; section?: string | null};
-type Answer = {answer: string; section: string | null};
+type Answer = {answer: string; section: string | null; source?: 'model' | 'learned'};
+type Turn = {role: 'user' | 'assistant'; content: string; section?: string | null; source?: Answer['source']};
 
 export default function AdminAssistant({page, sections, request, navigate, onSessionError}: {
  page: string;
@@ -18,6 +18,7 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
  const [draft, setDraft] = useState('');
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
+ const [correction, setCorrection] = useState<{index: number; answer: string} | null>(null);
  const active = useRef<AbortController | null>(null);
  const trigger = useRef<HTMLButtonElement>(null);
  const panel = useRef<HTMLDialogElement>(null);
@@ -58,7 +59,7 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
  async function send(event: FormEvent) {
   event.preventDefault();
   const question = draft.trim();
-  if (!question || active.current) return;
+  if (!question || active.current || correction) return;
   const controller = new AbortController();
   active.current = controller;
   const pending: Turn[] = [...turns, {role: 'user', content: question}];
@@ -69,11 +70,36 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
   try {
    const history = pending.slice(-7).map(({role, content}) => ({role, content}));
    const result = await request<Answer>('/ai/assistant', {section: page, history}, controller.signal);
-   setTurns([...pending, {role: 'assistant', content: result.answer, section: result.section}]);
+   setTurns([...pending, {role: 'assistant', content: result.answer, section: result.section, source: result.source}]);
   } catch (error) {
    if (controller.signal.aborted) return;
    setTurns(turns);
    setDraft(question);
+   if ((error as {status?: number}).status === 401) onSessionError(error);
+   else setError((error as Error).message);
+  } finally {
+   active.current = null;
+   if (!controller.signal.aborted) setBusy(false);
+  }
+ }
+
+ async function teach(event: FormEvent) {
+  event.preventDefault();
+  if (!correction?.answer.trim() || active.current) return;
+  const {index, answer} = correction;
+  const controller = new AbortController();
+  active.current = controller;
+  setBusy(true);
+  setError('');
+  try {
+   const result = await request<Answer>('/ai/assistant/learn', {
+    question: turns[index - 1].content, answer, section: turns[index].section
+   }, controller.signal);
+   setTurns(current => current.map((turn, i) => i === index ?
+    {...turn, content: result.answer, section: result.section, source: result.source} : turn));
+   setCorrection(null);
+  } catch (error) {
+   if (controller.signal.aborted) return;
    if ((error as {status?: number}).status === 401) onSessionError(error);
    else setError((error as Error).message);
   } finally {
@@ -101,9 +127,19 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
     {turns.map((turn, index) => {
      const section = sections.find(item => item.id === turn.section && item.id !== page);
      return <div key={index} className={'assistant-message assistant-' + turn.role}>
-      <span>{turn.role === 'user' ? 'Вы' : 'Помощник'}</span>
-      <p>{turn.content}</p>
-      {section && <button type="button" className="secondary" onClick={() => {
+      <span>{turn.role === 'user' ? 'Вы' : turn.source === 'learned' ? 'Сохранённый ответ' : 'Помощник'}</span>
+      {correction?.index === index ? <form className="assistant-correction" onSubmit={teach}>
+       <textarea autoFocus aria-label="Исправленный ответ" rows={4} maxLength={4000}
+        value={correction.answer} readOnly={busy}
+        onChange={event => setCorrection({...correction, answer: event.target.value})} />
+       <div>
+        <button className="primary" type="submit" disabled={busy || !correction.answer.trim()}>Запомнить</button>
+        <button className="secondary" type="button" disabled={busy} onClick={() => setCorrection(null)}>Отмена</button>
+       </div>
+      </form> : <p>{turn.content}</p>}
+      {turn.source && !correction && <button type="button" className="secondary" disabled={busy}
+       onClick={() => setCorrection({index, answer: turn.content})}>Исправить ответ</button>}
+      {section && !correction && <button type="button" className="secondary" onClick={() => {
        if (panel.current?.matches(':modal')) close();
        navigate(section.id);
       }}>
@@ -111,18 +147,18 @@ export default function AdminAssistant({page, sections, request, navigate, onSes
       </button>}
      </div>;
     })}
-    {busy && <p className="assistant-empty">Готовлю ответ…</p>}
+    {busy && !correction && <p className="assistant-empty">Готовлю ответ…</p>}
    </div>
    {error && <p className="assistant-error" role="alert">{error}</p>}
    <form onSubmit={send}>
     <textarea rows={2} enterKeyHint="send" aria-label="Сообщение помощнику" placeholder="Напишите вопрос"
-     maxLength={2000} value={draft} readOnly={busy} onChange={event => setDraft(event.target.value)}
+     maxLength={2000} value={draft} readOnly={busy || !!correction} onChange={event => setDraft(event.target.value)}
      onKeyDown={event => {
       if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();
      }} />
-    <button className="primary" type="submit" aria-label="Отправить" disabled={busy || !draft.trim()}><Send size={18} /></button>
+    <button className="primary" type="submit" aria-label="Отправить" disabled={busy || !!correction || !draft.trim()}><Send size={18} /></button>
    </form>
   </dialog>}
   <button ref={trigger} className="assistant-trigger secondary" type="button" aria-expanded={open}

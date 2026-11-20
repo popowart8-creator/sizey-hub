@@ -65,3 +65,12 @@
  #admin-assistant-panel textarea { font-size: 16px; }
  body:has(#admin-assistant-panel:modal) { overflow: hidden; }
 }
+
+#admin-assistant-panel .assistant-correction {
+ align-items: stretch;
+ flex-direction: column;
+ padding: .45rem 0 0;
+ border: 0;
+}
+.assistant-correction > div { display: flex; flex-wrap: wrap; gap: .5rem; }
+.assistant-message > button + button { margin-left: .5rem; }

@@ -55,7 +55,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
    const response=await call('/api/chat',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model,stream:false,format:'json',messages,keep_alive:'5m',options:{temperature:0.3,num_ctx:3072,num_thread:2,num_predict:shortTitle?64:220},think:false}),
+    body:JSON.stringify({model,stream:false,format:'json',messages,keep_alive:'5m',options:{temperature:0.3,num_ctx:3072,num_predict:shortTitle?64:220},think:false}),
     timeout:120000
    });
    if(!response.ok)throw new ContentError(503,'Локальная модель не смогла обработать запрос');
