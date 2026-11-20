@@ -660,8 +660,16 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 .home-intro .carousel-art {
   position: absolute;
   inset: 0;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 38px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 38px), transparent);
+  --catalog-edge-mask: linear-gradient(
+    to bottom,
+    #000 calc(100% - 56px),
+    #000e calc(100% - 42px),
+    #0008 calc(100% - 26px),
+    #0002 calc(100% - 10px),
+    transparent
+  );
+  -webkit-mask-image: var(--catalog-edge-mask);
+  mask-image: var(--catalog-edge-mask);
 }
 
 .home-intro .carousel-slide > img {
@@ -688,16 +696,16 @@ html[data-hero-tone="dark"] .home-logo img {
 
 .home-intro .carousel-art::before {
   height: clamp(80px, 15svh, 144px);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   -webkit-mask-image: linear-gradient(transparent, #000 80%);
   mask-image: linear-gradient(transparent, #000 80%);
 }
 
 .home-intro .carousel-art::after {
   height: clamp(40px, 8svh, 80px);
-  -webkit-backdrop-filter: blur(28px);
-  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
   -webkit-mask-image: linear-gradient(transparent, #000 75%);
   mask-image: linear-gradient(transparent, #000 75%);
 }
