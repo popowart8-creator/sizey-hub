@@ -73,7 +73,7 @@ test('Qwen blog creates a valid draft from compact inference and distinct source
  assert.equal(result.rejected,false,JSON.stringify({sources:await ai.collectSources('Как выбрать пальто'),rank:scoreTopic('Как выбрать пальто и с чем носить: гид по выбору одежды',products,await ai.collectSources('Как выбрать пальто'))}));
  assert.equal(result.article.sources.length,4);
  assert.equal(result.article.productIds[0],1);
- assert.equal(prompt.options.num_ctx,3072);
+ assert.equal(prompt.options.num_ctx,1536);
  const dir=room(),blog=blogStore(join(dir,'blog.sqlite'));
  try{assert.equal(blog.save(result.article).published,false)}finally{blog.close();rmSync(dir,{recursive:true,force:true})}
 });
