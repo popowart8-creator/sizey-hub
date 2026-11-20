@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {ContentError,storeImage} from './content-store.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
-export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
+export function createAdmin({store,analytics,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
  const sessions=new Map(),attempts=new Map(),hash=value=>createHash('sha256').update(value).digest('hex');
  const cookie=(value,age)=>`__Host-sizey_admin=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${age}`;
@@ -54,6 +54,8 @@ export function createAdmin({store,analytics,descriptionAI,staffAuth,listClients
    }
    else if(path==='/hub-api/admin/ai/status'&&req.method==='GET'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');reply(200,await descriptionAI.status())}
    else if(path==='/hub-api/admin/ai/settings'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.configure(await body(req));store.audit(user.id,'configure-description-ai','OpenRouter');reply(200,result)}
+   else if(path==='/hub-api/admin/ai/keywords'&&req.method==='GET'){if(!keywordSuggestions)throw new ContentError(503,'Подсказки недоступны');const q=new URL(req.url,'http://internal').searchParams.get('q');reply(200,await keywordSuggestions.suggest(q))}
+   else if(path==='/hub-api/admin/ai/wordstat'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.wordstat(await body(req),user.id);store.audit(user.id,'wordstat-lookup','seo');reply(200,result)}
    else if(path==='/hub-api/admin/ai/seo'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.seo(await body(req),user.id);store.audit(user.id,'generate-seo-ai','seo');reply(200,result)}
    else if(path==='/hub-api/admin/ai/description'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.generate(await body(req),user.id);store.audit(user.id,'generate-description-ai','description');reply(200,result)}
    else if(req.method==='GET'&&path==='/hub-api/admin/summary')reply(200,{...store.summary(),clients:(await listClients()).length});
