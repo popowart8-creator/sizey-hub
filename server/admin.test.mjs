@@ -16,6 +16,12 @@ test('admin auth rejects guests, cashier and wrong Origin; verified admin can ed
  const answer=await call('/admin/ai/assistant',question,cookie);
  assert.equal(answer.status,200);
  assert.deepEqual(await answer.json(),{answer:'Откройте товары.',section:'products'});
+ const greeting=await call('/admin/ai/assistant',{...question,history:[{role:'user',content:'йоу'}]},cookie);
+ assert.equal(greeting.status,200);
+ assert.match((await greeting.json()).answer,/^Привет/);
+ const abilities=await call('/admin/ai/assistant',{...question,history:[{role:'user',content:'йоу'},{role:'assistant',content:'Привет!'},{role:'user',content:'что умеешь?'}]},cookie);
+ assert.equal(abilities.status,200);
+ assert.match((await abilities.json()).answer,/подготовить описание/);
  assert.equal((await call('/admin/ai/settings',{apiKey:'test'},cookie,'https://evil.invalid')).status,403);assert.equal((await call('/admin/ai/description',{name:'Пальто'},cookie)).status,200);assert.equal((await call('/admin/ai/status',undefined,cookie)).status,200);assert.equal((await call('/admin/products/order',{id:1,beforeId:null,revision:x.store.orderRevision()},cookie)).status,200);active=false;assert.equal((await call('/admin/ai/status',undefined,cookie)).status,403);assert.equal((await call('/admin/products',undefined,cookie)).status,403);active=true;await call('/admin/logout',{},cookie);assert.equal((await call('/admin/me',undefined,cookie)).status,401);
 }finally{await new Promise(resolve=>server.close(resolve));x.close()}});
 test('employee session exchange requires a verified active admin bearer token',async()=>{const x=setup();const handler=createAdmin({store:x.store,mediaDirectory:x.dir,listClients:async()=>[],staffAuth:{me:async token=>{if(!['admin','cashier'].includes(token))throw Error();return{id:'staff',role:token==='admin'?'ADMIN':'CASHIER',status:'ACTIVE'}}}});const s=createServer(async(req,res)=>{await handler(req,res)});await new Promise(r=>s.listen(0,'127.0.0.1',r));try{for(const[token,status]of[['invalid',401],['cashier',403],['admin',200]]){const r=await fetch('http://127.0.0.1:'+s.address().port+'/hub-api/admin/session',{method:'POST',headers:{Origin:'https://admmm.sizey.ru','Content-Type':'application/json',Authorization:'Bearer '+token},body:'{}'});assert.equal(r.status,status);if(status===200)assert.match(r.headers.get('set-cookie'),/HttpOnly/)}}finally{await new Promise(r=>s.close(r));x.close()}});
