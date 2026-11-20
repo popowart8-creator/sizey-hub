@@ -25,13 +25,13 @@ export default function ClientFinancialActions({clientId,transactions,onComplete
   }catch(e){const err=e as Error&{status?:number};if(err.status===401)onExpired();setError(err.message+' Если результат неизвестен, проверьте историю перед повтором. Повтор использует тот же ключ операции.')}
   finally{setPending(false)}
  }
- return <section style={{display:'grid',gap:12,marginTop:24}}><h3>Бонусы, продажи и возвраты</h3>
+ return <section className="clients-financial-card" style={{display:'grid',gap:12,marginTop:24,padding:20,border:'1px solid var(--border,#e4e4e4)',borderRadius:18,background:'var(--surface,#fff)'}}><h3>Бонусы, продажи и возвраты</h3>
   <label>Действие<select value={operation} onChange={e=>change(e.target.value as Operation)} disabled={pending}>
    <option value="manual-accrual">Начислить бонусы</option><option value="manual-debit">Списать бонусы</option><option value="sale">Создать продажу</option><option value="refund">Возврат по операции</option><option value="cancel">Отменить продажу</option>
   </select></label>
   <form onSubmit={submit} style={{display:'grid',gap:10}}>
-   {(operation==='manual-accrual'||operation==='manual-debit'||operation==='sale')&&<label>{operation==='sale'?'Сумма покупки':'Количество бонусов'}<input required type="number" min={operation==='sale'?'0.01':'1'} step={operation==='sale'?'0.01':'1'} value={amount} onChange={e=>setAmount(e.target.value)}/></label>}
-   {operation==='sale'&&<label>Оплатить бонусами<input required type="number" min="0" step="1" value={spent} onChange={e=>setSpent(e.target.value)}/></label>}
+   {(operation==='manual-accrual'||operation==='manual-debit'||operation==='sale')&&<label>{operation==='sale'?'Сумма покупки':'Количество бонусов'}<input required type="number" inputMode={operation==='sale'?'decimal':'numeric'} min={operation==='sale'?'0.01':'1'} step={operation==='sale'?'0.01':'1'} value={amount} onChange={e=>setAmount(e.target.value)}/></label>}
+   {operation==='sale'&&<label>Оплатить бонусами<input required type="number" inputMode="numeric" pattern="[0-9]*" min="0" step="1" value={spent} onChange={e=>setSpent(e.target.value)}/></label>}
    {(operation==='refund'||operation==='cancel')&&<label>Операция из истории<select required value={transactionId} onChange={e=>setTransactionId(e.target.value)}><option value="">Выберите операцию</option>{transactions.filter(t=>t.id&&uuid.test(t.id)).map(t=><option key={t.id} value={t.id}>{t.type||'Операция'} · {t.amount??'—'} · {t.createdAt?new Date(t.createdAt).toLocaleString('ru-RU'):t.id}</option>)}</select></label>}
    {(operation==='manual-accrual'||operation==='manual-debit'||operation==='refund')&&<label>Комментарий<input maxLength={500} value={note} onChange={e=>setNote(e.target.value)}/></label>}
    {error&&<div className="notice error" role="alert">{error}</div>}{success&&<div className="notice" role="status">{success}</div>}
