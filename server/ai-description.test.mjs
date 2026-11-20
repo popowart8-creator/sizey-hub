@@ -154,3 +154,25 @@ test('single-title prompts omit unrelated page data and retain product facts', a
  assert.doesNotMatch(messages[0].content, /5900|analytics|overview/);
  assert.ok(messages.reduce((length, message) => length + message.content.length, 0) < 240);
 });
+
+test('assistant knows the actual SIZEY admin workflows and supplies relevant steps on complex questions', async () => {
+ const {prepareAssistantReply} = await import('./admin-assistant.mjs');
+ const store = {list: () => [], summary: () => ({})};
+ const ask = content => prepareAssistantReply({section:'overview',history:[{role:'user',content}]},{store});
+ for (const [question, section, label] of [
+  ['Как добавить товар?', 'products', 'Добавить товар'],
+  ['Подскажи, как мне создать статью в блоге?', 'blog', 'Создать статью'],
+  ['Где посмотреть конверсию сайта?', 'analytics', '7, 30 или 90'],
+  ['Как оформить возврат?', 'clients', 'Возврат по операции'],
+  ['Как подключить бонусную карту клиенту?', 'clients', 'Подключить бонусную карту'],
+  ['Почему нет заказов в админке?', 'orders', 'демонстрационная корзина']
+ ]) {
+  const reply = ask(question);
+  assert.equal(reply.section, section);
+  assert.equal(reply.source, 'guide');
+  assert.ok(reply.answer.includes(label));
+ }
+ const messages = ask('Можно ли оформить возврат по операции покупателя и где искать историю?');
+ assert.match(messages[0].content, /Проверенные шаги.*Возврат по операции/);
+ assert.doesNotMatch(messages[0].content, /Добавить товар/);
+});

@@ -51,6 +51,8 @@ const help=prepareAssistantReply({section:'overview',history:[...history,{role:'
 if(!hello.answer||!help.answer)throw Error('Assistant quick replies unavailable');
 const price=prepareAssistantReply({section:'products',history:[{role:'user',content:'Сколько стоит пальто SIZEY?'}]},{store});
 if(!price.answer?.includes('900'))throw Error('Direct catalog price unavailable');
+const instructions=prepareAssistantReply({section:'overview',history:[{role:'user',content:'Как мне оформить возврат?'}]},{store});
+if(instructions.section!=='clients'||!instructions.answer?.includes('Возврат по операции'))throw Error('Verified loyalty procedure unavailable');
 const messages=prepareAssistantReply({section:'products',history:[...history,{role:'user',content:'Напиши короткий заголовок для пальто SIZEY'}]},{store});
 const preloadStart=Date.now();
 await ai.warmAssistant();

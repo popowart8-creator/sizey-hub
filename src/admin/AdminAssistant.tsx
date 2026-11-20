@@ -3,7 +3,7 @@ import {ArrowUpRight, Send, Sparkles, X} from 'lucide-react';
 import type {AdminRequest} from './editor-types';
 import './admin-assistant.css';
 
-type Answer = {answer: string; section: string | null; source?: 'model' | 'learned'};
+type Answer = {answer: string; section: string | null; source?: 'model' | 'learned' | 'guide'};
 type Turn = {role: 'user' | 'assistant'; content: string; section?: string | null; source?: Answer['source']};
 
 type AssistantEvent = {type: 'progress'; text: string} | {type: 'answer'; answer: Answer} | {type: 'error'; message: string};
