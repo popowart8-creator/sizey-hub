@@ -53,3 +53,23 @@
 .authpage .sizey-profile-loading-hint{background:#eceaf0}
 .authpage .sizey-profile-loading .profile-menu-stack .sizey-profile-loading-row{height:55px;border-radius:8px;background:#f0eff2}
 @media(max-width:600px){.authpage .sizey-profile-loading-card{min-height:225px}}
+
+/* Final profile skeleton: neutral white surface, matching the page, not a dark card. */
+.authpage .sizey-profile-loading .sizey-profile-loading-card{
+ background:#f7f7f8!important;
+ border:1px solid #e9e9ec!important;
+ box-shadow:none!important;
+ color:inherit;
+ min-height:252px;
+ border-radius:30px;
+}
+.authpage .sizey-profile-loading .sizey-profile-loading-card .sizey-skeleton-bone,
+.authpage .sizey-profile-loading .sizey-profile-loading-qr{
+ background:#e6e6e9!important;
+}
+.authpage .sizey-profile-loading .sizey-profile-loading-card .sizey-skeleton-bone::after{
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);
+}
+.authpage .sizey-profile-loading .sizey-profile-loading-menu-row{background:transparent!important;border-radius:0!important;border-bottom:1px solid #f0f0f0}
+.authpage .sizey-profile-loading .sizey-profile-loading-menu-row .sizey-profile-loading-icon{background:#e9e9ec}
+.authpage .sizey-profile-loading .sizey-profile-loading-menu-row .sizey-profile-loading-chevron{color:#b5b5b5}
