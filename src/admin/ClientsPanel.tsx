@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import {Search,X,ExternalLink,RefreshCw} from 'lucide-react';
 import useAdminDialog from './useAdminDialog';
+import LoyaltyPanel from './LoyaltyPanel';
 import './clients.css';
 
 type Client={id:string;name:string;phone?:string;phoneNormalized?:string;loyalty?:boolean;loyaltyLevel?:{name?:string};bonusBalance?:number};
@@ -44,6 +45,7 @@ function ClientDrawer({client,onClose,onExpired}:{client:Client;onClose:()=>void
 export default function ClientsPanel({onExpired}:Props){
  const [clients,setClients]=useState<Client[]>([]),[search,setSearch]=useState(''),[selected,setSelected]=useState<Client|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const [reload,setReload]=useState(0);
+ const [section,setSection]=useState<'clients'|'settings'|'employees'>('clients');
  useEffect(()=>{let active=true;async function load(){setLoading(true);setError('');try{
   const result=await request('/clients?all=true');
   if(active)setClients(items(result,'clients'));
@@ -51,7 +53,7 @@ export default function ClientsPanel({onExpired}:Props){
  void load();return()=>{active=false};
  },[reload,onExpired]);
  const filtered=clients.filter(c=>((c.name||'')+' '+phone(c)).toLocaleLowerCase('ru').includes(search.toLocaleLowerCase('ru')));
- return <><section className="panel"><div className="table-toolbar"><div className="search-input"><Search size={18}/><input aria-label="Поиск клиентов" placeholder="Имя или телефон" value={search} onChange={e=>setSearch(e.target.value)}/></div><span className="result-count">{filtered.length} клиентов</span><button className="secondary icon-button" aria-label="Обновить клиентов" disabled={loading} onClick={()=>setReload(n=>n+1)}><RefreshCw size={18}/></button></div>
+ return <><div className="table-toolbar" style={{marginBottom:16,display:'flex',gap:8,flexWrap:'wrap'}}><button className="secondary" aria-pressed={section==='clients'} onClick={()=>setSection('clients')}>Клиенты и бонусы</button><button className="secondary" aria-pressed={section==='settings'} onClick={()=>setSection('settings')}>Настройки лояльности</button><button className="secondary" aria-pressed={section==='employees'} onClick={()=>setSection('employees')}>Сотрудники</button></div>{section!=='clients'?<LoyaltyPanel key={section} initialTab={section} hideClientTab onExpired={onExpired}/>:<section className="panel"><div className="table-toolbar"><div className="search-input"><Search size={18}/><input aria-label="Поиск клиентов" placeholder="Имя или телефон" value={search} onChange={e=>setSearch(e.target.value)}/></div><span className="result-count">{filtered.length} клиентов</span><button className="secondary icon-button" aria-label="Обновить клиентов" disabled={loading} onClick={()=>setReload(n=>n+1)}><RefreshCw size={18}/></button></div>
  {error&&<div className="notice error" role="alert">{error}</div>}
  {loading?<p className="clients-state" role="status">Загружаем клиентов…</p>:<div className="table-wrap"><table className="clients-table"><thead><tr><th>Клиент</th><th>Телефон</th><th>Уровень</th><th>Бонусы</th></tr></thead><tbody>{filtered.map(c=><tr key={c.id} tabIndex={0} role="button" aria-label={'Открыть карточку: '+(c.name||phone(c))} onClick={()=>setSelected(c)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSelected(c)}}}><td><div className="client-name"><span className="avatar">{(c.name||'К').slice(0,1)}</span>{c.name||'Клиент'}</div></td><td>{phone(c)}</td><td>{c.loyaltyLevel?.name||'—'}</td><td>{balance(c.bonusBalance)}</td></tr>)}</tbody></table>{!filtered.length&&<p className="clients-state">{search?'По запросу ничего не найдено.':'Клиентов пока нет.'}</p>}</div>}</section>
  {selected&&<ClientDrawer key={selected.id} client={selected} onClose={()=>setSelected(null)} onExpired={onExpired}/>}</>;
