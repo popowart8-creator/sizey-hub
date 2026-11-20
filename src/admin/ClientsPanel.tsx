@@ -21,20 +21,45 @@ const normalizedPhone=(value:string)=>value.replace(/\D/g,'').replace(/^8(?=\d{1
 const balance=(value?:number)=>typeof value==='number'?value.toLocaleString('ru-RU'):'—';
 
 function ClientDrawer({client,onClose,onExpired,onSaved}:{client:Client;onClose:()=>void;onExpired:()=>void;onSaved:()=>void}){
+ const [activating,setActivating]=useState(false),[activated,setActivated]=useState<Client|null>(null);
  const [editing,setEditing]=useState(false),[saving,setSaving]=useState(false),[form,setForm]=useState({name:client.name||'',phone:client.phone||client.phoneNormalized||''});
  const [detail,setDetail]=useState<Client|null>(null),[transactions,setTransactions]=useState<Transaction[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const root=useAdminDialog(onClose,false);
- const registeredOnly=client.registeredOnly===true;
+ const registeredOnly=client.registeredOnly===true&&!activated;
+ const loyaltyId=activated?.id||client.id;
  const expiredRef=useRef(onExpired);
  expiredRef.current=onExpired;
  useEffect(()=>{if(registeredOnly){setDetail(client);setTransactions([]);setLoading(false);return}let active=true;async function load(){setLoading(true);setError('');try{
-  const [info,history]=await Promise.all([request('/clients/'+encodeURIComponent(client.id)),request('/clients/'+encodeURIComponent(client.id)+'/transactions')]);
+  const [info,history]=await Promise.all([request('/clients/'+encodeURIComponent(loyaltyId)),request('/clients/'+encodeURIComponent(loyaltyId)+'/transactions')]);
   if(active){setDetail(info.client||info);setTransactions(items(history,'transactions'))}
  }catch(e){if(active){if((e as {status?:number}).status===401)expiredRef.current();setError((e as Error).message)}}finally{if(active)setLoading(false)}}
  void load();return()=>{active=false};
- },[client.id,registeredOnly]);
- async function save(event:import('react').FormEvent){event.preventDefault();setSaving(true);setError('');try{const updated=await request('/clients/'+encodeURIComponent(client.id),'PATCH',{name:form.name.trim(),phone:form.phone.trim()});setDetail(updated.client||updated);setEditing(false);onSaved()}catch(e){if((e as {status?:number}).status===401)expiredRef.current();setError((e as Error).message)}finally{setSaving(false)}}
- const value=detail||client;
+ },[loyaltyId,registeredOnly]);
+ async function save(event:import('react').FormEvent){event.preventDefault();setSaving(true);setError('');try{const updated=await request('/clients/'+encodeURIComponent(loyaltyId),'PATCH',{name:form.name.trim(),phone:form.phone.trim()});setDetail(updated.client||updated);setEditing(false);onSaved()}catch(e){if((e as {status?:number}).status===401)expiredRef.current();setError((e as Error).message)}finally{setSaving(false)}}
+ async function activate(){
+  if(activating)return;
+  const customerPhone=phone(client);
+  if(!window.confirm('Подключить '+(client.name||'клиента')+' к бонусной системе по телефону '+customerPhone+'?'))return;
+  setActivating(true);setError('');
+  try{
+   const existing=await request('/clients?all=true');
+   let account:Client|undefined=items(existing,'clients').find((c:Client)=>normalizedPhone(phone(c))===normalizedPhone(customerPhone));
+   if(!account){
+    try{const created=await request('/clients','POST',{name:client.name||'Клиент',phone:customerPhone});account=created.client||created}
+    catch(e){
+     if((e as {status?:number}).status===409){
+      const fresh=await request('/clients?all=true');
+      account=items(fresh,'clients').find((c:Client)=>normalizedPhone(phone(c))===normalizedPhone(customerPhone));
+     }
+     if(!account)throw e;
+    }
+   }
+   if(!account?.id||!/^[a-f0-9-]{36}$/i.test(account.id))throw new Error('Бонусная система не вернула идентификатор клиента. Проверьте список перед повтором.');
+   setActivated(account);onSaved();
+  }catch(e){if((e as {status?:number}).status===401)expiredRef.current();setError((e as Error).message)}
+  finally{setActivating(false)}
+ }
+ const value=detail||activated||client;
  return <div className="editor-overlay clients-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
   <section className="editor clients-drawer" role="dialog" aria-modal="true" aria-labelledby="client-drawer-title" ref={root}>
    <header><div><span className="overline">КЛИЕНТЫ / ПРОГРАММА ЛОЯЛЬНОСТИ</span><h2 id="client-drawer-title">{value.name||'Карточка клиента'}</h2></div><button className="icon-button" aria-label="Закрыть карточку" onClick={onClose}><X size={20}/></button></header>
@@ -42,9 +67,8 @@ function ClientDrawer({client,onClose,onExpired,onSaved}:{client:Client;onClose:
     <div className="client-summary"><div><small>Телефон</small><strong>{phone(value)}</strong></div><div><small>Бонусный баланс</small><strong>{registeredOnly?'Не подключена':balance(value.bonusBalance)}</strong></div><div><small>Уровень лояльности</small><strong>{registeredOnly?'Без бонусной карты':value.loyaltyLevel?.name||'—'}</strong></div></div>
     {error&&<div className="notice error" role="alert">{error}</div>}
     {loading?<p role="status">Загрузка карточки и операций…</p>:<><h3>История операций</h3><div className="table-wrap"><table><thead><tr><th>Тип</th><th>Сумма</th><th>Дата</th></tr></thead><tbody>{transactions.map((t,i)=><tr key={t.id||i}><td>{t.type||'—'}</td><td>{balance(t.amount??t.bonusAmount)}</td><td>{t.createdAt?new Date(t.createdAt).toLocaleString('ru-RU'):'—'}</td></tr>)}</tbody></table></div>{!transactions.length&&!error&&<p className="clients-muted">Операций пока нет.</p>}</>}
-    {registeredOnly?<p className="clients-muted">Пользователь зарегистрирован в SIZEY Hub, но бонусная карта пока не подключена. Изменение данных через бонусный API недоступно.</p>:editing?<form onSubmit={save} style={{display:'grid',gap:12}}><label>Имя<input required maxLength={160} value={form.name} onChange={e=>setForm(v=>({...v,name:e.target.value}))}/></label><label>Телефон<input required maxLength={160} value={form.phone} onChange={e=>setForm(v=>({...v,phone:e.target.value}))}/></label><div style={{display:'flex',gap:8}}><button className="primary" disabled={saving||!form.name.trim()||!form.phone.trim()}>{saving?'Сохранение…':'Сохранить'}</button><button type="button" className="secondary" onClick={()=>setEditing(false)}>Отмена</button></div></form>:<button className="secondary" onClick={()=>{setForm({name:value.name||'',phone:value.phone||value.phoneNormalized||''});setEditing(true)}}>Редактировать клиента</button>}
-    {!registeredOnly&&<ClientFinancialActions clientId={client.id} transactions={transactions} onExpired={onExpired} onComplete={onSaved}/>}
-    {registeredOnly&&<p className="clients-muted">Для финансовых операций сначала подключите бонусную карту.</p>}
+    {registeredOnly?<div style={{display:"grid",gap:10}}><p className="clients-muted">Клиент зарегистрирован на сайте, но ещё не подключён к бонусной системе.</p><button className="primary" disabled={activating||loading||normalizedPhone(phone(client)).length<10} onClick={()=>void activate()}>{activating?"Подключение…":"Подключить бонусную карту"}</button></div>:editing?<form onSubmit={save} style={{display:'grid',gap:12}}><label>Имя<input required maxLength={160} value={form.name} onChange={e=>setForm(v=>({...v,name:e.target.value}))}/></label><label>Телефон<input required maxLength={160} value={form.phone} onChange={e=>setForm(v=>({...v,phone:e.target.value}))}/></label><div style={{display:'flex',gap:8}}><button className="primary" disabled={saving||!form.name.trim()||!form.phone.trim()}>{saving?'Сохранение…':'Сохранить'}</button><button type="button" className="secondary" onClick={()=>setEditing(false)}>Отмена</button></div></form>:<button className="secondary" onClick={()=>{setForm({name:value.name||'',phone:value.phone||value.phoneNormalized||''});setEditing(true)}}>Редактировать клиента</button>}
+    {!registeredOnly&&<ClientFinancialActions clientId={loyaltyId} transactions={transactions} onExpired={onExpired} onComplete={onSaved}/>}
     <a className="secondary" href="https://app.sizey.ru" target="_blank" rel="noreferrer">Открыть действующий кабинет <ExternalLink size={16}/></a>
    </div>
   </section>

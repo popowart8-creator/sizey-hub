@@ -55,10 +55,10 @@ test('upstream errors preserve status for authorized read routes',async()=>{
  assert.equal(r.status,403);assert.equal(r.data.message,'Недостаточно прав');
 });
 
-test('unverified client creation and employee deletion never reach upstream',async()=>{
+test('employee deletion never reaches upstream',async()=>{
  let count=0;
  const fetcher=async()=>{count++;throw Error('unexpected upstream call')};
- for(const [path,method] of [['/clients','POST'],['/users/11111111-1111-4111-8111-111111111111','DELETE']]){
+ for(const [path,method] of [['/users/11111111-1111-4111-8111-111111111111','DELETE']]){
   const r=await loyaltyAdminRequest({path,method,body:{name:'Test'},accessToken:token,fetcher});
   assert.equal(r.status,501);
  }
@@ -125,4 +125,17 @@ test('financial writes require a stable idempotency key and verified DTO fields'
   assert.equal((await loyaltyAdminRequest({path,method:'POST',body:{...body,idempotencyKey:undefined},accessToken:token,fetcher})).status,400);
  }
  assert.equal(seen.length,4);
+});
+
+test('client creation accepts only name and phone and forwards to existing backend',async()=>{
+ let sent;
+ const fetcher=async(url,options)=>{sent={url,options};return {status:201,headers:new Headers({'content-type':'application/json'}),json:async()=>({id:'11111111-1111-4111-8111-111111111111'})}};
+ const body={name:'Ирина',phone:'+79990000000'};
+ const r=await loyaltyAdminRequest({path:'/clients',method:'POST',body,accessToken:token,fetcher});
+ assert.equal(r.status,201);
+ assert.equal(sent.url,'http://sizey-prod-backend:4000/api/clients');
+ assert.deepEqual(JSON.parse(sent.options.body),body);
+ for(const bad of [{name:'Ирина'},{name:'',phone:'+79990000000'},{...body,bonusBalance:100}]){
+  assert.equal((await loyaltyAdminRequest({path:'/clients',method:'POST',body:bad,accessToken:token,fetcher})).status,400);
+ }
 });
