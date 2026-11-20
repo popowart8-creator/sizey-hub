@@ -89,3 +89,20 @@ test('client edits reject unapproved fields and malformed data before upstream',
  }
  assert.equal(calls,0);
 });
+
+test('employee create and update forward validated DTOs only',async()=>{
+ const seen=[];const fetcher=async(url,options)=>{seen.push({url,options});return {status:200,headers:new Headers({'content-type':'application/json'}),json:async()=>({id:'ok'})}};
+ const id='11111111-1111-4111-8111-111111111111';
+ assert.equal((await loyaltyAdminRequest({path:'/users',method:'POST',body:{name:'Тест',login:'test',password:'secure-password-123',role:'CASHIER',status:'ACTIVE'},accessToken:token,fetcher})).status,200);
+ assert.equal((await loyaltyAdminRequest({path:'/users/'+id,method:'PATCH',body:{name:'Новое имя',role:'ADMIN'},accessToken:token,fetcher})).status,200);
+ assert.equal(seen.length,2);
+ assert.equal(seen[0].url,'http://sizey-prod-backend:4000/api/users');
+ assert.equal(seen[1].url,'http://sizey-prod-backend:4000/api/users/'+id);
+});
+test('employee mutations reject invalid DTOs without upstream access',async()=>{
+ let calls=0;const fetcher=async()=>{calls++;throw Error('unexpected')};
+ for(const body of [{name:'A',role:'OWNER'},{name:'A',login:'a',password:'short',role:'ADMIN'},{name:'A',login:'a',password:'long-password',role:'ADMIN',isSuperuser:true}]){
+  assert.equal((await loyaltyAdminRequest({path:'/users',method:'POST',body,accessToken:token,fetcher})).status,400);
+ }
+ assert.equal(calls,0);
+});
