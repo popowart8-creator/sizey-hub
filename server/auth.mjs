@@ -1,6 +1,6 @@
 import {createServer} from 'node:http';
 import {DatabaseSync} from 'node:sqlite';
-import {randomBytes,createHash,createCipheriv,createDecipheriv} from 'node:crypto';
+import {randomBytes,createHash,createHmac,createCipheriv,createDecipheriv} from 'node:crypto';
 import {hashPassword,verifyPassword,validPassword,temporaryPassword} from './passwords.mjs';
 
 export const digest=value=>createHash('sha256').update(value).digest('hex');
@@ -55,7 +55,10 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
   }catch(e){db.exec('ROLLBACK');throw e}
   return{phone:user.phone,temporaryPassword:password,mustChangePassword:true};
  }
- async function customerAccess(me,clientId,confirmation){
+ const proofWindow=()=>Math.floor(now()/300000);
+ const proofCode=(sessionHash,window)=>String(createHmac('sha256',secret)
+  .update('loyalty-phone-proof:'+sessionHash+':'+window).digest().readUInt32BE()%100000000).padStart(8,'0');
+ async function customerAccess(me,clientId,confirmation,allowConfirmation=false){
   if(!getLoyaltyClient)throw new ApiError(503,'Связь с бонусной системой временно недоступна');
   const client=await getLoyaltyClient(clientId);
   if(!client)throw new ApiError(404,'Клиент не найден');
@@ -64,13 +67,30 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
   limit('staff-issue',me.id,50,3600000);
   if(confirmation.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
   if(typeof confirmation.expectedPhone!=='string'||normalizePhone(confirmation.expectedPhone)!==phone)throw new ApiError(409,'Телефон клиента изменился. Обновите карточку и проверьте клиента заново.');
+  if(allowConfirmation&&user?.password_hash&&!user.must_change&&!user.phone_verified){
+   const code=confirmation.verificationCode;
+   if(typeof code!=='string'||!/^\d{8}$/.test(code))throw new ApiError(400,'Укажите код из профиля клиента');
+   const window=proofWindow();
+   const sessions=all('SELECT hash FROM sessions WHERE customer=? AND expires>?',user.id,now());
+   if(!sessions.some(session=>code===proofCode(session.hash,window)||code===proofCode(session.hash,window-1)))
+    throw new ApiError(400,'Код неверный или устарел. Обновите профиль клиента.');
+   db.exec('BEGIN');
+   try{
+    const updated=run('UPDATE credentials SET phone_verified=1 WHERE customer=? AND phone_verified=0 AND must_change=0 AND password_hash=?',user.id,user.password_hash);
+    if(!updated.changes)throw new ApiError(409,'Данные уже изменены. Обновите карточку.');
+    run('INSERT INTO credential_audit VALUES(?,?,?,?)',me.id,user.id,'confirm-loyalty-phone',now());
+    db.exec('COMMIT');
+   }catch(error){db.exec('ROLLBACK');throw error}
+   return{phoneVerified:true};
+  }
+  if(confirmation.verificationCode!==undefined)throw new ApiError(409,'Статус номера изменился. Обновите карточку клиента.');
   return issueToCustomer(me,user||{id:randomBytes(16).toString('hex'),phone,password_hash:null,temporary_encrypted:null},!user);
  }
  const server=createServer(async(req,res)=>{
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
   try{
    const path=new URL(req.url,'http://internal').pathname;
-   if(adminHandler&&await adminHandler(req,res,customerAccess))return;
+   if(adminHandler&&await adminHandler(req,res,(me,id,confirmation)=>customerAccess(me,id,confirmation,true)))return;
    if(req.method==='GET'&&path==='/hub-api/health')return reply(200,{ok:true,authMethod:'password',loyaltyConfigured:!!loyalty,employeeCabinetIntegration:!!getLoyaltyClient});
    if(req.method==='POST'){if(req.headers.origin!==origin)throw new ApiError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ApiError(415,'Ожидается JSON')}
    if(req.method==='POST'&&path==='/hub-api/auth/register'){
@@ -107,7 +127,10 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
    if(req.method==='GET'&&path==='/hub-api/auth/me'){const user=current(req);return reply(user?200:401,user?{user:publicUser(user)}:{message:'Требуется вход'})}
    if(req.method==='GET'&&path==='/hub-api/loyalty'){
     const user=current(req);if(!user)throw new ApiError(401,'Требуется вход');if(user.must_change)throw new ApiError(403,'Сначала смените временный пароль');
-    if(!user.phone_verified)return reply(200,{linked:false,pendingVerification:true,balance:null,history:[]});
+    if(!user.phone_verified){
+     const sessionHash=digest(readCookie(req,'__Host-sizey_session'));
+     return reply(200,{linked:false,pendingVerification:true,verificationCode:proofCode(sessionHash,proofWindow()),balance:null,history:[]});
+    }
     if(!loyalty)throw new ApiError(503,'Бонусная система временно недоступна');return reply(200,await loyalty(user.phone));
    }
    if(req.method==='POST'&&path==='/hub-api/staff/login'){

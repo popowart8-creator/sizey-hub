@@ -3,7 +3,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 type Access={exists:boolean;phone:string;phoneVerified:boolean;mustChangePassword:boolean;temporaryPasswordPending:boolean};
 type Issued={phone:string;temporaryPassword:string};
 
-async function request<T>(clientId:string,confirmation?:{identityChecked:boolean;expectedPhone:string},signal?:AbortSignal):Promise<T>{
+async function request<T>(clientId:string,confirmation?:{identityChecked:boolean;expectedPhone:string;verificationCode?:string},signal?:AbortSignal):Promise<T>{
  const response=await fetch('/hub-api/admin/clients/'+encodeURIComponent(clientId)+'/access',{
   credentials:'same-origin',cache:'no-store',signal,
   ...(confirmation?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(confirmation)}:{})
@@ -18,6 +18,8 @@ export default function ClientAccess({clientId,onExpired}:{clientId:string;onExp
  const [issued,setIssued]=useState<Issued|null>(null);
  const [confirming,setConfirming]=useState(false);
  const [confirmed,setConfirmed]=useState(false);
+ const [code,setCode]=useState('');
+ const confirmingExisting=!!access?.exists&&!access.phoneVerified&&!access.mustChangePassword&&!access.temporaryPasswordPending;
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [revision,setRevision]=useState(0);
@@ -46,7 +48,11 @@ export default function ClientAccess({clientId,onExpired}:{clientId:string;onExp
   setBusy(true);
   setError('');
   try{
-   setIssued(await request<Issued>(clientId,{identityChecked:true,expectedPhone:access.phone}));
+   const result=await request<Issued|{phoneVerified:true}>(clientId,{
+    identityChecked:true,expectedPhone:access.phone,...(confirmingExisting?{verificationCode:code}:{})
+   });
+   if('temporaryPassword' in result)setIssued(result);
+   setCode('');
    setConfirming(false);
    setConfirmed(false);
    setRevision(value=>value+1);
@@ -69,12 +75,12 @@ export default function ClientAccess({clientId,onExpired}:{clientId:string;onExp
    <button type="button" className="secondary" onClick={()=>setIssued(null)}>Скрыть пароль</button>
   </div>:confirming&&access?<form onSubmit={issue}>
    <p>Номер клиента: <strong>{access.phone}</strong></p>
-   <p>Предыдущий пароль перестанет действовать, активные сеансы завершатся.</p>
+   {confirmingExisting?<p><label>Код из профиля клиента <input value={code} inputMode="numeric" pattern="[0-9]{8}" maxLength={8} required onChange={event=>setCode(event.target.value)}/></label></p>:<p>Предыдущий пароль перестанет действовать, активные сеансы завершатся.</p>}
    <p><label><input type="checkbox" checked={confirmed} required disabled={busy} onChange={event=>setConfirmed(event.target.checked)}/> Я проверил личность клиента и принадлежность номера телефона.</label></p>
-   <button className="primary" disabled={!confirmed||busy}>{busy?'Выдаём…':'Выдать временный пароль'}</button>
-   <button type="button" className="secondary" disabled={busy} onClick={()=>{setConfirming(false);setConfirmed(false);setError('')}}>Отмена</button>
+   <button className="primary" disabled={!confirmed||busy||(confirmingExisting&&!/^\d{8}$/.test(code))}>{busy?'Сохраняем…':confirmingExisting?'Подтвердить номер':'Выдать временный пароль'}</button>
+   <button type="button" className="secondary" disabled={busy} onClick={()=>{setConfirming(false);setConfirmed(false);setCode('');setError('')}}>Отмена</button>
   </form>:access&&<button type="button" className="secondary" onClick={()=>setConfirming(true)}>
-   {!access.exists||access.temporaryPasswordPending?'Выдать временный пароль':'Сбросить пароль'}
+   {confirmingExisting?'Подтвердить номер':!access.exists||access.temporaryPasswordPending?'Выдать временный пароль':'Сбросить пароль'}
   </button>}
  </section>;
 }

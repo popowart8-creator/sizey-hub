@@ -30,7 +30,7 @@ test('temporary password requires change; rotation revokes sessions; logout inva
 test('registration cannot overwrite existing clients and unverified new phones cannot see loyalty',async()=>{const f=await fixture();try{
  assert.equal((await f.post('/hub-api/auth/register',{phone,password:changed,consent:true})).status,409);
  const r=await f.post('/hub-api/auth/register',{phone:'+79991112233',password:changed,consent:true});assert.equal(r.status,201);const c=cookie(r);assert.equal((await r.json()).user.phoneVerified,false);
- const calls=f.calls.length;assert.deepEqual(await(await f.get('/hub-api/loyalty',c)).json(),{linked:false,pendingVerification:true,balance:null,history:[]});assert.equal(f.calls.length,calls);
+ const calls=f.calls.length;const {verificationCode,...pending}=await(await f.get('/hub-api/loyalty',c)).json();assert.match(verificationCode,/^\d{8}$/);assert.deepEqual(pending,{linked:false,pendingVerification:true,balance:null,history:[]});assert.equal(f.calls.length,calls);
  assert.equal((await f.post('/hub-api/auth/request-code',{phone,consent:true})).status,404);
 }finally{await f.close()}});
 test('staff-only delivery consumes encrypted initial password, reset revokes customer sessions',async()=>{const f=await fixture();try{
@@ -71,5 +71,29 @@ test('admin client access requires an admin session and explicit phone confirmat
   const issued=await f.post(path,{identityChecked:true,expectedPhone:phone},session,origin);
   assert.equal(issued.status,200);
   assert.equal((await issued.json()).temporaryPassword,temporary);
+ }finally{await f.close()}
+});
+
+test('an existing customer proves account access and keeps their password and session',async()=>{
+ const f=await fixture('ADMIN');
+ const customerPhone='+79990001122',origin='https://admmm.sizey.ru';
+ const path='/hub-api/admin/clients/22222222-2222-4222-8222-222222222222/access';
+ try{
+  const registration=await f.post('/hub-api/auth/register',{phone:customerPhone,password:changed,consent:true});
+  assert.equal(registration.status,201);
+  const customerSession=cookie(registration);
+  const {verificationCode}=await(await f.get('/hub-api/loyalty',customerSession)).json();
+  const adminSession=cookie(await f.post('/hub-api/admin/login',{login:'employee',password:'employee-password'},null,origin));
+  const proof={identityChecked:true,expectedPhone:customerPhone};
+  assert.equal((await f.post(path,proof,adminSession,origin)).status,400);
+  const wrong=verificationCode==='00000000'?'11111111':'00000000';
+  assert.equal((await f.post(path,{...proof,verificationCode:wrong},adminSession,origin)).status,400);
+  const verified=await f.post(path,{...proof,verificationCode},adminSession,origin);
+  assert.deepEqual(await verified.json(),{phoneVerified:true});
+  const {user}=await(await f.get('/hub-api/auth/me',customerSession)).json();
+  assert.equal(user.phoneVerified,true);
+  assert.equal(user.mustChangePassword,false);
+  assert.equal((await f.post('/hub-api/auth/login',{phone:customerPhone,password:changed})).status,200);
+  assert.equal((await f.post(path,{...proof,verificationCode},adminSession,origin)).status,409);
  }finally{await f.close()}
 });
