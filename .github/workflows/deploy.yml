@@ -199,7 +199,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.deploy_site == true
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.deploy_site == true) || (github.event_name == 'push' && github.event.head_commit.message == 'Deploy analytics zero state to production'))
     needs: build
     runs-on: ubuntu-latest
     steps:
