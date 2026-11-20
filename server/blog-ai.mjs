@@ -7,7 +7,7 @@ const slug=text=>String(text||'').toLowerCase().replace(/[^a-z0-9а-яё\s-]/g,'
 function xmlItems(xml){
  const items=[];
  for(const match of xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)){
-  const item=match[1],field=name=>strip(item.match(new RegExp('<'+name+'(?:\\s[^>]*)?>([\\s\\S]*?)<\\/'+name+'>','i'))?.[1]||'');
+  const item=match[1],field=name=>strip(item.match(new RegExp('<'+name+'(?:\s[^>]*)?>([\s\S]*?)<\/'+name+'>','i'))?.[1]||'');
   const title=field('title'),description=field('description'),url=field('link');
   if(!title||!description||title.length>240)continue;
   try{const u=new URL(url);if(u.protocol==='https:'&&u.hostname!=='www.bing.com'&&u.hostname!=='bing.com')items.push({title,description:description.slice(0,700),url:u.href})}catch{/* ignore malformed feed */ }
@@ -55,19 +55,19 @@ export function createBlogAI({fetchImpl=fetch,endpoint=process.env.OLLAMA_URL||'
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),115000);
   try{
    let response;
-   try{response=await fetchImpl(endpoint.replace(/\\/$/,'')+'/api/chat',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(request)})}
+   try{response=await fetchImpl(endpoint.replace(/\/$/,'')+'/api/chat',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(request)})}
    catch(e){if(controller.signal.aborted)fail('Qwen превысил лимит времени (115 секунд). Попробуйте ещё раз.',504);fail('Нет соединения с локальной моделью Qwen',503)}
    if(!response.ok)fail('Qwen отклонил запрос (HTTP '+response.status+')',503);
    let data;
    try{data=await response.json()}catch{fail('Qwen вернул повреждённый ответ',502)}
    let article;
    try{
-    const raw=String(data.message?.content||'').trim().replace(/^\`\`\`(?:json)?\\s*/i,'').replace(/\\s*\`\`\`$/,'');
+    const raw=String(data.message?.content||'').trim().replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'');
     article=JSON.parse(raw);
    }catch{fail('Qwen вернул некорректный JSON. Повторите генерацию.',502)}
    if(!article||typeof article.title!=='string'||article.title.trim().length<12||typeof article.summary!=='string'||article.summary.trim().length<30||!Array.isArray(article.sections)||article.sections.length<2||article.sections.some(x=>typeof x!=='string'||x.trim().length<50))fail('Qwen создал неполный текст. Повторите генерацию.',502);
    const uniqueSources=[],domains=new Set();
-   for(const source of sources){const host=new URL(source.url).hostname.replace(/^www\\./,'').toLowerCase();if(!domains.has(host)){uniqueSources.push({title:source.title,url:source.url});domains.add(host)}if(uniqueSources.length>=6)break}
+   for(const source of sources){const host=new URL(source.url).hostname.replace(/^www\./,'').toLowerCase();if(!domains.has(host)){uniqueSources.push({title:source.title,url:source.url});domains.add(host)}if(uniqueSources.length>=6)break}
    if(uniqueSources.length<2)fail('Недостаточно независимых источников',422);
    return{rejected:false,article:{slug:'sizey-'+Date.now().toString(36),title:article.title.trim().slice(0,140),summary:article.summary.trim().slice(0,450),sections:article.sections.slice(0,8).map(x=>x.trim().slice(0,2500)),sources:uniqueSources,productIds:rank.productIds,score:rank.score},score:rank.score,reviewRequired:true};
   }finally{clearTimeout(timeout)}
