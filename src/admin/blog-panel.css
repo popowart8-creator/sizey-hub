@@ -23,3 +23,5 @@
 .blog-admin-editor form{margin:22px 0}.blog-admin-publish{display:flex;justify-content:space-between;align-items:center;gap:15px;border-top:1px solid #eee;padding-top:20px;font-weight:650;font-size:14px}
 @media(max-width:930px){.blog-admin-columns{grid-template-columns:1fr}.blog-admin-intro{align-items:flex-start}}
 @media(max-width:580px){.blog-admin-intro,.blog-admin-generate{flex-direction:column}.blog-admin-threshold{flex:initial;width:100%}.blog-admin .panel{padding:16px}.blog-admin-generate button{width:100%}}
+
+.blog-admin-ideas{display:grid;gap:10px;margin-top:18px}.blog-admin-ideas h4{font-size:14px;margin:0 0 5px}.blog-admin-ideas button{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #e8ebe7;background:#f9faf8;border-radius:12px;padding:13px;text-align:left;font-size:14px;line-height:1.5}.blog-admin-ideas button span{display:grid;gap:5px}.blog-admin-ideas button small{color:#6f7c6e;font-size:12px}
