@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {Search,X,ExternalLink,RefreshCw} from 'lucide-react';
 import useAdminDialog from './useAdminDialog';
 import LoyaltyPanel from './LoyaltyPanel';
@@ -21,12 +21,14 @@ const balance=(value?:number)=>typeof value==='number'?value.toLocaleString('ru-
 function ClientDrawer({client,onClose,onExpired}:{client:Client;onClose:()=>void;onExpired:()=>void}){
  const [detail,setDetail]=useState<Client|null>(null),[transactions,setTransactions]=useState<Transaction[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const root=useAdminDialog(onClose,false);
+ const expiredRef=useRef(onExpired);
+ expiredRef.current=onExpired;
  useEffect(()=>{let active=true;async function load(){setLoading(true);setError('');try{
   const [info,history]=await Promise.all([request('/clients/'+encodeURIComponent(client.id)),request('/clients/'+encodeURIComponent(client.id)+'/transactions')]);
   if(active){setDetail(info.client||info);setTransactions(items(history,'transactions'))}
- }catch(e){if(active){if((e as {status?:number}).status===401)onExpired();setError((e as Error).message)}}finally{if(active)setLoading(false)}}
+ }catch(e){if(active){if((e as {status?:number}).status===401)expiredRef.current();setError((e as Error).message)}}finally{if(active)setLoading(false)}}
  void load();return()=>{active=false};
- },[client.id,onExpired]);
+ },[client.id]);
  const value=detail||client;
  return <div className="editor-overlay clients-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}>
   <section className="editor clients-drawer" role="dialog" aria-modal="true" aria-labelledby="client-drawer-title" ref={root}>
@@ -45,13 +47,15 @@ function ClientDrawer({client,onClose,onExpired}:{client:Client;onClose:()=>void
 export default function ClientsPanel({onExpired}:Props){
  const [clients,setClients]=useState<Client[]>([]),[search,setSearch]=useState(''),[selected,setSelected]=useState<Client|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
  const [reload,setReload]=useState(0);
+ const expiredRef=useRef(onExpired);
+ expiredRef.current=onExpired;
  const [section,setSection]=useState<'clients'|'settings'|'employees'>('clients');
  useEffect(()=>{let active=true;async function load(){setLoading(true);setError('');try{
   const result=await request('/clients?all=true');
   if(active)setClients(items(result,'clients'));
  }catch(e){if(active){if((e as {status?:number}).status===401)onExpired();setError((e as Error).message)}}finally{if(active)setLoading(false)}}
  void load();return()=>{active=false};
- },[reload,onExpired]);
+ },[reload]);
  const filtered=clients.filter(c=>((c.name||'')+' '+phone(c)).toLocaleLowerCase('ru').includes(search.toLocaleLowerCase('ru')));
  return <><div className="table-toolbar" style={{marginBottom:16,display:'flex',gap:8,flexWrap:'wrap'}}><button className="secondary" aria-pressed={section==='clients'} onClick={()=>setSection('clients')}>Клиенты и бонусы</button><button className="secondary" aria-pressed={section==='settings'} onClick={()=>setSection('settings')}>Настройки лояльности</button><button className="secondary" aria-pressed={section==='employees'} onClick={()=>setSection('employees')}>Сотрудники</button></div>{section!=='clients'?<LoyaltyPanel key={section} initialTab={section} hideClientTab onExpired={onExpired}/>:<section className="panel"><div className="table-toolbar"><div className="search-input"><Search size={18}/><input aria-label="Поиск клиентов" placeholder="Имя или телефон" value={search} onChange={e=>setSearch(e.target.value)}/></div><span className="result-count">{filtered.length} клиентов</span><button className="secondary icon-button" aria-label="Обновить клиентов" disabled={loading} onClick={()=>setReload(n=>n+1)}><RefreshCw size={18}/></button></div>
  {error&&<div className="notice error" role="alert">{error}</div>}
