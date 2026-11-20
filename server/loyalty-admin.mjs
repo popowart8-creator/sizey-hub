@@ -67,14 +67,15 @@ export async function loyaltyAdminRequest({path,method,query='',accessToken,body
   if(!route)return {status:404,data:{message:'Операция бонусной системы не поддерживается'}};
   const financialWrite=financialWrites.has(path)&&method==='POST';
   if(financialWrite&&!validateFinancial(path,body))return {status:400,data:{message:'Некорректные данные финансовой операции'}};
-  if(/^\/sales\/[a-f0-9-]{36}\/cancel$/i.test(path)&&method==='POST')return {status:501,data:{message:'Отмена продажи временно недоступна до проверки контракта'}};
+  const cancelSale=route.upstream==='/api/sales/:id/cancel'&&method==='POST';
+  if(cancelSale&&body!==undefined)return {status:400,data:{message:'Отмена продажи не принимает тело запроса'}};
   // Production ClientsController and UpdateClientDto were verified by the read-only contract inspection.
   const clientPatch=method==='PATCH'&&/^\/clients\/[a-f0-9-]{36}$/i.test(path);
   if(clientPatch&&!validateClientPatch(body))return {status:400,data:{message:'Некорректные данные клиента'}};
   const employeeWrite=(path==='/users'&&method==='POST')||(path.startsWith('/users/')&&route.upstream==='/api/users/:id'&&method==='PATCH');
   if(employeeWrite&&!validateEmployee(body,method==='POST'))return {status:400,data:{message:'Некорректные данные сотрудника'}};
   // Other write DTOs have not been verified against the production NestJS source.
-  if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!clientPatch&&!employeeWrite&&!financialWrite&&!(path==='/sales/preview'&&method==='POST'))
+  if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!clientPatch&&!employeeWrite&&!financialWrite&&!cancelSale&&!(path==='/sales/preview'&&method==='POST'))
     return {status:501,data:{message:'Изменение данных ожидает проверки контракта действующей системы'}};
   if(path==='/settings'&&method==='PATCH'&&!validateSettings(body))
     return {status:400,data:{message:'Некорректные настройки программы лояльности'}};
