@@ -29,3 +29,12 @@
 .sizey-blog-sources h3{font-size:19px}.sizey-blog-sources p{font-size:13px;color:#787878;line-height:1.6}
 .sizey-blog-sources a{font-size:14px;text-decoration:underline;text-underline-offset:3px;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
 @media(max-width:600px){.sizey-blog-grid{grid-template-columns:1fr}.sizey-blog-productgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.sizey-blog{padding:14px 16px 110px}.sizey-blog-article h2{font-size:32px}.sizey-blog-prose p{font-size:16px}.sizey-blog-card-info{padding:18px}}
+
+/* Article detail occupies the viewport, like the product detail overlay. */
+.sizey-blog-article{position:fixed;inset:0;z-index:900;overflow-y:auto;overscroll-behavior:contain;background:#fff;max-width:none;width:100%;margin:0;padding:78px max(24px,calc((100vw - 780px)/2)) 100px}
+.sizey-blog-back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:20px;z-index:2;display:grid;place-items:center;width:42px;height:42px;margin:0;border-radius:50%;background:#f5f5f5}
+.sizey-blog-article h2{margin-top:8px}
+.sizey-blog a,.sizey-blog a:visited{color:inherit;text-decoration:none}
+.sizey-blog-card:hover,.sizey-blog-card:focus-visible{color:inherit;text-decoration:none}
+.sizey-blog-product-action,.sizey-blog-more,.sizey-blog-sources,.sizey-blog-cta{display:none}
+@media(max-width:600px){.sizey-blog-article{padding:calc(env(safe-area-inset-top,0px) + 78px) 20px 100px}.sizey-blog-back{left:16px}}
