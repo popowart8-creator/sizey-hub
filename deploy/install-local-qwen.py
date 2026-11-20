@@ -36,7 +36,25 @@ override.write_text('services:\n  auth:\n    environment:\n      OLLAMA_URL: htt
 dc=['docker','compose','-f',str(compose),'-f',str(override)]
 canary='sizey-qwen-api-canary'
 live_changed=False
-probe="""import {createDescriptionAI} from './ai-description.mjs';const ai=createDescriptionAI();const s=await ai.status();if(!s.ready)throw Error('Qwen status unavailable: '+s.reason);const r=await ai.generate({name:'Пальто',facts:'Цвет чёрный, пояс в комплекте',mode:'create'},'qwen-deploy-smoke');if(!r.description||r.description.length<20)throw Error('No generated text');const answer=await ai.assistant([{role:'system',content:'Ответь по-русски в JSON с полями answer и section. Раздел analytics показывает посещения.'},{role:'user',content:'Где посмотреть посещения?'}],'qwen-deploy-smoke');if(!answer.answer)throw Error('No assistant reply');console.log(JSON.stringify({model:s.model.id,ready:s.ready,generatedCharacters:r.description.length,assistantCharacters:answer.answer.length}));"""
+probe="""
+import {createDescriptionAI} from './ai-description.mjs';
+import {prepareAssistantReply} from './admin-assistant.mjs';
+const ai=createDescriptionAI();
+const status=await ai.status();
+if(!status.ready)throw Error('Qwen status unavailable: '+status.reason);
+const description=await ai.generate({name:'Пальто',facts:'Цвет чёрный, пояс в комплекте',mode:'create'},'qwen-deploy-smoke');
+const store={list:()=>[{id:1,name:'Пальто SIZEY',price:5900,categories:['Пальто'],sizes:['S','M'],published:true}],summary:()=>({products:1,publishedProducts:1,orders:0})};
+const greeting={role:'user',content:'йоу'};
+const hello=prepareAssistantReply({section:'overview',history:[greeting]},{store});
+const history=[greeting,{role:'assistant',content:hello.answer}];
+const help=prepareAssistantReply({section:'overview',history:[...history,{role:'user',content:'что умеешь'}]},{store});
+if(!hello.answer||!help.answer)throw Error('Assistant quick replies unavailable');
+const messages=prepareAssistantReply({section:'products',history:[...history,{role:'user',content:'Сколько стоит пальто SIZEY?'}]},{store});
+const start=Date.now();
+const answer=await ai.assistant(messages,'qwen-deploy-smoke');
+if(!answer.answer)throw Error('No assistant reply');
+console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,assistantMs:Date.now()-start}));
+"""
 try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)
     run(dc+['config','-q'])

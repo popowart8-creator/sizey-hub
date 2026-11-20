@@ -28,7 +28,10 @@ test('assistant uses Ollama and only returns allowlisted navigation', async () =
  const messages = [{role: 'user', content: 'Где аналитика?'}];
  const ai = createDescriptionAI({fetchImpl: async (url, options) => {
   assert.equal(url.pathname, '/api/chat');
-  assert.deepEqual(JSON.parse(options.body).messages, messages);
+  const request = JSON.parse(options.body);
+  assert.deepEqual(request.messages, messages);
+  assert.ok(request.options.num_ctx <= 3072);
+  assert.ok(request.options.num_predict <= 220);
   return Response.json({message: {content: JSON.stringify({answer: 'Откройте аналитику.', section: 'analytics'})}});
  }});
  assert.deepEqual(await ai.assistant(messages, 'admin'), {answer: 'Откройте аналитику.', section: 'analytics'});
@@ -36,4 +39,9 @@ test('assistant uses Ollama and only returns allowlisted navigation', async () =
  const invalidSection = createDescriptionAI({fetchImpl: async () =>
   Response.json({message: {content: JSON.stringify({answer: 'Ответ', section: '/admin/secret'})}})});
  assert.deepEqual(await invalidSection.assistant(messages, 'admin'), {answer: 'Ответ', section: null});
+});
+
+test('assistant distinguishes a slow Ollama response from a connection error', async () => {
+ const ai = createDescriptionAI({fetchImpl: async () => { throw new DOMException('Timeout', 'TimeoutError'); }});
+ await assert.rejects(ai.assistant([], 'admin'), error => error.status === 504);
 });
