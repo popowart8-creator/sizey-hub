@@ -1,1 +1,24 @@
 .sizey-loading-skeleton{width:100%;max-width:1180px;margin:0 auto;padding:22px 16px 42px;box-sizing:border-box}.sizey-skeleton-heading{height:26px;width:38%;max-width:250px;margin:8px 0 26px}.sizey-skeleton-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.sizey-skeleton-card{min-width:0}.sizey-skeleton-image{width:100%;aspect-ratio:4/5;border-radius:14px}.sizey-skeleton-line{height:14px;width:85%;margin-top:14px}.sizey-skeleton-line--short{width:48%;margin-top:10px}.sizey-skeleton-bone{position:relative;overflow:hidden;background:#ececec;border-radius:8px}.sizey-skeleton-bone::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);animation:sizey-skeleton-glide 1.6s ease-in-out infinite}@keyframes sizey-skeleton-glide{to{transform:translateX(100%)}}@media(min-width:720px){.sizey-skeleton-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}}@media(prefers-reduced-motion:reduce){.sizey-skeleton-bone::after{display:none}}
+
+/* Skeleton geometry follows the actual blog cards and profile loyalty card. */
+.sizey-blog .sizey-loading-skeleton--blog{padding:0;margin:0;max-width:none}
+.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-card{border:1px solid #ebebeb;border-radius:20px;overflow:hidden;background:#fff}
+.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-image{aspect-ratio:16/9;border-radius:0}
+.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-card-content{padding:22px;display:grid;gap:10px}
+.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-line{height:21px;width:92%;margin:0}
+.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-line--short{width:65%}
+.sizey-profile-loading{display:grid;gap:20px;width:100%;max-width:540px;margin:0 auto;padding:22px 16px 40px;box-sizing:border-box}
+.sizey-profile-loading-heading{display:flex;align-items:center;gap:14px}
+.sizey-profile-loading-avatar{width:54px;height:54px;border-radius:50%;flex:none}
+.sizey-profile-loading-heading-lines{display:grid;gap:10px;flex:1}
+.sizey-profile-loading-heading-lines span{height:14px;width:54%}
+.sizey-profile-loading-heading-lines span+span{width:35%;height:11px}
+.sizey-profile-loading-card{position:relative;display:flex;flex-direction:column;gap:12px;min-height:205px;border-radius:22px;padding:24px;background:#252525;box-sizing:border-box}
+.sizey-profile-loading-card .sizey-skeleton-bone{background:#454545}
+.sizey-profile-loading-name{width:42%;height:17px}
+.sizey-profile-loading-level{position:absolute;right:22px;top:22px;width:80px;height:25px;border-radius:99px}
+.sizey-profile-loading-caption{width:35%;height:12px;margin-top:auto}
+.sizey-profile-loading-balance{width:44%;height:38px}
+.sizey-profile-loading-row{height:54px;border-radius:14px}
+@media(max-width:600px){.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-grid{grid-template-columns:1fr}.sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-card-content{padding:18px}}
