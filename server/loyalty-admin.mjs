@@ -26,7 +26,7 @@ function validateFinancial(path,body){
  if(Object.keys(body).some(k=>!allowed.includes(k)))return false;
  if(typeof body.idempotencyKey!=='string'||body.idempotencyKey.length<8||body.idempotencyKey.length>128)return false;
  if(body.note!==undefined&&(typeof body.note!=='string'||body.note.length>500))return false;
- if(sale)return uuid.test(body.clientId)&&typeof body.purchaseAmount==='number'&&Number.isFinite(body.purchaseAmount)&&body.purchaseAmount>0&&Math.round(body.purchaseAmount*100)===body.purchaseAmount*100&&Number.isSafeInteger(body.bonusSpent)&&body.bonusSpent>=0;
+ if(sale)return uuid.test(body.clientId)&&typeof body.purchaseAmount==='number'&&Number.isFinite(body.purchaseAmount)&&body.purchaseAmount>0&&Math.abs(Math.round(body.purchaseAmount*100)-body.purchaseAmount*100)<1e-7&&Number.isSafeInteger(body.bonusSpent)&&body.bonusSpent>=0;
  if(manual)return uuid.test(body.clientId)&&Number.isSafeInteger(body.amount)&&body.amount>0;
  return uuid.test(body.transactionId);
 }
