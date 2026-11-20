@@ -53,13 +53,15 @@ const price=prepareAssistantReply({section:'products',history:[{role:'user',cont
 if(!price.answer?.includes('900'))throw Error('Direct catalog price unavailable');
 const messages=prepareAssistantReply({section:'products',history:[...history,{role:'user',content:'Напиши короткий заголовок для пальто SIZEY'}]},{store});
 const start=Date.now();
-const answer=await ai.assistant(messages,'qwen-deploy-smoke');
+let firstTextMs;
+const answer=await ai.assistant(messages,'qwen-deploy-smoke',{onProgress:()=>{firstTextMs??=Date.now()-start;}});
+if(firstTextMs===undefined)throw Error('Assistant text did not stream');
 const assistantMs=Date.now()-start;
 if(!answer.answer)throw Error('No assistant reply');
 const warmStart=Date.now();
 const next=await ai.assistant(messages,'qwen-deploy-smoke');
 if(!next.answer)throw Error('No warm assistant reply');
-console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,assistantMs,warmAssistantMs:Date.now()-warmStart}));
+console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,assistantMs,firstTextMs,warmAssistantMs:Date.now()-warmStart}));
 """
 try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)

@@ -112,7 +112,31 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
     const prepared=prepareAssistantReply(await body(req,65536),{store,blog,analytics,actor:user.id});
     if(Array.isArray(prepared)){
      if(!descriptionAI)throw new ContentError(503,'ИИ-помощник недоступен');
-     reply(200,{...await descriptionAI.assistant(prepared,user.id),source:'model'});
+     if(!String(req.headers.accept||'').includes('application/x-ndjson')){
+      reply(200,{...await descriptionAI.assistant(prepared,user.id),source:'model'});
+     }else{
+      const controller=new AbortController();
+      const disconnect=()=>controller.abort();
+      res.once('close',disconnect);
+      const send=event=>{
+       if(res.destroyed)return;
+       if(!res.headersSent)res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store, no-transform','X-Content-Type-Options':'nosniff'});
+       res.write(JSON.stringify(event)+'\n');
+      };
+      try{
+       const result=await descriptionAI.assistant(prepared,user.id,{
+        signal:controller.signal,onProgress:text=>send({type:'progress',text})
+       });
+       send({type:'answer',answer:{...result,source:'model'}});
+      }catch(error){
+       if(res.destroyed)return true;
+       if(!res.headersSent)throw error;
+       send({type:'error',message:error instanceof ContentError?error.message:'Не удалось закончить ответ'});
+      }finally{
+       res.off('close',disconnect);
+       if(res.headersSent&&!res.destroyed)res.end();
+      }
+     }
     }else reply(200,prepared);
    }
    else if(path==='/hub-api/admin/ai/status'&&req.method==='GET'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');reply(200,await descriptionAI.status())}
