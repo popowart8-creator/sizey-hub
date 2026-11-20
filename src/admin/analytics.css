@@ -5,3 +5,13 @@
 @media(prefers-reduced-motion:reduce){.is-spinning{animation:none}}
 
 .analytics .table-wrap td{color:#56614d}.analytics .table-wrap th{color:#6e7864}.ap-chart-tooltip>div{color:#6e7864}
+
+/* Yandex search analytics: readable action button and responsive content */
+.ap-search-analytics{min-width:0;max-width:100%;overflow:hidden}
+.ap-search-analytics .ap-panel-heading{flex-wrap:wrap;align-items:center;gap:12px}
+.ap-search-analytics .ap-title{flex:1 1 230px;min-width:0}
+.ap-search-analytics .ap-title h2{overflow-wrap:anywhere}
+.ap-search-analytics .ap-refresh{width:auto;height:auto;min-height:40px;min-width:140px;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;white-space:normal;text-align:center;line-height:1.35;font-size:12px;flex:0 1 auto;overflow-wrap:normal}
+.ap-search-analytics .ap-caption,.ap-search-analytics [role=alert]{white-space:normal;overflow-wrap:anywhere;padding:0 24px 18px;margin:0;font-size:12px;line-height:1.5}
+.ap-search-analytics .table-wrap{max-width:100%;overflow-x:auto}
+@media(max-width:540px){.ap-search-analytics .ap-panel-heading{padding:16px}.ap-search-analytics .ap-refresh{width:100%;flex:1 1 100%}.ap-search-analytics .ap-caption,.ap-search-analytics [role=alert]{padding:0 16px 16px}}
