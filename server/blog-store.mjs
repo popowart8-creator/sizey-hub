@@ -2,6 +2,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {mkdirSync,chmodSync} from 'node:fs';
 import {dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {autoSlug} from './blog-auto.mjs';
 import {ContentError} from './content-store.mjs';
 
 const fail=(message,status=400)=>{throw new ContentError(status,message)};
@@ -9,7 +10,7 @@ const slugPattern=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const clean=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 function normalize(value){
  if(!value||typeof value!=='object'||Array.isArray(value))fail('Некорректная статья');
- const title=clean(value.title,140),slug=clean(value.slug,100).toLowerCase();
+ const title=clean(value.title,140),slug=(clean(value.slug,100)||autoSlug(title)).toLowerCase();
  const sections=value.sections,links=value.sources,productIds=value.productIds;
  if(title.length<12||!slugPattern.test(slug))fail('Проверьте заголовок и адрес статьи');
  if(!Array.isArray(sections)||sections.length<2||sections.length>16||sections.some(s=>typeof s!=='string'||s.trim().length<50||s.length>2500))fail('Добавьте от 2 до 16 содержательных абзацев');
