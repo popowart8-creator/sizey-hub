@@ -673,10 +673,6 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
   bottom: 18px;
 }
 
-.home-logo {
-  position: fixed;
-}
-
 html[data-hero-tone="dark"] .home-logo img {
   filter: brightness(0) invert(1) drop-shadow(0 1px 3px #0009);
 }
