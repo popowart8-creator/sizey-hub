@@ -304,3 +304,13 @@ button.sizey-bonus-card:disabled{cursor:default}
 .authpage:has(.customerlayout) .sizey-card-interactive:has(.sizey-bonus-card--gold){--grade-ink:#f1d77d}
 .authpage:has(.customerlayout) .sizey-card-interactive:has(.sizey-bonus-card--platinum){--grade-ink:#e1e2e9}
 @media(max-width:390px){.authpage:has(.customerlayout) .sizey-grade-info-trigger{top:23px;right:23px}}
+
+/* Press animation belongs to the whole loyalty card assembly, including the grade badge. */
+.customerbonus .sizey-card-interactive{transform:scale(1);transform-origin:center;transition:transform 160ms ease,filter 160ms ease;will-change:transform}
+.customerbonus .sizey-card-interactive:has(.sizey-bonus-card:active),
+.customerbonus .sizey-card-interactive:has(.haptic-action-switch:active){transform:scale(.975);filter:brightness(.93)}
+.customerbonus .sizey-card-interactive .sizey-bonus-card,
+.customerbonus .sizey-card-interactive .sizey-bonus-card:active,
+.customerbonus .sizey-card-interactive .sizey-bonus-card:has(.haptic-action-switch:active){transform:none;filter:none}
+.customerbonus .sizey-card-interactive .sizey-grade-info-trigger:active{transform:none}
+@media(prefers-reduced-motion:reduce){.customerbonus .sizey-card-interactive{transition:none}}
