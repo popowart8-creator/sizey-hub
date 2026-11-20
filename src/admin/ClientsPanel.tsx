@@ -8,7 +8,7 @@ import './clients.css';
 
 type Client={id:string;name:string;phone?:string;phoneNormalized?:string;loyalty?:boolean;loyaltyLevel?:{name?:string};bonusBalance?:number;registeredOnly?:boolean};
 type Transaction={id?:string;type?:string;amount?:number;bonusAmount?:number;createdAt?:string};
-type Props={onExpired:()=>void};
+type Props={onExpired:()=>void;openScannerOnMount?:boolean};
 async function request(path:string,method='GET',body?:unknown){
  const response=await fetch('/hub-api/admin/loyalty'+path,{method,credentials:'same-origin',cache:'no-store',...(body===undefined?{}:{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});
  let result:any;
@@ -126,9 +126,9 @@ function QRScanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void
  },[]);
  return <div className="editor-overlay clients-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className="editor clients-drawer" role="dialog" aria-modal="true" aria-label="Сканер бонусной карты"><header><div><span className="overline">БОНУСНАЯ КАРТА</span><h2>Сканировать QR</h2></div><button className="icon-button" onClick={onClose} aria-label="Закрыть"><X/></button></header><div className="clients-drawer-content" style={{display:'grid',gap:14}}><p>Наведите камеру на QR-код клиента. Списание только после подтверждения.</p><video ref={video} autoPlay playsInline muted style={{width:'100%',maxHeight:320,objectFit:'cover',borderRadius:16,background:'#161616'}}/>{error&&<p role="status" className="clients-muted">{error}</p>}<form onSubmit={e=>{e.preventDefault();onCode(manual.trim())}} style={{display:'grid',gap:10}}><label>Код карты<input value={manual} onChange={e=>setManual(e.target.value)} placeholder="SIZEY:PHONE:..." autoComplete="off"/></label><button className="primary" disabled={!manual.trim()}>Найти клиента</button></form></div></section></div>
 }
-export default function ClientsPanel({onExpired}:Props){
+export default function ClientsPanel({onExpired,openScannerOnMount=false}:Props){
  const [clients,setClients]=useState<Client[]>([]),[search,setSearch]=useState(''),[selected,setSelected]=useState<Client|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
- const [reload,setReload]=useState(0);const [scannerOpen,setScannerOpen]=useState(false),[scannedClient,setScannedClient]=useState<string|null>(null);
+ const [reload,setReload]=useState(0);const [scannerOpen,setScannerOpen]=useState(openScannerOnMount),[scannedClient,setScannedClient]=useState<string|null>(null);
  const [creating,setCreating]=useState(false),[createBusy,setCreateBusy]=useState(false),[createError,setCreateError]=useState(''),[newClient,setNewClient]=useState({name:'',phone:'',birthDate:''});
  async function createClient(e:import('react').FormEvent){e.preventDefault();setCreateBusy(true);setCreateError('');try{const result=await request('/clients','POST',{name:newClient.name.trim(),phone:newClient.phone.trim(),birthDate:newClient.birthDate});setCreating(false);setNewClient({name:'',phone:'',birthDate:''});setReload(n=>n+1);const created=result.client||result;if(created.id)setSelected(created)}catch(err){setCreateError((err as Error).message);if((err as {status?:number}).status===401)onExpired()}finally{setCreateBusy(false)}}
  const expiredRef=useRef(onExpired);
