@@ -73,3 +73,15 @@
 .authpage .sizey-profile-loading .sizey-profile-loading-menu-row{background:transparent!important;border-radius:0!important;border-bottom:1px solid #f0f0f0}
 .authpage .sizey-profile-loading .sizey-profile-loading-menu-row .sizey-profile-loading-icon{background:#e9e9ec}
 .authpage .sizey-profile-loading .sizey-profile-loading-menu-row .sizey-profile-loading-chevron{color:#b5b5b5}
+
+/* Skeleton follows actual signed-in profile layout and row grouping. */
+.authpage .sizey-profile-loading .customer-profile-heading{display:block;margin:0;padding:0}
+.authpage .sizey-profile-loading-heading-name{display:block;width:42%;height:24px;border-radius:7px;margin:0 0 14px}
+.authpage .sizey-profile-loading .sizey-card-interactive{position:relative;width:100%}
+.authpage .sizey-profile-loading .sizey-profile-loading-card{width:100%;box-sizing:border-box}
+.authpage .sizey-profile-loading .sizey-profile-loading-hint{display:block;width:64%;height:11px;border-radius:6px;margin:14px auto 20px;background:#e9e9ec}
+.authpage .sizey-profile-loading .sizey-profile-loading-label{display:block;width:38%;height:14px;border-radius:5px;background:#e9e9ec}
+.authpage .sizey-profile-loading .profile-utilities{display:block}
+.authpage .sizey-profile-loading .profile-account-actions{margin-top:0}
+.authpage .sizey-profile-loading .sizey-profile-loading-menu-row{min-height:56px}
+.authpage .sizey-profile-loading .sizey-profile-loading-menu-row .sizey-profile-loading-icon{display:block}
