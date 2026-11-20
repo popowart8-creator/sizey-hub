@@ -51,8 +51,8 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
    if(req.method==='GET'&&path==='/hub-api/admin/me')reply(200,{user:{id:user.id,name:user.name,role:user.role}});
    else if(req.method==='GET'&&path==='/hub-api/admin/analytics'){
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
-    const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p]));
-    reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'}))});
+    const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p])),blogTitles=new Map((blog?.list()||[]).map(a=>[a.slug,a.title]));
+    reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'})),blogArticles:report.blogArticles.map(a=>({...a,title:blogTitles.get(a.slug)||a.slug}))});
    }
    else if(path==='/hub-api/admin/blog'&&req.method==='GET'){if(!blog)throw new ContentError(503,'Блог недоступен');reply(200,{articles:blog.list()})}
    else if(path==='/hub-api/admin/blog/save'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);const article=blog.save(item.article,item.id);store.audit(user.id,'blog-save',article.slug);reply(200,{article})}
