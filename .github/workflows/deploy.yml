@@ -165,7 +165,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy_qwen_api:
-    if: (github.event_name == 'workflow_dispatch' && inputs.deploy_qwen_api == true) || (github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'deploy-blog-api-trigger'))
+    if: (github.event_name == 'workflow_dispatch' && inputs.deploy_qwen_api == true) || (github.event_name == 'push' && github.ref == 'refs/heads/main' && (contains(github.event.head_commit.message, 'deploy-blog-api-trigger') || contains(github.event.head_commit.message, 'deploy-blog-ui-api-trigger')))
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -199,7 +199,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy:
-    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.deploy_site == true) || (github.event_name == 'push' && github.event.head_commit.message == 'Deploy loyalty activation to production'))
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.deploy_site == true) || (github.event_name == 'push' && (github.event.head_commit.message == 'Deploy loyalty activation to production' || contains(github.event.head_commit.message, 'deploy-blog-ui-api-trigger'))))
     needs: build
     runs-on: ubuntu-latest
     steps:
