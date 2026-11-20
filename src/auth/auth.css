@@ -212,3 +212,8 @@ button.sizey-bonus-card:disabled{cursor:default}
 .tab-screen:has(.customerlayout) .customer-profile-heading:has(>h3):not(:has(.autherror)){display:none}
 .tab-screen:has(.customerlayout) .authpage{margin-top:0}
 .tab-screen:has(.customerlayout) .customerlayout{padding-top:0;margin-top:0}
+
+/* Customer name fades before the loyalty grade, preserving a 16px gap. */
+.customerbonus .sizey-bonus-top{display:flex;align-items:center;gap:16px;min-width:0}
+.customerbonus .sizey-bonus-client-name{display:block;flex:1 1 auto;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:clip;mask-image:linear-gradient(to right,#000 0%,#000 calc(100% - 32px),transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 0%,#000 calc(100% - 32px),transparent 100%)}
+.customerbonus .sizey-bonus-grade{flex:0 0 auto;max-width:55%}
