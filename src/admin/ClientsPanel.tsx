@@ -97,7 +97,8 @@ function QRScanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void
     stream.current=media;
     const el=video.current;if(!el)return;
     el.srcObject=media;await el.play();
-    const module=await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm');
+    const scannerUrl='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm';
+    const module=await import(/* @vite-ignore */ scannerUrl);
     const decode=(module.default||module) as (data:Uint8ClampedArray,width:number,height:number,options?:{inversionAttempts:string})=>{data:string}|null;
     let last=0;
     const tick=(now:number)=>{
