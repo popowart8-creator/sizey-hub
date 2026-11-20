@@ -314,3 +314,9 @@ button.sizey-bonus-card:disabled{cursor:default}
 .customerbonus .sizey-card-interactive .sizey-bonus-card:has(.haptic-action-switch:active){transform:none;filter:none}
 .customerbonus .sizey-card-interactive .sizey-grade-info-trigger:active{transform:none}
 @media(prefers-reduced-motion:reduce){.customerbonus .sizey-card-interactive{transition:none}}
+
+/* Bonus history uses the same delivery/contact sheet surface and spacing. */
+.delivery-swipe-sheet>.sizey-history-sheet{width:100%;max-width:none;max-height:none;margin:0;padding:0 0 8px;border:0;border-radius:0;box-shadow:none;background:transparent;transform:none;position:relative}
+.delivery-swipe-sheet .sizey-history-sheet>.close{position:absolute;top:0;right:0;left:auto;transform:none}
+.delivery-swipe-sheet .sizey-history-sheet>h2{margin:0 48px 20px 0;padding:0;font-size:24px;line-height:1.3}
+.delivery-swipe-sheet .sizey-history-dialog-body{max-height:min(60dvh,540px);overflow-y:auto;padding:0;margin:0}
