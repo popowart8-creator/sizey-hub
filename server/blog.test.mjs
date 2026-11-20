@@ -107,3 +107,15 @@ test('only unpublished drafts can be deleted and public articles stay accessible
   assert.throws(()=>store.remove(draft.id),e=>e.status===404);
  }finally{store.close();rmSync(dir,{recursive:true,force:true})}
 });
+
+test('manual articles get automatic stable URL when slug is omitted',()=>{
+ const dir=room(),store=blogStore(join(dir,'blog.sqlite'));
+ try{
+  const article=fixture();delete article.slug;
+  const draft=store.save(article);
+  assert.equal(draft.slug,autoSlug(article.title));
+  const edited=store.save({...article,title:'Новое название статьи о выборе осеннего пальто'},draft.id);
+  assert.equal(edited.slug,draft.slug);
+  assert.throws(()=>store.save(article),e=>e.status===409);
+ }finally{store.close();rmSync(dir,{recursive:true,force:true})}
+});
