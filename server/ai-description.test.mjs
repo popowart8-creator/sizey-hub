@@ -140,3 +140,17 @@ test('opening multiple chats preloads one Ollama runner without generating token
  await ai.warmAssistant();
  assert.equal(calls.length, 2);
 });
+
+test('single-title prompts omit unrelated page data and retain product facts', async () => {
+ const {prepareAssistantReply} = await import('./admin-assistant.mjs');
+ const store = {
+  list: () => [{id:1,name:'Пальто SIZEY',categories:['Пальто'],sizes:['S','M'],price:5900}],
+  summary: () => { throw new Error('Title generation does not need a store overview'); }
+ };
+ const messages = prepareAssistantReply({
+  section:'analytics', history:[{role:'user',content:'Напиши короткий заголовок для пальто SIZEY'}]
+ }, {store,analytics:{report:() => { throw new Error('Title generation does not need analytics'); }}});
+ assert.match(messages[0].content, /Пальто SIZEY/);
+ assert.doesNotMatch(messages[0].content, /5900|analytics|overview/);
+ assert.ok(messages.reduce((length, message) => length + message.content.length, 0) < 240);
+});

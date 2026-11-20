@@ -2,6 +2,11 @@ import {ContentError} from './content-store.mjs';
 
 const sections = ['overview', 'analytics', 'blog', 'products', 'banners', 'clients', 'orders'];
 const instructions = 'Ты помощник админки SIZEY. Отвечай по-русски, кратко и по делу. Для фактов о магазине используй данные ниже. Помогай писать тексты и объясняй действия. Запись выполняет администратор. Верни JSON: answer (текст), section (overview, analytics, blog, products, banners, clients, orders или null).';
+const titleInstructions = 'Дай один короткий заголовок по-русски. Бери свойства из фактов. JSON: answer — заголовок, section — null.';
+export function shortTitleSubject(question) {
+ if (/[;,]| и | также | потом /iu.test(question)) return null;
+ return question.match(/^(?:напиши|придумай|предложи|составь) (?:короткий |краткий )?заголовок(?: для | к |: )([^\n]{1,140})$/iu)?.[1] ?? null;
+}
 const capabilities = 'Помогу найти товары и разобраться в аналитике. Могу подготовить описание товара, SEO или черновик статьи и подсказать, где изменить баннер, посмотреть заказы или открыть настройки лояльности.';
 
 const normalize = value => value.toLocaleLowerCase('ru').replace(/ё/g, 'е')
@@ -68,6 +73,20 @@ function quickReply(question) {
  return null;
 }
 
+function generalContext(store, blog, analytics, section, query, matches) {
+ const {recent, ...summary} = store.summary();
+ const report = section === 'analytics' || /аналитик|посещен|трафик|конверс|сесси/.test(query) ? analytics?.report(7) : null;
+ return {
+  section,
+  overview: summary,
+  products: matches.length ? matches.slice(0, 4).map(({product: {id, name, price, categories, sizes, published}}) =>
+   ({id, name: name.slice(0, 100), price, categories: categories.slice(0, 3), sizes: sizes.slice(0, 6), published})) : undefined,
+  banners: section === 'banners' || /баннер/.test(query) ? store.list('banners').slice(0, 4).map(({title, published}) => ({title: title.slice(0, 100), published})) : undefined,
+  articles: section === 'blog' || /стать|блог/.test(query) ? (blog?.list() || []).slice(0, 4).map(({title, published}) => ({title: title.slice(0, 100), published})) : undefined,
+  analytics: report ? {from: report.from, to: report.to, startedAt: report.startedAt, metrics: report.metrics} : undefined
+ };
+}
+
 export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
  const {section, history} = input;
  if (!sections.includes(section) || !Array.isArray(history) || history.length < 1 || history.length > 7 ||
@@ -88,26 +107,20 @@ export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
   .get(String(actor), questionKey(question));
  if (learned) return {...learned, source: 'learned'};
  const examples = learnedExamples(store.db, actor, question);
- const terms = query.match(/[\p{L}\p{N}]{3,}/gu) || [];
+ const titleSubject = shortTitleSubject(question);
+ const terms = (titleSubject?.toLocaleLowerCase('ru') ?? query).match(/[\p{L}\p{N}]{3,}/gu) || [];
  const matches = products.map(product => {
   const name = product.name.toLocaleLowerCase('ru');
   return {product, score: terms.filter(term => name.includes(term)).length};
  }).filter(item => item.score > 0).sort((a, b) => b.score - a.score);
- const {recent, ...overview} = store.summary();
- const report = section === 'analytics' || /аналитик|посещен|трафик|конверс|сесси/.test(query) ? analytics?.report(7) : null;
- const context = {
-  section,
-  overview,
-  products: matches.slice(0, 4).map(({product: {id, name, price, categories, sizes, published}}) =>
-   ({id, name: name.slice(0, 100), price, categories: categories.slice(0, 3), sizes: sizes.slice(0, 6), published})),
-  banners: section === 'banners' || /баннер/.test(query) ? store.list('banners').slice(0, 4).map(({title, published}) => ({title: title.slice(0, 100), published})) : undefined,
-  articles: section === 'blog' || /стать|блог/.test(query) ? (blog?.list() || []).slice(0, 4).map(({title, published}) => ({title: title.slice(0, 100), published})) : undefined,
-  analytics: report ? {from: report.from, to: report.to, startedAt: report.startedAt, metrics: report.metrics} : null
- };
+ const data = titleSubject ?
+  matches.slice(0, 2).map(({product}) =>
+   [product.name.slice(0, 100), ...product.categories.slice(0, 2)].join(', ')).join(' / ') :
+  JSON.stringify(generalContext(store, blog, analytics, section, query, matches));
  const previous = history.slice(0, -1);
  while (previous.length && quickReply(previous.at(-2).content.trim())) previous.splice(-2);
  return [
-  {role: 'system', content: instructions + '\nДанные SIZEY: ' + JSON.stringify(context) +
+  {role: 'system', content: (titleSubject ? titleInstructions : instructions) + (data ? '\nДанные SIZEY: ' + data : '') +
    (examples.length ? '\nОдобренные примеры ответов. Используй только подходящие как справку, а текущие данные магазина имеют приоритет: ' + JSON.stringify(examples) : '')},
   ...previous.slice(-2).map(({role, content}) => ({role, content: content.trim().slice(0, 360)})),
   {role: 'user', content: question}
