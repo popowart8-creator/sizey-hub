@@ -191,3 +191,10 @@ button.sizey-bonus-card:disabled{cursor:default}
 .sizey-qr-fullscreen h2{font-size:24px;margin:0}
 .sizey-qr-image{width:min(82vw,360px);height:auto;aspect-ratio:1;image-rendering:pixelated}
 .sizey-qr-fullscreen p{color:#777;font-size:14px;margin:0}
+
+
+/* Restore original tier palette on the clickable card, overriding native button styles. */
+.authpage:has(.customerlayout) button.sizey-bonus-card{background:linear-gradient(125deg,var(--grade-start),var(--grade-end));color:#fff;-webkit-appearance:none;appearance:none;opacity:1;min-height:184px;padding:23px 24px;border:0;border-radius:22px}
+.authpage:has(.customerlayout) button.sizey-bonus-card:disabled{opacity:1}
+.authpage:has(.customerlayout) .customerlayout{padding-top:12px}
+@media(max-width:800px){.authpage:has(.customerlayout) .customerlayout{padding-top:18px}}
