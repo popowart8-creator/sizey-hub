@@ -1,5 +1,9 @@
 name: Deploy Yandex Webmaster analytics
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-webmaster.yml'
   workflow_dispatch:
 permissions:
   contents: read
