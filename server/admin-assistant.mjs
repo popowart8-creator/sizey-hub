@@ -1,12 +1,62 @@
 import {ContentError} from './content-store.mjs';
 
 const sections = ['overview', 'analytics', 'blog', 'products', 'banners', 'clients', 'orders'];
-const instructions = 'Ты помощник админки SIZEY. Отвечай по-русски, кратко и по делу. Для фактов о магазине используй данные ниже. Помогай писать тексты и объясняй действия. Запись выполняет администратор. Верни JSON: answer (текст), section (overview, analytics, blog, products, banners, clients, orders или null).';
+const instructions = 'Ты помощник админки SIZEY. Отвечай по-русски, кратко и по делу. Используй переданные данные и проверенные шаги. Если сведений мало, задай уточняющий вопрос. Помогай писать тексты и объясняй действия. Запись выполняет администратор. Верни JSON: answer (текст), section (overview, analytics, blog, products, banners, clients, orders или null).';
 const titleInstructions = 'Дай один короткий заголовок по-русски. Бери свойства из фактов. JSON: answer — заголовок, section — null.';
 export function shortTitleSubject(question) {
  if (/[;,]| и | также | потом /iu.test(question)) return null;
  return question.match(/^(?:напиши|придумай|предложи|составь) (?:короткий |краткий )?заголовок(?: для | к |: )([^\n]{1,140})$/iu)?.[1] ?? null;
 }
+const guides = [
+ {section:'products', topic:/категори|размер/, action:/^(?:как|где) (?:добавить|создать|настроить|изменить) (?:категори[юи]|размер(?:ы)?)(?: товара)?$/,
+  answer:'В разделе «Товары» нажмите «Категории и размеры», выберите нужный список и добавьте значение. Затем откройте карточку товара, выберите его и сохраните карточку.'},
+ {section:'products', topic:/публик|витрин|скрыть/, action:/^(?:как|где) (?:опубликовать|показать) товар(?: на витрине)?$/,
+  answer:'В разделе «Товары» откройте карточку, включите публикацию внизу формы и сохраните. Включённый переключатель показывает статус «Опубликован на витрине».'},
+ {section:'products', topic:/товар|каталог|карточк/, action:/^(?:как|где) (?:добавить|создать) (?:новый )?товар(?: в каталог)?$/,
+  answer:'Откройте «Товары» → «Добавить товар». Заполните карточку, загрузите фото и выберите категории и размеры. Включите публикацию, если товар должен появиться на витрине, затем сохраните.'},
+ {section:'banners', topic:/баннер/, action:/^(?:как|где) (?:добавить|создать) (?:новый )?баннер(?: на главную)?$/,
+  answer:'Откройте «Баннеры» → «Добавить баннер». Укажите название, загрузите изображение, выберите категорию и позицию. Включите публикацию и сохраните, чтобы баннер появился на главной.'},
+ {section:'blog', topic:/публик|черновик|оценк/, action:/^(?:как|где) опубликовать (?:черновик|статью)(?: в блоге)?$/,
+  answer:'В разделе «Блог и новости» откройте статью во вкладке «Черновики». Проверьте факты и источники. Кнопка «Опубликовать» доступна при оценке от 85 из 100.'},
+ {section:'blog', topic:/блог|стать|черновик/, action:/^(?:как|где) (?:создать|добавить|написать) (?:новую )?(?:статью|черновик)(?: в блоге)?$/,
+  answer:'Откройте «Блог и новости» → «Создать статью». Укажите тему и запустите создание черновика. Он появится во вкладке «Черновики», где его можно проверить, отредактировать и опубликовать.'},
+ {section:'analytics', topic:/аналитик|посещен|трафик|конверс|сесси/, action:/^(?:как|где) посмотреть (?:аналитику|посещения|трафик|конверсию)(?: сайта)?$/,
+  answer:'Откройте «Аналитика» и выберите 7, 30 или 90 дней либо свой период. Там видны посещения и действия покупателей. Продажи бонусной системы смотрите в карточке клиента или в бонусном кабинете.'},
+ {section:'clients', topic:/карт|подключ|лояльност/, action:/^(?:как|где) (?:подключить|оформить|добавить) бонусную карту(?: клиенту)?$/,
+  answer:'В разделе «Клиенты» найдите зарегистрированного покупателя и откройте его карточку. Если карта ещё не подключена, нажмите «Подключить бонусную карту».'},
+ {section:'clients', topic:/начисл|бонус/, action:/^(?:как|где) начислить бонусы(?: клиенту)?$/,
+  answer:'В «Клиенты» откройте карточку покупателя. В блоке «Бонусы, продажи и возвраты» выберите «Начислить бонусы», укажите количество и подтвердите начисление.'},
+ {section:'clients', topic:/спис|бонус/, action:/^(?:как|где) списать бонусы(?: у клиента| клиенту)?$/,
+  answer:'В карточке клиента откройте «Бонусы, продажи и возвраты», выберите «Списать бонусы», укажите количество и подтвердите списание.'},
+ {section:'clients', topic:/продаж/, action:/^(?:как|где) (?:создать|провести|оформить) продажу(?: клиенту)?$/,
+  answer:'В карточке клиента откройте «Бонусы, продажи и возвраты». Выберите «Создать продажу», введите сумму покупки и число списываемых бонусов, затем подтвердите.'},
+ {section:'clients', topic:/возврат/, action:/^(?:как|где) (?:сделать|оформить|провести) возврат(?: по операции| клиенту)?$/,
+  answer:'В карточке клиента откройте «Бонусы, продажи и возвраты». Выберите «Возврат по операции», укажите нужную операцию из истории и подтвердите возврат.'},
+ {section:'clients', topic:/отмен.*продаж/, action:/^(?:как|где) отменить продажу$/,
+  answer:'В карточке клиента откройте «Бонусы, продажи и возвраты». Выберите «Отменить продажу», найдите операцию в истории и подтвердите отмену.'},
+ {section:'orders', topic:/заказ|корзин|оформлени/, action:/^почему (?:нет|не видно|не отображаются) (?:новые )?заказ(?:ы|ов)(?: в админке)?$/,
+  answer:'В SIZEY Hub пока не подключено оформление покупок, поэтому демонстрационная корзина не создаёт заказов и не проводит оплату. Продажи бонусной системы доступны в действующем бонусном кабинете.'}
+];
+
+const knowledgeTopics = {
+ products:/товар|каталог|карточк|размер|категори/,
+ banners:/баннер/,
+ blog:/блог|стать|черновик/,
+ analytics:/аналитик|посещен|трафик|конверс|сесси/,
+ clients:/клиент|лояльност|бонус|продаж|возврат/,
+ orders:/заказ|корзин/
+};
+
+function relevantGuides(query, section) {
+ const domains = Object.keys(knowledgeTopics).filter(domain => knowledgeTopics[domain].test(query));
+ return guides.filter(guide => (domains.length ? domains.includes(guide.section) : guide.section === section) && guide.topic.test(query))
+  .slice(0, 3).map(guide => guide.answer);
+}
+
+const followUp = /^(?:а |и )?(?:что дальше|почему(?: так)?|как (?:это|его|её|их) (?:сделать|изменить|проверить)|как теперь|что если|если (?:не|нет)|а если|а дальше)(?:[ ?.,!]|$)/iu;
+const multiStep = /почему|если|не (?:работает|видно|получается|появля)|что (?:дальше|делать)|сравни|проверь| и (?:как|где|что|почему)|затем|после/iu;
+const reasoningInstructions = 'Сначала выясни цель и проверь, хватает ли данных. Учти условия и порядок действий. В ответе дай вывод и короткие шаги, поясни важную причину. Если результата нельзя проверить по данным, скажи, что проверить в админке. Если без уточнения есть несколько вариантов, задай один конкретный вопрос.';
+
 const capabilities = 'Помогу найти товары и разобраться в аналитике. Могу подготовить описание товара, SEO или черновик статьи и подсказать, где изменить баннер, посмотреть заказы или открыть настройки лояльности.';
 
 const normalize = value => value.toLocaleLowerCase('ru').replace(/ё/g, 'е')
@@ -99,15 +149,23 @@ export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
  const question = history.at(-1).content.trim();
  const quick = quickReply(question);
  if (quick) return quick;
- const query = question.toLocaleLowerCase('ru');
+ const previous = history.slice(0, -1);
+ while (previous.length && quickReply(previous.at(-2).content.trim())) previous.splice(-2);
+ const continuation = previous.length && followUp.test(question);
+ const query = (continuation ? previous.at(-2).content + ' ' + question : question).toLocaleLowerCase('ru');
  const products = store.list('products');
  const catalog = catalogReply(normalize(question), products);
  if (catalog) return catalog;
  const learned = store.db?.prepare('SELECT answer,section FROM hub_assistant_answers WHERE actor=? AND question_key=?')
   .get(String(actor), questionKey(question));
  if (learned) return {...learned, source: 'learned'};
+ const normalized = normalize(question).replace(/^(?:подскажи(?:те)? )?(?:пожалуйста )?/, '')
+  .replace(/^(как|где) мне /, '$1 ').replace(/ пожалуйста$/, '');
+ const guide = guides.find(item => item.action.test(normalized));
+ if (guide) return {answer: guide.answer, section: guide.section, source: 'guide'};
  const examples = learnedExamples(store.db, actor, question);
  const titleSubject = shortTitleSubject(question);
+ const help = titleSubject ? [] : relevantGuides(query, section);
  const terms = (titleSubject?.toLocaleLowerCase('ru') ?? query).match(/[\p{L}\p{N}]{3,}/gu) || [];
  const matches = products.map(product => {
   const name = product.name.toLocaleLowerCase('ru');
@@ -117,10 +175,10 @@ export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
   matches.slice(0, 2).map(({product}) =>
    [product.name.slice(0, 100), ...product.categories.slice(0, 2)].join(', ')).join(' / ') :
   JSON.stringify(generalContext(store, blog, analytics, section, query, matches));
- const previous = history.slice(0, -1);
- while (previous.length && quickReply(previous.at(-2).content.trim())) previous.splice(-2);
  return [
-  {role: 'system', content: (titleSubject ? titleInstructions : instructions) + (data ? '\nДанные SIZEY: ' + data : '') +
+  {role: 'system', content: (titleSubject ? titleInstructions : instructions) +
+   (!titleSubject && (continuation || multiStep.test(question)) ? '\n' + reasoningInstructions : '') + (data ? '\nДанные SIZEY: ' + data : '') +
+   (help.length ? '\nПроверенные шаги в админке: ' + help.join(' ') : '') +
    (examples.length ? '\nОдобренные примеры ответов. Используй только подходящие как справку, а текущие данные магазина имеют приоритет: ' + JSON.stringify(examples) : '')},
   ...previous.slice(-2).map(({role, content}) => ({role, content: content.trim().slice(0, 360)})),
   {role: 'user', content: question}

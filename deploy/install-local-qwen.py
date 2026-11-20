@@ -51,6 +51,8 @@ const help=prepareAssistantReply({section:'overview',history:[...history,{role:'
 if(!hello.answer||!help.answer)throw Error('Assistant quick replies unavailable');
 const price=prepareAssistantReply({section:'products',history:[{role:'user',content:'Сколько стоит пальто SIZEY?'}]},{store});
 if(!price.answer?.includes('900'))throw Error('Direct catalog price unavailable');
+const instructions=prepareAssistantReply({section:'overview',history:[{role:'user',content:'Как мне оформить возврат?'}]},{store});
+if(instructions.section!=='clients'||!instructions.answer?.includes('Возврат по операции'))throw Error('Verified loyalty procedure unavailable');
 const messages=prepareAssistantReply({section:'products',history:[...history,{role:'user',content:'Напиши короткий заголовок для пальто SIZEY'}]},{store});
 const preloadStart=Date.now();
 await ai.warmAssistant();
@@ -64,17 +66,25 @@ if(!answer.answer)throw Error('No assistant reply');
 const warmStart=Date.now();
 const next=await ai.assistant(messages,'qwen-deploy-smoke',{onProgress:()=>{}});
 if(!next.answer)throw Error('No warm assistant reply');
-console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,preloadMs,promptCharacters:messages.reduce((sum,message)=>sum+message.content.length,0),assistantMs,firstTextMs,warmAssistantMs:Date.now()-warmStart}));
+const warmAssistantMs=Date.now()-warmStart;
+const followUp=prepareAssistantReply({section:'overview',history:[
+ {role:'user',content:'Как мне оформить возврат?'},
+ {role:'assistant',content:instructions.answer},
+ {role:'user',content:'А если нужной операции нет?'}
+]},{store});
+const reasoning=await ai.assistant(followUp,'qwen-deploy-smoke',{onProgress:()=>{}});
+if(!/истори|операци|карточк/iu.test(reasoning.answer))throw Error('Assistant lost the topic of the refund follow-up');
+console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,preloadMs,promptCharacters:messages.reduce((sum,message)=>sum+message.content.length,0),assistantMs,firstTextMs,warmAssistantMs,followUpCharacters:reasoning.answer.length}));
 """
 try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)
     run(dc+['config','-q'])
     run(dc+['build','auth'],timeout=900)
-    run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-e','OLLAMA_URL=http://sizey-local-ollama:11434','-e','OLLAMA_MODEL=qwen2.5:1.5b','-v',str(base/'data')+':/data','--entrypoint','sleep','sizey-hub-api:local','420'])
+    run(['docker','run','-d','--name',canary,'--init','--network','proxy','--env-file',str(base/'.env'),'-e','OLLAMA_URL=http://sizey-local-ollama:11434','-e','OLLAMA_MODEL=qwen2.5:1.5b','-v',str(base/'data')+':/data','--entrypoint','sleep','sizey-hub-api:local','540'])
     run(['docker','network','connect','sizey_prod',canary])
     run(['docker','network','connect','sizey_ai_internal',canary])
     # Canary runs a sleeping container so app startup dependencies cannot mask Qwen connectivity.
-    run(['docker','exec',canary,'node','--input-type=module','-e',probe],timeout=375)
+    run(['docker','exec',canary,'node','--input-type=module','-e',probe],timeout=500)
     print('Canary verified Qwen description and assistant',flush=True)
     run(['docker','rm','-f',canary])
     live_changed=True
@@ -85,7 +95,7 @@ try:
     state=run(['docker','inspect','sizey-hub-api','--format','{{.State.Status}} exit={{.State.ExitCode}} restart={{.RestartCount}}']).strip()
     print('Production container state: '+state,flush=True)
     if not state.startswith('running '): raise RuntimeError('Production API exited after Compose restart')
-    result=run(['docker','exec','sizey-hub-api','node','--input-type=module','-e',probe],timeout=375)
+    result=run(['docker','exec','sizey-hub-api','node','--input-type=module','-e',probe],timeout=500)
     print('Production API verified Qwen description and assistant: '+result.strip(),flush=True)
     wordstat_probe="""import {createDescriptionAI} from './ai-description.mjs';const ai=createDescriptionAI();const r=await ai.wordstat({name:'женское пальто'},'deployment-canary');if(!Array.isArray(r.results)||!r.results.length)throw Error('Wordstat returned no search phrases');console.log(JSON.stringify({wordstat:'ok',phrases:r.results.length,totalCount:r.totalCount}));"""
     # Legacy Wordstat endpoint was retired; never roll back a healthy Qwen deployment for it.
