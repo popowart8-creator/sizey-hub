@@ -55,11 +55,22 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
   }catch(e){db.exec('ROLLBACK');throw e}
   return{phone:user.phone,temporaryPassword:password,mustChangePassword:true};
  }
+ async function customerAccess(me,clientId,confirmation){
+  if(!getLoyaltyClient)throw new ApiError(503,'Связь с бонусной системой временно недоступна');
+  const client=await getLoyaltyClient(clientId);
+  if(!client)throw new ApiError(404,'Клиент не найден');
+  const phone=normalizePhone(client.phone_normalized),user=findUser(phone);
+  if(!confirmation)return{exists:!!user,phone,phoneVerified:!!user?.phone_verified,temporaryPasswordPending:!!user?.temporary_encrypted,mustChangePassword:!!user?.must_change,issued:!!user?.issued_at};
+  limit('staff-issue',me.id,50,3600000);
+  if(confirmation.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
+  if(typeof confirmation.expectedPhone!=='string'||normalizePhone(confirmation.expectedPhone)!==phone)throw new ApiError(409,'Телефон клиента изменился. Обновите карточку и проверьте клиента заново.');
+  return issueToCustomer(me,user||{id:randomBytes(16).toString('hex'),phone,password_hash:null,temporary_encrypted:null},!user);
+ }
  const server=createServer(async(req,res)=>{
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
   try{
    const path=new URL(req.url,'http://internal').pathname;
-   if(adminHandler&&await adminHandler(req,res))return;
+   if(adminHandler&&await adminHandler(req,res,customerAccess))return;
    if(req.method==='GET'&&path==='/hub-api/health')return reply(200,{ok:true,authMethod:'password',loyaltyConfigured:!!loyalty,employeeCabinetIntegration:!!getLoyaltyClient});
    if(req.method==='POST'){if(req.headers.origin!==origin)throw new ApiError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ApiError(415,'Ожидается JSON')}
    if(req.method==='POST'&&path==='/hub-api/auth/register'){
@@ -117,14 +128,8 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
    }
    const cabinetRoute=/^\/hub-api\/staff\/clients\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\/(access|issue)$/i.exec(path);
    if(cabinetRoute&&((req.method==='GET'&&cabinetRoute[2]==='access')||(req.method==='POST'&&cabinetRoute[2]==='issue'))){
-    const me=await employee(req,true);if(!getLoyaltyClient)throw new ApiError(503,'Связь с бонусной системой временно недоступна');
-    const client=await getLoyaltyClient(cabinetRoute[1]);if(!client)throw new ApiError(404,'Клиент не найден');
-    const phone=normalizePhone(client.phone_normalized),user=findUser(phone);
-    if(req.method==='GET')return reply(200,{exists:!!user,phone,temporaryPasswordPending:!!user?.temporary_encrypted,mustChangePassword:!!user?.must_change,issued:!!user?.issued_at});
-    limit('staff-issue',me.id,50,3600000);const b=await body(req);
-    if(b.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');
-    if(typeof b.expectedPhone!=='string'||normalizePhone(b.expectedPhone)!==phone)throw new ApiError(409,'Телефон клиента изменился. Обновите карточку и проверьте клиента заново.');
-    return reply(200,await issueToCustomer(me,user||{id:randomBytes(16).toString('hex'),phone,password_hash:null,temporary_encrypted:null},!user));
+    const me=await employee(req,true);
+    return reply(200,await customerAccess(me,cabinetRoute[1],req.method==='POST'?await body(req):undefined));
    }
    if(req.method==='POST'&&path==='/hub-api/staff/issue-password'){
     const me=await employee(req);limit('staff-issue',me.id,50,3600000);const b=await body(req);if(b.identityChecked!==true)throw new ApiError(400,'Подтвердите проверку клиента');

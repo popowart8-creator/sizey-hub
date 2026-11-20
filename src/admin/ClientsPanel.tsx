@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from 'react';
 import {Search,X,ExternalLink,RefreshCw,Plus} from 'lucide-react';
 import useAdminDialog from './useAdminDialog';
 import LoyaltyPanel from './LoyaltyPanel';
+import ClientAccess from './ClientAccess';
 import ClientFinancialActions from './ClientFinancialActions';
 import './clients.css';
 
@@ -69,6 +70,7 @@ function ClientDrawer({client,onClose,onExpired,onSaved}:{client:Client;onClose:
     {error&&<div className="notice error" role="alert">{error}</div>}
     {loading?<p role="status">Загрузка карточки и операций…</p>:<><h3>История операций</h3><div className="table-wrap"><table><thead><tr><th>Тип</th><th>Сумма</th><th>Дата</th></tr></thead><tbody>{transactions.map((t,i)=><tr key={t.id||i}><td>{t.type||'—'}</td><td>{balance(t.amount??t.bonusAmount)}</td><td>{t.createdAt?new Date(t.createdAt).toLocaleString('ru-RU'):'—'}</td></tr>)}</tbody></table></div>{!transactions.length&&!error&&<p className="clients-muted">Операций пока нет.</p>}</>}
     {registeredOnly?<div style={{display:"grid",gap:10}}><p className="clients-muted">Клиент зарегистрирован на сайте, но ещё не подключён к бонусной системе. Для подключения укажите дату рождения.</p><label>Дата рождения<input type="date" required value={birthDate} max={new Date().toISOString().slice(0,10)} onChange={e=>setBirthDate(e.target.value)}/></label><button className="primary" disabled={activating||loading||!birthDate||normalizedPhone(phone(client)).length<10} onClick={()=>void activate()}>{activating?"Подключение…":"Подключить бонусную карту"}</button></div>:editing?<form onSubmit={save} style={{display:'grid',gap:12}}><label>Имя<input required maxLength={160} value={form.name} onChange={e=>setForm(v=>({...v,name:e.target.value}))}/></label><label>Телефон<input required maxLength={160} value={form.phone} onChange={e=>setForm(v=>({...v,phone:e.target.value}))}/></label><div style={{display:'flex',gap:8}}><button className="primary" disabled={saving||!form.name.trim()||!form.phone.trim()}>{saving?'Сохранение…':'Сохранить'}</button><button type="button" className="secondary" onClick={()=>setEditing(false)}>Отмена</button></div></form>:<button className="secondary" onClick={()=>{setForm({name:value.name||'',phone:value.phone||value.phoneNormalized||''});setEditing(true)}}>Редактировать клиента</button>}
+    {!registeredOnly&&<ClientAccess key={loyaltyId+phone(value)} clientId={loyaltyId} onExpired={onExpired}/>}
     {!registeredOnly&&<ClientFinancialActions clientId={loyaltyId} transactions={transactions} onExpired={onExpired} onComplete={onSaved}/>}
     <a className="secondary" href="https://app.sizey.ru" target="_blank" rel="noreferrer">Открыть действующий кабинет <ExternalLink size={16}/></a>
    </div>

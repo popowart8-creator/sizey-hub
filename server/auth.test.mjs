@@ -1,3 +1,4 @@
+import {createAdmin} from './admin.mjs';
 import{test}from'node:test';import assert from'node:assert/strict';import{mkdtempSync,rmSync}from'node:fs';import{tmpdir}from'node:os';import{join}from'node:path';
 import{createAuth,initializeDatabase,normalizePhone,credentialEnvelope}from'./auth.mjs';import{hashPassword,verifyPassword}from'./passwords.mjs';
 const phone='+79991234567',temporary='Individual-temporary-2026',changed='Customer-new-password-2026',secret='x'.repeat(40);
@@ -5,7 +6,8 @@ async function fixture(role='CASHIER'){
  const dir=mkdtempSync(join(tmpdir(),'sizey-auth-')),database=join(dir,'auth.sqlite'),db=initializeDatabase(database);
  db.prepare('INSERT INTO customers VALUES(?,?,?)').run('client-1',phone,1);db.prepare('INSERT INTO credentials(customer,password_hash,must_change,phone_verified,temporary_encrypted) VALUES(?,?,1,1,?)').run('client-1',await hashPassword(temporary),credentialEnvelope(secret).seal(temporary));db.close();
  let staffActive=true,clock=1000000;const calls=[];
- const app=createAuth({database,secret,origin:'https://hub.sizey.ru',now:()=>clock,loyalty:async p=>{calls.push(p);return p===phone?{linked:true,balance:321,history:[]}:{linked:false,balance:null,history:[]}},getLoyaltyClient:async id=>id==='11111111-1111-4111-8111-111111111111'?{id,name:'Customer',phone_normalized:phone.slice(1)}:id==='22222222-2222-4222-8222-222222222222'?{id,name:'New client',phone_normalized:'79990001122'}:null,listLoyaltyCustomers:async()=>[{id:'client-1',name:'Customer',phone_normalized:phone.slice(1)}],staffAuth:{login:async(login,password)=>{if(login!=='employee'||password!=='employee-password')throw Error();return{accessToken:'internal-token',user:{id:'employee-1',name:'Employee',role}}},me:async accessToken=>{if(!staffActive||accessToken!=='internal-token')throw Error();return{id:'employee-1',name:'Employee',role}}}});
+ const adminHandler=createAdmin({staffAuth:{login:async()=>({accessToken:'admin-token',user:{id:'admin-1',role}}),me:async()=>({id:'admin-1',role})}});
+ const app=createAuth({database,adminHandler,secret,origin:'https://hub.sizey.ru',now:()=>clock,loyalty:async p=>{calls.push(p);return p===phone?{linked:true,balance:321,history:[]}:{linked:false,balance:null,history:[]}},getLoyaltyClient:async id=>id==='11111111-1111-4111-8111-111111111111'?{id,name:'Customer',phone_normalized:phone.slice(1)}:id==='22222222-2222-4222-8222-222222222222'?{id,name:'New client',phone_normalized:'79990001122'}:null,listLoyaltyCustomers:async()=>[{id:'client-1',name:'Customer',phone_normalized:phone.slice(1)}],staffAuth:{login:async(login,password)=>{if(login!=='employee'||password!=='employee-password')throw Error();return{accessToken:'internal-token',user:{id:'employee-1',name:'Employee',role}}},me:async accessToken=>{if(!staffActive||accessToken!=='internal-token')throw Error();return{id:'employee-1',name:'Employee',role}}}});
  await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port;
  const post=(path,data,cookie,origin='https://hub.sizey.ru')=>fetch(base+path,{method:'POST',headers:{origin,'Content-Type':'application/json',...(cookie?{cookie}:{})},body:JSON.stringify(data)});
  const get=(path,cookie)=>fetch(base+path,{headers:cookie?{cookie}:{}});
@@ -50,3 +52,24 @@ test('cabinet issuance verifies identity and protects against a stale phone in t
 test('staff can provision access for a newly created loyalty client without altering loyalty data',async()=>{const f=await fixture();try{const path=f.base+'/hub-api/staff/clients/'+newCabinetId;assert.equal((await(await fetch(path+'/access',{headers:cabinetHeaders})).json()).exists,false);const response=await fetch(path+'/issue',{method:'POST',headers:cabinetHeaders,body:JSON.stringify({identityChecked:true,expectedPhone:'+79990001122'})});assert.equal(response.status,200);const issued=await response.json();const login=await f.post('/hub-api/auth/login',{phone:issued.phone,password:issued.temporaryPassword});assert.equal(login.status,200);assert.equal((await login.json()).user.mustChangePassword,true);assert.deepEqual(f.calls,[])}finally{await f.close()}});
 test('cabinet denies non-staff roles and missing clients',async()=>{const denied=await fixture('CUSTOMER');try{assert.equal((await fetch(denied.base+'/hub-api/staff/clients/'+cabinetId+'/access',{headers:cabinetHeaders})).status,403)}finally{await denied.close()}const f=await fixture();try{assert.equal((await fetch(f.base+'/hub-api/staff/clients/33333333-3333-4333-8333-333333333333/access',{headers:cabinetHeaders})).status,404)}finally{await f.close()}});
 test('changed loyalty phone can receive access without colliding with the old imported identity',async()=>{const f=await fixture();try{const db=initializeDatabase(f.database);db.prepare('INSERT INTO customers VALUES(?,?,?)').run(newCabinetId,'+79993334455',1);db.close();const r=await fetch(f.base+'/hub-api/staff/clients/'+newCabinetId+'/issue',{method:'POST',headers:cabinetHeaders,body:JSON.stringify({identityChecked:true,expectedPhone:'+79990001122'})});assert.equal(r.status,200);const issued=await r.json();const login=await f.post('/hub-api/auth/login',{phone:issued.phone,password:issued.temporaryPassword});assert.equal(login.status,200);assert.notEqual((await login.json()).user.id,newCabinetId);const check=initializeDatabase(f.database);assert.equal(check.prepare('SELECT phone FROM customers WHERE id=?').get(newCabinetId).phone,'+79993334455');check.close()}finally{await f.close()}});
+
+test('admin client access requires an admin session and explicit phone confirmation',async()=>{
+ const f=await fixture('ADMIN');
+ const origin='https://admmm.sizey.ru';
+ const path='/hub-api/admin/clients/11111111-1111-4111-8111-111111111111/access';
+ try{
+  assert.equal((await f.get(path)).status,401);
+  const login=await f.post('/hub-api/admin/login',{login:'employee',password:'employee-password'},null,origin);
+  assert.equal(login.status,200);
+  const session=cookie(login);
+  const access=await f.get(path,session);
+  assert.equal(access.status,200);
+  assert.equal((await access.json()).phone,phone);
+  assert.equal((await f.post(path,{expectedPhone:phone},session,origin)).status,400);
+  assert.equal((await f.post(path,{identityChecked:true,expectedPhone:'+79990000000'},session,origin)).status,409);
+  assert.equal((await f.post(path,{identityChecked:true,expectedPhone:phone},session,'https://hub.sizey.ru')).status,403);
+  const issued=await f.post(path,{identityChecked:true,expectedPhone:phone},session,origin);
+  assert.equal(issued.status,200);
+  assert.equal((await issued.json()).temporaryPassword,temporary);
+ }finally{await f.close()}
+});
