@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: sizey-production
+  group: webmaster-deployment
   cancel-in-progress: false
 jobs:
   deploy_webmaster:
