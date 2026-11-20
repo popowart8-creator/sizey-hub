@@ -41,6 +41,9 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
  async function wordstat(){throw new ContentError(503,'Старый API Яндекс Wordstat закрыт. Для частотности требуется подключение Yandex Search API; используйте бесплатные поисковые подсказки Google и Яндекса без частотности.')}
 
  async function assistant(messages, actor){
+  const question=messages.at(-1)?.content || '';
+  const shortTitle=/^(?:напиши|придумай|предложи|составь) (?:короткий |краткий )?заголовок(?: для | к |: )[^\n]{1,140}$/iu.test(question) &&
+   !/[;,]| и | также | потом /iu.test(question);
   const id='assistant:'+String(actor), time=now();
   const recent=(attempts.get(id)||[]).filter(t=>t>time-60000);
   if(running.has(id)||recent.length>=5)throw new ContentError(429,'Дождитесь ответа ИИ-помощника и повторите запрос.');
@@ -52,7 +55,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
    const response=await call('/api/chat',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model,stream:false,format:'json',messages,options:{temperature:0.3,num_ctx:3072,num_predict:220},think:false}),
+    body:JSON.stringify({model,stream:false,format:'json',messages,keep_alive:'5m',options:{temperature:0.3,num_ctx:3072,num_thread:2,num_predict:shortTitle?64:220},think:false}),
     timeout:120000
    });
    if(!response.ok)throw new ContentError(503,'Локальная модель не смогла обработать запрос');
