@@ -85,18 +85,53 @@ function QRScanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void
  const video=useRef<HTMLVideoElement>(null),stream=useRef<MediaStream|null>(null);
  const [error,setError]=useState(''),[manual,setManual]=useState('');
  const scanRef=useRef(onCode);scanRef.current=onCode;
- useEffect(()=>{let cancelled=false;let timer:number|undefined;
+ useEffect(()=>{
+  let cancelled=false,timer:number|undefined,busy=false;
   const Detector=(window as unknown as {BarcodeDetector?:new(options:{formats:string[]})=>{detect:(source:HTMLVideoElement)=>Promise<Array<{rawValue:string}>>}}).BarcodeDetector;
-  if(!Detector){setError('Сканирование камерой не поддерживается. Введите код вручную.');return}
-  navigator.mediaDevices?.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(async media=>{
-   if(cancelled){media.getTracks().forEach(t=>t.stop());return}stream.current=media;
-   const el=video.current;if(!el)return;el.srcObject=media;await el.play();
-   const detector=new Detector({formats:['qr_code']});
-   const tick=async()=>{if(cancelled)return;try{const codes=await detector.detect(el);for(const code of codes){if((qrPattern.test(code.rawValue.trim())||qrPhonePattern.test(code.rawValue.trim()))){scanRef.current(code.rawValue.trim());return}}}catch{}if(!cancelled)timer=window.setTimeout(tick,220)};void tick();
-  }).catch(()=>{if(!cancelled)setError('Нет доступа к камере. Разрешите камеру или введите код вручную.')});
+  type Decoder=(data:Uint8ClampedArray,width:number,height:number,options?:{inversionAttempts:string})=>{data:string}|null;
+  const start=async()=>{
+   if(!navigator.mediaDevices?.getUserMedia){setError('Камера недоступна в этом браузере. Откройте админку по HTTPS или используйте ввод кода.');return}
+   let detector:InstanceType<NonNullable<typeof Detector>>|undefined;
+   let decoder:Decoder|undefined;
+   if(Detector){try{detector=new Detector({formats:['qr_code']})}catch{}}
+   if(!detector){
+    try{
+     const url='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm';
+     const module=await import(/* @vite-ignore */ url) as {default:Decoder};
+     decoder=module.default;
+     if(typeof decoder!=='function')throw new Error('Decoder unavailable');
+    }catch{if(!cancelled)setError('Не удалось загрузить QR-сканер. Проверьте интернет или введите код вручную.');return}
+   }
+   if(cancelled)return;
+   try{
+    const media=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    if(cancelled){media.getTracks().forEach(t=>t.stop());return}
+    stream.current=media;
+    const el=video.current;if(!el)return;
+    el.srcObject=media;await el.play();
+    const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const tick=async()=>{
+     if(cancelled||busy)return;busy=true;
+     try{
+      let raw:string|undefined;
+      if(detector){const codes=await detector.detect(el);raw=codes.find(c=>qrPattern.test(c.rawValue.trim())||qrPhonePattern.test(c.rawValue.trim()))?.rawValue}
+      else if(decoder&&ctx&&el.videoWidth&&el.videoHeight){
+       const scale=Math.min(1,640/el.videoWidth);canvas.width=Math.round(el.videoWidth*scale);canvas.height=Math.round(el.videoHeight*scale);
+       ctx.drawImage(el,0,0,canvas.width,canvas.height);
+       raw=decoder(ctx.getImageData(0,0,canvas.width,canvas.height).data,canvas.width,canvas.height,{inversionAttempts:'attemptBoth'})?.data;
+      }
+      if(raw&&(qrPattern.test(raw.trim())||qrPhonePattern.test(raw.trim()))){scanRef.current(raw.trim());return}
+     }catch{}
+     finally{busy=false}
+     if(!cancelled)timer=window.setTimeout(tick,180);
+    };
+    void tick();
+   }catch{if(!cancelled)setError('Нет доступа к камере. Разрешите доступ в настройках браузера или введите код вручную.')}
+  };
+  void start();
   return()=>{cancelled=true;if(timer)clearTimeout(timer);stream.current?.getTracks().forEach(t=>t.stop())}
  },[]);
- return <div className="editor-overlay clients-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className="editor clients-drawer" role="dialog" aria-modal="true" aria-label="Сканер бонусной карты"><header><div><span className="overline">БОНУСНАЯ КАРТА</span><h2>Сканировать QR</h2></div><button className="icon-button" onClick={onClose} aria-label="Закрыть"><X/></button></header><div className="clients-drawer-content" style={{display:'grid',gap:14}}><p>Наведите камеру на QR-код клиента. Списание только после подтверждения.</p><video ref={video} playsInline muted style={{width:'100%',maxHeight:320,objectFit:'cover',borderRadius:16,background:'#161616'}}/>{error&&<p role="status" className="clients-muted">{error}</p>}<form onSubmit={e=>{e.preventDefault();onCode(manual.trim())}} style={{display:'grid',gap:10}}><label>Код карты<input value={manual} onChange={e=>setManual(e.target.value)} placeholder="SIZEY:LOYALTY:..." autoComplete="off"/></label><button className="primary" disabled={!manual.trim()}>Найти клиента</button></form></div></section></div>
+ return <div className="editor-overlay clients-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className="editor clients-drawer" role="dialog" aria-modal="true" aria-label="Сканер бонусной карты"><header><div><span className="overline">БОНУСНАЯ КАРТА</span><h2>Сканировать QR</h2></div><button className="icon-button" onClick={onClose} aria-label="Закрыть"><X/></button></header><div className="clients-drawer-content" style={{display:'grid',gap:14}}><p>Наведите камеру на QR-код клиента. Списание только после подтверждения.</p><video ref={video} autoPlay playsInline muted style={{width:'100%',maxHeight:320,objectFit:'cover',borderRadius:16,background:'#161616'}}/>{error&&<p role="status" className="clients-muted">{error}</p>}<form onSubmit={e=>{e.preventDefault();onCode(manual.trim())}} style={{display:'grid',gap:10}}><label>Код карты<input value={manual} onChange={e=>setManual(e.target.value)} placeholder="SIZEY:PHONE:..." autoComplete="off"/></label><button className="primary" disabled={!manual.trim()}>Найти клиента</button></form></div></section></div>
 }
 export default function ClientsPanel({onExpired}:Props){
  const [clients,setClients]=useState<Client[]>([]),[search,setSearch]=useState(''),[selected,setSelected]=useState<Client|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
