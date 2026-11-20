@@ -54,3 +54,30 @@ body>.password-screen .password-card form>.blackbtn{box-sizing:border-box;width:
 .authcard--native .authconsent{font-size:13px;line-height:1.5}
 .auth-support-link{display:inline-flex;align-items:center;min-height:44px;font-size:14px;color:#4d4d4d;text-decoration:underline;text-underline-offset:4px;margin-top:18px}
 @media(min-width:801px){.auth-native-header{padding-top:32px}}
+
+
+/* SIZEY BONUS — expressive native-style loyalty card */
+.customerbonus{background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important;overflow:visible!important}
+.sizey-bonus-card{position:relative;isolation:isolate;overflow:hidden;min-height:252px;padding:25px;border-radius:30px;background:radial-gradient(ellipse at 75% 100%,#d947bd 0%,transparent 54%),linear-gradient(125deg,#171429 5%,#29204c 52%,#6a2b91 100%);color:#fff;box-shadow:0 18px 45px rgba(48,24,83,.22),inset 0 1px 1px rgba(255,255,255,.3)}
+.sizey-bonus-card:before{content:"";position:absolute;inset:0;border:1px solid rgba(255,255,255,.28);border-radius:inherit;pointer-events:none}
+.sizey-bonus-orb{position:absolute;z-index:-1;pointer-events:none;filter:blur(1px);border-radius:50%;transform:rotate(-25deg)}
+.sizey-bonus-orb--one{width:115%;height:220px;left:16%;top:48%;background:linear-gradient(100deg,rgba(246,99,214,.02),rgba(191,81,248,.8),rgba(112,75,229,.15));border-top:1px solid rgba(255,200,250,.4)}
+.sizey-bonus-orb--two{width:100%;height:160px;left:44%;top:68%;background:linear-gradient(120deg,rgba(119,74,245,.1),rgba(243,105,214,.5))}
+.sizey-bonus-card-content{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;min-height:202px}
+.sizey-bonus-top,.sizey-bonus-footer{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sizey-bonus-brand{display:block;font-size:27px;line-height:1;font-weight:850;letter-spacing:.065em}
+.sizey-bonus-brand-dot{font-size:12px;vertical-align:top;margin-left:4px;color:#ecb1ff}
+.sizey-bonus-subtitle{display:block;margin-top:9px;font-size:10px;letter-spacing:.19em;color:#d2c6e8}
+.sizey-bonus-symbol{font-size:35px;line-height:1;color:#eac4ff;text-shadow:0 0 20px #ce83ff}
+.sizey-bonus-main{display:flex;flex-direction:column;gap:5px;margin:25px 0}
+.sizey-bonus-caption{font-size:12px;color:#e1d5f4}
+.sizey-bonus-number{font-size:clamp(38px,10vw,56px);line-height:1.05;font-weight:800;letter-spacing:-.045em;color:#fff;font-variant-numeric:tabular-nums}
+.sizey-bonus-number small{font-size:14px;letter-spacing:0;font-weight:500;color:#eadcf8}
+.sizey-bonus-level{font-size:12px;color:#f0d9ff}
+.sizey-bonus-footer{align-items:center}
+.sizey-bonus-chip{padding:9px 11px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);border-radius:12px;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(10px)}
+.sizey-bonus-footer-text{font-size:10px;text-align:right;color:#e6d6f4}
+.sizey-bonus-history,.sizey-bonus-connect{margin-top:23px}
+.sizey-bonus-history-head{display:flex;align-items:center;justify-content:space-between}
+.sizey-bonus-history-head h3{margin:0 0 12px}
+@media(max-width:390px){.sizey-bonus-card{padding:21px;min-height:235px;border-radius:25px}.sizey-bonus-card-content{min-height:193px}.sizey-bonus-footer-text{max-width:100px}}
