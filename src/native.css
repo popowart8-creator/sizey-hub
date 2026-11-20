@@ -652,46 +652,29 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 
 .product-screen label.detail-cart-action{margin-top:0;font-size:17px;line-height:1.4}
 
-html:has(.home-intro),
-html.sizey-android-shell .tab-screen:has(.home-intro) {
-  overscroll-behavior-y: none;
-}
-
-.home-intro .editorial-hero {
-  height: calc(50svh + var(--hero-pull, 0px));
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .home-intro .editorial-hero {
-    transition: height 280ms cubic-bezier(.2, .8, .2, 1);
-  }
-
-  .home-intro[data-pulling] .editorial-hero {
-    transition: none;
-  }
-}
-
+/* Gradually soften the photograph before it meets the white catalog. */
 .home-intro .editorial-hero::before,
 .home-intro .editorial-hero::after {
   content: "";
   position: absolute;
   inset: auto 0 0;
-  height: clamp(72px, 13svh, 128px);
   z-index: 1;
   pointer-events: none;
 }
 
 .home-intro .editorial-hero::before {
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-  -webkit-mask-image: linear-gradient(transparent, #000 85%);
-  mask-image: linear-gradient(transparent, #000 85%);
+  height: clamp(80px, 15svh, 144px);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  -webkit-mask-image: linear-gradient(transparent, #000 80%);
+  mask-image: linear-gradient(transparent, #000 80%);
 }
 
 .home-intro .editorial-hero::after {
-  background: linear-gradient(transparent, #ffffff24 42%, #ffffffb3 78%, #fff);
-}
-
-.home-intro .hero-bottom-content {
-  bottom: 26px;
+  height: clamp(40px, 8svh, 80px);
+  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px);
+  -webkit-mask-image: linear-gradient(transparent, #000 75%);
+  mask-image: linear-gradient(transparent, #000 75%);
+  background: linear-gradient(transparent 65%, #fff);
 }
