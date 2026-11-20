@@ -33,7 +33,10 @@ override=base/'docker-compose.qwen.yml'
 previous=override.read_bytes() if override.exists() else None
 if previous is not None:(backup/'previous-override.yml').write_bytes(previous)
 override.write_text('services:\n  auth:\n    environment:\n      OLLAMA_URL: http://sizey-local-ollama:11434\n      OLLAMA_MODEL: qwen2.5:1.5b\n')
+webmaster_override=base/'docker-compose.webmaster.yml'
 dc=['docker','compose','-f',str(compose),'-f',str(override)]
+if webmaster_override.is_file():
+    dc+=['-f',str(webmaster_override)]
 canary='sizey-qwen-api-canary'
 live_changed=False
 probe="""
@@ -89,6 +92,9 @@ try:
     run(['docker','rm','-f',canary])
     live_changed=True
     run(dc+['up','-d','--no-deps','--no-build','--pull','never','auth'],timeout=180)
+    if webmaster_override.is_file():
+        run(['docker','exec','sizey-hub-api','node','-e',
+             'if (!process.env.YANDEX_WEBMASTER_TOKEN) process.exit(1)'])
     networks=run(['docker','inspect','sizey-hub-api','--format','{{json .NetworkSettings.Networks}}'])
     if 'sizey_ai_internal' not in networks:run(['docker','network','connect','sizey_ai_internal','sizey-hub-api'])
     # Verify that the real API stays alive after Compose recreates it.
@@ -122,6 +128,8 @@ except Exception:
     if live_changed:
         olddc=['docker','compose','-f',str(compose)]
         if previous is not None:olddc+=['-f',str(override)]
+        if webmaster_override.is_file():
+            olddc+=['-f',str(webmaster_override)]
         run(olddc+['up','-d','--no-deps','--no-build','--pull','never','auth'])
     print('Qwen API deployment rolled back',flush=True)
     raise
