@@ -32,7 +32,7 @@ function validateClientPatch(body){
  if(!body||typeof body!=='object'||Array.isArray(body))return false;
  const entries=Object.entries(body);
  if(!entries.length||entries.some(([key])=>!['name','phone','birthDate'].includes(key)))return false;
- return entries.every(([key,value])=>typeof value==='string'&&value.trim().length>0&&value.length<=160&&(key!=='birthDate'||(/^\\d{4}-\\d{2}-\\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value)))));
+ return entries.every(([key,value])=>typeof value==='string'&&value.trim().length>0&&value.length<=160&&(key!=='birthDate'||(/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value)))));
 }
 export async function loyaltyAdminRequest({path,method,query='',accessToken,body,fetcher=fetch,base='http://sizey-prod-backend:4000'}){
   const route=routes.find(r=>r.pattern.test(path)&&r.methods.includes(method));
