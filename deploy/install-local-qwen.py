@@ -32,7 +32,7 @@ shutil.copytree(base/'server',backup/'server')
 override=base/'docker-compose.qwen.yml'
 previous=override.read_bytes() if override.exists() else None
 if previous is not None:(backup/'previous-override.yml').write_bytes(previous)
-override.write_text('services:\n  auth:\n    env_file:\n      - /opt/sizey/hub-api/wordstat.env\n    environment:\n      OLLAMA_URL: http://sizey-local-ollama:11434\n      OLLAMA_MODEL: qwen2.5:1.5b\n')
+override.write_text('services:\n  auth:\n    environment:\n      OLLAMA_URL: http://sizey-local-ollama:11434\n      OLLAMA_MODEL: qwen2.5:1.5b\n')
 dc=['docker','compose','-f',str(compose),'-f',str(override)]
 canary='sizey-qwen-api-canary'
 live_changed=False
