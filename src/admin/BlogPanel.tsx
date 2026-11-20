@@ -38,7 +38,7 @@ export default function BlogPanel({request}:{request:Request}){
   const article={...selected,title,slug,summary,sections:sections.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean),sources:parsed,productIds:productIds.split(/[,;\s]+/).filter(Boolean).map(Number)};
   const response=await request<{article:Article}>('/blog/save',{id:selected.id,article});open(response.article);setNotice('Черновик сохранён');await load();
  }catch(e){setError((e as Error).message)}finally{setBusy(false)}}
- async function publish(item:Article,published:boolean){setBusy(true);setError('');setNotice('');try{const r=await request<{article:Article}>('/blog/publish',{id:item.id,published});if(selected?.id===item.id)open(r.article);setNotice(published?'Статья опубликована':'Статья скрыта');await load()}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
+ async function publish(item:Article,published:boolean){setBusy(true);setError('');setNotice('');try{const r=await request<{article:Article}>('/blog/publish',{id:item.id,published});if(selected?.id===item.id)open(r.article);setTab(published?'published':'drafts');setNotice(published?'Статья опубликована':'Статья скрыта');await load()}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  const visible=articles.filter(item=>item.published===(tab==='published'));
  return <div className="blog-admin">
   <section className="panel blog-admin-intro"><div><span className="blog-admin-kicker"><Sparkles size={17}/> SIZEY / AI JOURNAL</span><h2>Статьи блога</h2><p>Управляйте черновиками и опубликованными материалами. Публикация только после проверки редактором.</p></div><button className="primary" type="button" onClick={()=>{setSelected(null);setDrawer('create');setError('');setNotice('')}}><Plus size={18}/> Создать статью</button></section>
@@ -55,7 +55,7 @@ export default function BlogPanel({request}:{request:Request}){
     <label>Источники — «название | https://адрес», каждый с новой строки<textarea rows={5} value={sources} onChange={e=>setSources(e.target.value)} required disabled={selected.published}/></label>
     <label>ID связанных товаров через запятую<input value={productIds} onChange={e=>setProductIds(e.target.value)} required disabled={selected.published}/></label>
     {!selected.published&&<button className="primary" disabled={busy}><Check size={17}/> Сохранить черновик</button>}
-   </form><div className="blog-admin-publish"><span>Оценка {selected.score}/100</span><button className={selected.published?'secondary':'primary'} onClick={()=>void publish(selected,!selected.published)} disabled={busy||(!selected.published&&selected.score<85)}>{selected.published?'Снять с публикации':'Опубликовать'}</button></div>
+   </form>
 
  <div className="blog-admin-publish"><span>Оценка {selected.score}/100</span><button className={selected.published?'secondary':'primary'} type="button" onClick={()=>void publish(selected,!selected.published)} disabled={busy||(!selected.published&&selected.score<85)}>{selected.published?'Снять с публикации':'Опубликовать'}</button></div>{!selected.published&&<button className="blog-admin-delete" type="button" disabled={busy} onClick={()=>void remove(selected)}><Trash2 size={16}/> Удалить черновик</button>}</>}
   </div></aside></div>}
