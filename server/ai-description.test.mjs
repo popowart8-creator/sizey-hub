@@ -23,3 +23,17 @@ test('SEO rejects invalid model output',async()=>{
  const ai=createDescriptionAI({fetchImpl:async()=>Response.json({message:{content:'not json'}})});
  await assert.rejects(ai.seo({name:'Пальто'},'admin'),e=>e.status===502);
 });
+
+test('assistant uses Ollama and only returns allowlisted navigation', async () => {
+ const messages = [{role: 'user', content: 'Где аналитика?'}];
+ const ai = createDescriptionAI({fetchImpl: async (url, options) => {
+  assert.equal(url.pathname, '/api/chat');
+  assert.deepEqual(JSON.parse(options.body).messages, messages);
+  return Response.json({message: {content: JSON.stringify({answer: 'Откройте аналитику.', section: 'analytics'})}});
+ }});
+ assert.deepEqual(await ai.assistant(messages, 'admin'), {answer: 'Откройте аналитику.', section: 'analytics'});
+
+ const invalidSection = createDescriptionAI({fetchImpl: async () =>
+  Response.json({message: {content: JSON.stringify({answer: 'Ответ', section: '/admin/secret'})}})});
+ assert.deepEqual(await invalidSection.assistant(messages, 'admin'), {answer: 'Ответ', section: null});
+});

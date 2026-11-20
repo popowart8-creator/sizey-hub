@@ -1,3 +1,4 @@
+import AdminAssistant from './AdminAssistant';
 import BlogPanel from './BlogPanel';
 import ClientsPanel from './ClientsPanel';
 import CatalogProducts from './CatalogProducts';
@@ -42,6 +43,6 @@ function App(){const[orderRevision,setOrderRevision]=useState(0);const[manageOpt
  {page==='orders'&&<section className="panel orders-empty"><span className="empty-icon"><Receipt size={34}/></span><h2>{orders.length?'Заказы':'Заказов пока нет'}</h2><p>Реальные заказы появятся после подключения оформления покупок в Hub. Демонстрационная корзина не создаёт заказ и не проводит оплату.</p><a className="secondary" href="https://app.sizey.ru" target="_blank" rel="noreferrer">Продажи бонусной системы <ExternalLink size={15}/></a></section>}
  </>}
  <div className="workspace-footer">SIZEY / Управление магазином <span>Москва · {new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',timeZone:'Europe/Moscow'}).format(new Date())}</span></div></main></div>
- {manageOptions&&<CatalogOptions request={api} onClose={()=>{setManageOptions(false);void load()}}/>}{editor&&<ProductEditor request={api} kind={editor.kind} initial={editor.value} onClose={()=>setEditor(null)} onSaved={()=>{setEditor(null);setToast('Изменения сохранены');void load()}} onSessionError={failed}/>}{toast&&<div className="admin-toast" role="status"><Check size={18}/>{toast}</div>}</div>
+ {manageOptions&&<CatalogOptions request={api} onClose={()=>{setManageOptions(false);void load()}}/>}{editor&&<ProductEditor request={api} kind={editor.kind} initial={editor.value} onClose={()=>setEditor(null)} onSaved={()=>{setEditor(null);setToast('Изменения сохранены');void load()}} onSessionError={failed}/>}<AdminAssistant key={user.id} page={page} sections={links} request={api} navigate={setPage} onSessionError={failed}/>{toast&&<div className="admin-toast" role="status"><Check size={18}/>{toast}</div>}</div>
 }
 createRoot(document.getElementById('root')!).render(<App/>);

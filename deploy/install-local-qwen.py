@@ -19,7 +19,7 @@ def run(args,timeout=240):
             print('Qwen canary probe failed (last 1600 chars): '+(p.stderr or p.stdout)[-1600:],flush=True)
         raise RuntimeError('Command failed: '+args[0]+'; private logs saved on server')
     return p.stdout
-files=['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','loyalty-admin.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','admin.mjs','analytics.mjs','geo.mjs','blog-store.mjs','blog-ai.mjs','blog-auto.mjs','content-store.mjs','ai-description.mjs','keyword-suggestions.mjs','catalog-seed.json','categories-seed.json']
+files=['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','loyalty-admin.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','admin.mjs','analytics.mjs','geo.mjs','blog-store.mjs','blog-ai.mjs','blog-auto.mjs','content-store.mjs','ai-description.mjs','admin-assistant.mjs','keyword-suggestions.mjs','catalog-seed.json','categories-seed.json']
 for name in files: assert (source/'server'/name).is_file()
 assert 'qwen2.5:1.5b' in run(['docker','exec','sizey-local-ollama','ollama','list'])
 run(['docker','network','inspect','sizey_ai_internal']) if subprocess.run(['docker','network','inspect','sizey_ai_internal'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0 else run(['docker','network','create','--internal','sizey_ai_internal'])
@@ -36,7 +36,7 @@ override.write_text('services:\n  auth:\n    environment:\n      OLLAMA_URL: htt
 dc=['docker','compose','-f',str(compose),'-f',str(override)]
 canary='sizey-qwen-api-canary'
 live_changed=False
-probe="""import {createDescriptionAI} from './ai-description.mjs';const ai=createDescriptionAI();const s=await ai.status();if(!s.ready)throw Error('Qwen status unavailable: '+s.reason);const r=await ai.generate({name:'Пальто',facts:'Цвет чёрный, пояс в комплекте',mode:'create'},'qwen-deploy-smoke');if(!r.description||r.description.length<20)throw Error('No generated text');console.log(JSON.stringify({model:s.model.id,ready:s.ready,generatedCharacters:r.description.length}));"""
+probe="""import {createDescriptionAI} from './ai-description.mjs';const ai=createDescriptionAI();const s=await ai.status();if(!s.ready)throw Error('Qwen status unavailable: '+s.reason);const r=await ai.generate({name:'Пальто',facts:'Цвет чёрный, пояс в комплекте',mode:'create'},'qwen-deploy-smoke');if(!r.description||r.description.length<20)throw Error('No generated text');const answer=await ai.assistant([{role:'system',content:'Ответь по-русски в JSON с полями answer и section. Раздел analytics показывает посещения.'},{role:'user',content:'Где посмотреть посещения?'}],'qwen-deploy-smoke');if(!answer.answer)throw Error('No assistant reply');console.log(JSON.stringify({model:s.model.id,ready:s.ready,generatedCharacters:r.description.length,assistantCharacters:answer.answer.length}));"""
 try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)
     run(dc+['config','-q'])
@@ -45,8 +45,8 @@ try:
     run(['docker','network','connect','sizey_prod',canary])
     run(['docker','network','connect','sizey_ai_internal',canary])
     # Canary runs a sleeping container so app startup dependencies cannot mask Qwen connectivity.
-    run(['docker','exec',canary,'node','--input-type=module','-e',probe],timeout=150)
-    print('Canary generated a Qwen description successfully',flush=True)
+    run(['docker','exec',canary,'node','--input-type=module','-e',probe],timeout=255)
+    print('Canary verified Qwen description and assistant',flush=True)
     run(['docker','rm','-f',canary])
     live_changed=True
     run(dc+['up','-d','--no-deps','--no-build','--pull','never','auth'],timeout=180)
@@ -56,8 +56,8 @@ try:
     state=run(['docker','inspect','sizey-hub-api','--format','{{.State.Status}} exit={{.State.ExitCode}} restart={{.RestartCount}}']).strip()
     print('Production container state: '+state,flush=True)
     if not state.startswith('running '): raise RuntimeError('Production API exited after Compose restart')
-    result=run(['docker','exec','sizey-hub-api','node','--input-type=module','-e',probe],timeout=150)
-    print('Production API generated Qwen description: '+result.strip(),flush=True)
+    result=run(['docker','exec','sizey-hub-api','node','--input-type=module','-e',probe],timeout=255)
+    print('Production API verified Qwen description and assistant: '+result.strip(),flush=True)
     wordstat_probe="""import {createDescriptionAI} from './ai-description.mjs';const ai=createDescriptionAI();const r=await ai.wordstat({name:'женское пальто'},'deployment-canary');if(!Array.isArray(r.results)||!r.results.length)throw Error('Wordstat returned no search phrases');console.log(JSON.stringify({wordstat:'ok',phrases:r.results.length,totalCount:r.totalCount}));"""
     # Legacy Wordstat endpoint was retired; never roll back a healthy Qwen deployment for it.
     # Re-enable only after migrating to the supported Yandex Search API and its credentials.
