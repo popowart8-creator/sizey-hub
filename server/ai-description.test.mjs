@@ -30,6 +30,8 @@ test('assistant uses Ollama and only returns allowlisted navigation', async () =
   assert.equal(url.pathname, '/api/chat');
   const request = JSON.parse(options.body);
   assert.deepEqual(request.messages, messages);
+  assert.equal(request.keep_alive, '5m');
+  assert.equal(request.options.num_thread, 2);
   assert.ok(request.options.num_ctx <= 3072);
   assert.ok(request.options.num_predict <= 220);
   return Response.json({message: {content: JSON.stringify({answer: 'Откройте аналитику.', section: 'analytics'})}});
@@ -57,4 +59,16 @@ test('catalog facts use exact matches and skip generation', async () => {
  assert.match(ask('Сколько товаров в каталоге?').answer, /На витрине: 1/);
  assert.ok(Array.isArray(ask('Сколько стоит пальто?')));
  assert.ok(Array.isArray(ask('Цена пальто Север', [product, {...product, id: 43}])));
+});
+
+test('assistant bounds single-title generation while preserving the budget for longer tasks', async () => {
+ const budgets = [];
+ const ai = createDescriptionAI({fetchImpl: async (_url, options) => {
+  budgets.push(JSON.parse(options.body).options.num_predict);
+  return Response.json({message: {content: JSON.stringify({answer: 'Пальто SIZEY', section: null})}});
+ }});
+ for (const content of ['Напиши короткий заголовок для пальто SIZEY', 'Напиши заголовок для пальто и описание']) {
+  await ai.assistant([{role: 'user', content}], 'admin');
+ }
+ assert.deepEqual(budgets, [64, 220]);
 });
