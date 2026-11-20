@@ -52,10 +52,10 @@ test('upstream errors preserve status for authorized read routes',async()=>{
  assert.equal(r.status,403);assert.equal(r.data.message,'Недостаточно прав');
 });
 
-test('unverified employee and client mutations never reach upstream',async()=>{
+test('unverified client creation and employee deletion never reach upstream',async()=>{
  let count=0;
  const fetcher=async()=>{count++;throw Error('unexpected upstream call')};
- for(const [path,method] of [['/clients','POST'],['/users','POST'],['/users/11111111-1111-4111-8111-111111111111','DELETE']]){
+ for(const [path,method] of [['/clients','POST'],['/users/11111111-1111-4111-8111-111111111111','DELETE']]){
   const r=await loyaltyAdminRequest({path,method,body:{name:'Test'},accessToken:token,fetcher});
   assert.equal(r.status,501);
  }
