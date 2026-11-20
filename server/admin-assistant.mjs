@@ -53,6 +53,10 @@ function relevantGuides(query, section) {
   .slice(0, 3).map(guide => guide.answer);
 }
 
+const followUp = /^(?:а |и )?(?:что дальше|почему(?: так)?|как (?:это|его|её|их) (?:сделать|изменить|проверить)|как теперь|что если|если (?:не|нет)|а если|а дальше)(?:[ ?.,!]|$)/iu;
+const multiStep = /почему|если|не (?:работает|видно|получается|появля)|что (?:дальше|делать)|сравни|проверь| и (?:как|где|что|почему)|затем|после/iu;
+const reasoningInstructions = 'Сначала выясни цель и проверь, хватает ли данных. Учти условия и порядок действий. В ответе дай вывод и короткие шаги, поясни важную причину. Если результата нельзя проверить по данным, скажи, что проверить в админке. Если без уточнения есть несколько вариантов, задай один конкретный вопрос.';
+
 const capabilities = 'Помогу найти товары и разобраться в аналитике. Могу подготовить описание товара, SEO или черновик статьи и подсказать, где изменить баннер, посмотреть заказы или открыть настройки лояльности.';
 
 const normalize = value => value.toLocaleLowerCase('ru').replace(/ё/g, 'е')
@@ -145,7 +149,10 @@ export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
  const question = history.at(-1).content.trim();
  const quick = quickReply(question);
  if (quick) return quick;
- const query = question.toLocaleLowerCase('ru');
+ const previous = history.slice(0, -1);
+ while (previous.length && quickReply(previous.at(-2).content.trim())) previous.splice(-2);
+ const continuation = previous.length && followUp.test(question);
+ const query = (continuation ? previous.at(-2).content + ' ' + question : question).toLocaleLowerCase('ru');
  const products = store.list('products');
  const catalog = catalogReply(normalize(question), products);
  if (catalog) return catalog;
@@ -168,10 +175,9 @@ export function prepareAssistantReply(input, {store, blog, analytics, actor}) {
   matches.slice(0, 2).map(({product}) =>
    [product.name.slice(0, 100), ...product.categories.slice(0, 2)].join(', ')).join(' / ') :
   JSON.stringify(generalContext(store, blog, analytics, section, query, matches));
- const previous = history.slice(0, -1);
- while (previous.length && quickReply(previous.at(-2).content.trim())) previous.splice(-2);
  return [
-  {role: 'system', content: (titleSubject ? titleInstructions : instructions) + (data ? '\nДанные SIZEY: ' + data : '') +
+  {role: 'system', content: (titleSubject ? titleInstructions : instructions) +
+   (!titleSubject && (continuation || multiStep.test(question)) ? '\n' + reasoningInstructions : '') + (data ? '\nДанные SIZEY: ' + data : '') +
    (help.length ? '\nПроверенные шаги в админке: ' + help.join(' ') : '') +
    (examples.length ? '\nОдобренные примеры ответов. Используй только подходящие как справку, а текущие данные магазина имеют приоритет: ' + JSON.stringify(examples) : '')},
   ...previous.slice(-2).map(({role, content}) => ({role, content: content.trim().slice(0, 360)})),

@@ -176,3 +176,17 @@ test('assistant knows the actual SIZEY admin workflows and supplies relevant ste
  assert.match(messages[0].content, /Проверенные шаги.*Возврат по операции/);
  assert.doesNotMatch(messages[0].content, /Добавить товар/);
 });
+
+test('complex follow-ups recover the previous topic and request a grounded plan', async () => {
+ const {prepareAssistantReply} = await import('./admin-assistant.mjs');
+ const store = {list: () => [], summary: () => ({})};
+ const messages = prepareAssistantReply({section:'overview',history:[
+  {role:'user',content:'Как оформить возврат?'},
+  {role:'assistant',content:'Выберите операцию из истории.'},
+  {role:'user',content:'А если нужной операции нет?'}
+ ]},{store});
+ assert.match(messages[0].content, /Учти условия и порядок/);
+ assert.match(messages[0].content, /Возврат по операции/);
+ assert.match(messages[0].content, /один конкретный вопрос/);
+ assert.equal(messages[1].content, 'Как оформить возврат?');
+});
