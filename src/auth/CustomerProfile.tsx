@@ -35,11 +35,12 @@ export default function CustomerProfile({children,onScreenChange,onViewChange}:{
   let frame=0;
   const orient=(event:DeviceOrientationEvent)=>{
    if(event.beta===null||event.gamma===null)return;
+   const beta=event.beta,gamma=event.gamma;
    if(frame)cancelAnimationFrame(frame);
    frame=requestAnimationFrame(()=>{
     const el=bonusCardRef.current;if(!el)return;
-    const x=Math.max(-9,Math.min(9,event.gamma*.22));
-    const y=Math.max(-9,Math.min(9,event.beta*.12));
+    const x=Math.max(-9,Math.min(9,gamma*.22));
+    const y=Math.max(-9,Math.min(9,beta*.12));
     el.style.setProperty('--tilt-x',(-y)+'deg');
     el.style.setProperty('--tilt-y',x+'deg');
     el.style.setProperty('--shine-x',(50+x*3)+'%');
@@ -57,11 +58,12 @@ export default function CustomerProfile({children,onScreenChange,onViewChange}:{
    let frame=0;
    const orient=(event:DeviceOrientationEvent)=>{
     if(event.beta===null||event.gamma===null)return;
+    const beta=event.beta,gamma=event.gamma;
     if(frame)cancelAnimationFrame(frame);
     frame=requestAnimationFrame(()=>{
      const el=bonusCardRef.current;if(!el)return;
-     const x=Math.max(-9,Math.min(9,event.gamma*.22));
-     const y=Math.max(-9,Math.min(9,event.beta*.12));
+     const x=Math.max(-9,Math.min(9,gamma*.22));
+     const y=Math.max(-9,Math.min(9,beta*.12));
      el.style.setProperty('--tilt-x',(-y)+'deg');
      el.style.setProperty('--tilt-y',x+'deg');
      el.style.setProperty('--shine-x',(50+x*3)+'%');
