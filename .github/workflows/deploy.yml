@@ -4,6 +4,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      deploy_site:
+        description: 'Explicitly deploy website to production after API verification'
+        required: false
+        type: boolean
+        default: false
       deploy_qwen_api:
         description: 'Explicitly deploy Qwen API to production'
         required: false
@@ -161,7 +166,7 @@ jobs:
         run: rm -f ~/.ssh/id_ed25519
   deploy_qwen_api:
     if: github.event_name == 'workflow_dispatch' && inputs.deploy_qwen_api == true
-    needs: [build, inspect_local_ai]
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -194,7 +199,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.deploy_site == true
     needs: build
     runs-on: ubuntu-latest
     steps:
