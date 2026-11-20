@@ -270,3 +270,9 @@ button.sizey-bonus-card:disabled{cursor:default}
 .sizey-swipe-sheet .bonusoperation{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0}
 .sizey-swipe-sheet .bonusoperation>div{min-width:0;flex:1}
 .sizey-swipe-sheet .bonusoperation strong{flex-shrink:0;white-space:nowrap}
+
+/* Restore the loyalty card's tactile pressed state while keeping native haptics. */
+.customerbonus .sizey-bonus-card{transform:scale(1);transition:transform 160ms ease,filter 160ms ease;transform-origin:center;will-change:transform}
+.customerbonus .sizey-bonus-card:has(.haptic-action-switch:active),
+.customerbonus .sizey-bonus-card:active{transform:scale(.975);filter:brightness(.93)}
+@media(prefers-reduced-motion:reduce){.customerbonus .sizey-bonus-card{transition:none}}
