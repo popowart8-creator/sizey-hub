@@ -74,6 +74,8 @@ test('Qwen blog creates a valid draft from compact inference and distinct source
  assert.equal(result.article.sources.length,4);
  assert.equal(result.article.productIds[0],1);
  assert.equal(prompt.options.num_ctx,1536);
+ assert.equal(prompt.options.num_predict,320);
+ assert.equal(prompt.messages[1].content.length<1600,true);
  const dir=room(),blog=blogStore(join(dir,'blog.sqlite'));
  try{assert.equal(blog.save(result.article).published,false)}finally{blog.close();rmSync(dir,{recursive:true,force:true})}
 });
