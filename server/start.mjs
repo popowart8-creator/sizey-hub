@@ -1,3 +1,4 @@
+import {scheduleDailyBlogDrafts} from './blog-auto.mjs';
 import {blogStore} from './blog-store.mjs';
 import {createBlogAI} from './blog-ai.mjs';
 import {createKeywordSuggestions} from './keyword-suggestions.mjs';
@@ -19,6 +20,7 @@ const geo=createGeoLookup();
 const analytics=analyticsStore(directory+'/analytics.sqlite',{geoLookup:geo.lookup,geoProvider:geo.provider});
 const blog=blogStore(directory+'/blog.sqlite');
 const blogAI=createBlogAI();
+scheduleDailyBlogDrafts({blog,blogAI,store});
 const descriptionAI=createDescriptionAI();
 const keywordSuggestions=createKeywordSuggestions();
 const adminHandler=createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSuggestions,staffAuth:staffBackend(),listClients:async()=>{const rows=pool?(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:[];const phones=new Set(rows.map(c=>c.phone_normalized));const auth=new DatabaseSync(database,{readOnly:true});try{for(const c of auth.prepare('SELECT id,phone FROM customers').all()){const phone=c.phone.replace(/^\+/, '');if(!phones.has(phone))rows.push({id:c.id,name:'Клиент SIZEY Hub',phone_normalized:phone,hasLoyalty:false})}}finally{auth.close()}return rows},mediaDirectory:directory+'/media'});
