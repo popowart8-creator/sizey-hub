@@ -11,6 +11,8 @@ export default function LoyaltyPanel({onExpired,initialTab='clients',hideClientT
  const[selected,setSelected]=useState<any>(null);
  const[transactions,setTransactions]=useState<any[]>([]);
  const[employees,setEmployees]=useState<any[]>([]);
+ const[employeeEditing,setEmployeeEditing]=useState<any>(null);
+ const[employeeForm,setEmployeeForm]=useState({name:'',phone:'',login:'',password:'',role:'CASHIER',status:'ACTIVE'});
  const[search,setSearch]=useState('');
  const[clients,setClients]=useState<any[]>([]);
  const[settings,setSettings]=useState<any>(null);
@@ -38,12 +40,33 @@ export default function LoyaltyPanel({onExpired,initialTab='clients',hideClientT
  }
  useEffect(()=>{void load(tab)},[tab]);
  async function openClient(id:string){setLoading(true);setError('');setSelected(null);setTransactions([]);try{const [detail,history]=await Promise.all([request('/clients/'+encodeURIComponent(id)),request('/clients/'+encodeURIComponent(id)+'/transactions')]);setSelected(detail.client||detail);setTransactions(Array.isArray(history)?history:Array.isArray(history.transactions)?history.transactions:[])}catch(e){const err=e as Error&{status?:number};if(err.status===401)onExpired();setError(err.message)}finally{setLoading(false)}}
+ async function saveEmployee(e:FormEvent){e.preventDefault();setLoading(true);setError('');setNotice('');try{
+  const creating=!employeeEditing?.id;
+  const payload:any={name:employeeForm.name.trim(),login:employeeForm.login.trim(),role:employeeForm.role,status:employeeForm.status};
+  if(employeeForm.phone.trim())payload.phone=employeeForm.phone.trim();
+  if(employeeForm.password)payload.password=employeeForm.password;
+  await request(creating?'/users':'/users/'+encodeURIComponent(employeeEditing.id),creating?'POST':'PATCH',payload);
+  setEmployeeEditing(null);setNotice(creating?'Сотрудник создан':'Данные сотрудника сохранены');await load('employees');
+ }catch(e){const err=e as Error&{status?:number};if(err.status===401)onExpired();setError(err.message);setLoading(false)}}
  async function save(e:FormEvent){e.preventDefault();setLoading(true);setError('');setNotice('');try{await request('/settings','PATCH',form);setEditing(false);setNotice('Настройки сохранены в действующей бонусной системе');await load('settings')}catch(e){setError((e as Error).message);setLoading(false)}}
  return <section className="panel" style={{padding:24}}>
   <div className="table-toolbar"><div style={{display:'flex',gap:8}}>{!hideClientTab&&<button className="secondary" onClick={()=>setTab('clients')} aria-pressed={tab==='clients'}>Клиенты и бонусы</button>}<button className="secondary" onClick={()=>setTab('settings')} aria-pressed={tab==='settings'}>Настройки лояльности</button><button className="secondary" onClick={()=>setTab('employees')} aria-pressed={tab==='employees'}>Сотрудники</button></div><a className="secondary" href="https://app.sizey.ru" target="_blank" rel="noreferrer">Старый кабинет ↗</a></div>
   {error&&<div className="notice error" role="alert">{error}</div>}{notice&&<div className="notice" role="status">{notice}</div>}
   {tab==='clients'&&<><form onSubmit={e=>{e.preventDefault();void load('clients')}} style={{display:'flex',gap:8,margin:'20px 0'}}><input aria-label="Имя или телефон" placeholder="Имя или телефон" value={search} onChange={e=>setSearch(e.target.value)}/><button className="secondary" disabled={loading}>Найти</button></form><div className="table-wrap"><table><thead><tr><th>Клиент</th><th>Телефон</th><th>Уровень</th><th>Баланс</th></tr></thead><tbody>{clients.map((c,i)=><tr key={c.id||i}><td><button className="secondary" onClick={()=>void openClient(c.id)} disabled={!c.id}>{c.name||'Клиент'}</button></td><td>{c.phone||c.phoneNormalized||''}</td><td>{c.loyaltyLevel?.name||'—'}</td><td>{c.bonusBalance??'—'}</td></tr>)}</tbody></table></div>{!loading&&!clients.length&&<p>Клиенты не найдены.</p>}{selected&&<section className="panel" style={{padding:20,marginTop:20}}><div className="panel-heading"><h2>{selected.name||'Карточка клиента'}</h2><button className="secondary" onClick={()=>setSelected(null)}>Закрыть</button></div><p>Телефон: {selected.phone||selected.phoneNormalized||'—'} · Баланс: {selected.bonusBalance??'—'}</p><h3>История операций</h3><div className="table-wrap"><table><thead><tr><th>Тип</th><th>Сумма</th><th>Дата</th></tr></thead><tbody>{transactions.map((t,i)=><tr key={t.id||i}><td>{t.type||'—'}</td><td>{t.amount??t.bonusAmount??'—'}</td><td>{t.createdAt?new Date(t.createdAt).toLocaleString('ru-RU'):'—'}</td></tr>)}</tbody></table></div>{!transactions.length&&<p>Операций нет.</p>}</section>}</>}
-  {tab==='employees'&&<div className="table-wrap" style={{marginTop:20}}><table><thead><tr><th>Сотрудник</th><th>Роль</th><th>Статус</th></tr></thead><tbody>{employees.map((u,i)=><tr key={u.id||i}><td>{u.name||u.login||'—'}</td><td>{u.role||'—'}</td><td>{u.status||'—'}</td></tr>)}</tbody></table>{!loading&&!employees.length&&<p>Сотрудники не найдены.</p>}</div>}
+  {tab==='employees'&&<div style={{marginTop:20}}>
+  <button className="primary" onClick={()=>{setEmployeeForm({name:'',phone:'',login:'',password:'',role:'CASHIER',status:'ACTIVE'});setEmployeeEditing({})}}>Добавить сотрудника</button>
+  <div className="table-wrap" style={{marginTop:16}}><table><thead><tr><th>Сотрудник</th><th>Роль</th><th>Статус</th><th>Действия</th></tr></thead><tbody>{employees.map((u,i)=><tr key={u.id||i}><td>{u.name||u.login||'—'}</td><td>{u.role||'—'}</td><td>{u.status||'—'}</td><td><button className="secondary" onClick={()=>{setEmployeeEditing(u);setEmployeeForm({name:u.name||'',phone:u.phone||'',login:u.login||'',password:'',role:u.role||'CASHIER',status:u.status||'ACTIVE'})}}>Редактировать</button></td></tr>)}</tbody></table>{!loading&&!employees.length&&<p>Сотрудники не найдены.</p>}</div>
+  {employeeEditing&&<form onSubmit={saveEmployee} style={{display:'grid',gap:12,maxWidth:480,marginTop:20}}>
+   <h3>{employeeEditing.id?'Редактировать сотрудника':'Новый сотрудник'}</h3>
+   <label>Имя<input required maxLength={160} value={employeeForm.name} onChange={e=>setEmployeeForm(v=>({...v,name:e.target.value}))}/></label>
+   <label>Логин<input required maxLength={160} value={employeeForm.login} onChange={e=>setEmployeeForm(v=>({...v,login:e.target.value}))}/></label>
+   <label>Телефон<input value={employeeForm.phone} onChange={e=>setEmployeeForm(v=>({...v,phone:e.target.value}))}/></label>
+   <label>Пароль {employeeEditing.id?'(оставьте пустым, чтобы не менять)':''}<input type="password" required={!employeeEditing.id} minLength={10} maxLength={128} value={employeeForm.password} onChange={e=>setEmployeeForm(v=>({...v,password:e.target.value}))}/></label>
+   <label>Роль<select value={employeeForm.role} onChange={e=>setEmployeeForm(v=>({...v,role:e.target.value}))}><option value="CASHIER">Кассир</option><option value="ADMIN">Администратор</option></select></label>
+   <label>Статус<select value={employeeForm.status} onChange={e=>setEmployeeForm(v=>({...v,status:e.target.value}))}><option value="ACTIVE">Активен</option><option value="BLOCKED">Заблокирован</option></select></label>
+   <div style={{display:'flex',gap:8}}><button className="primary" disabled={loading}>Сохранить</button><button className="secondary" type="button" onClick={()=>setEmployeeEditing(null)}>Отмена</button></div>
+  </form>}
+ </div>}
   {tab==='settings'&&settings&&<form onSubmit={save} style={{display:'grid',gap:12,maxWidth:560,marginTop:20}}>{([
     ['companyName','Название компании'],['timezone','Часовой пояс'],['currency','Валюта'],['currencySymbol','Символ валюты'],['maxBonusSpendPercent','Максимальный процент оплаты бонусами'],['birthdayMultiplier','Множитель в день рождения']
    ] as const).map(([key,label])=><label key={key} style={{display:'grid',gap:6}}>{label}<input disabled={!editing||loading} type={typeof form[key]==='number'?'number':'text'} min={typeof form[key]==='number'?0:undefined} step={typeof form[key]==='number'?'any':undefined} value={form[key]} onChange={e=>setForm(v=>({...v,[key]:typeof v[key]==='number'?Number(e.target.value):e.target.value}))}/></label>)}<p>Уровни лояльности сохраняются действующим backend; их редактирование будет добавлено после проверки формата ответа.</p><div style={{display:'flex',gap:8}}>{!editing?<button type="button" className="secondary" onClick={()=>setEditing(true)}>Редактировать</button>:<><button className="primary" disabled={loading}>Сохранить</button><button type="button" className="secondary" onClick={()=>{setEditing(false);void load('settings')}}>Отмена</button></>}</div></form>}
