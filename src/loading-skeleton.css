@@ -36,3 +36,11 @@
 .authpage .sizey-profile-loading-row{display:block;width:100%;height:54px;border-radius:12px;margin:0}
 .authpage .sizey-profile-loading .profile-menu-stack{display:grid;gap:0;margin-top:12px}
 .authpage .sizey-profile-loading .profile-menu-stack .sizey-profile-loading-row{margin:0 0 10px}
+
+.authpage .sizey-profile-loading .sizey-profile-loading-menu-row{display:flex;align-items:center;gap:14px;height:auto;min-height:56px;width:100%;box-sizing:border-box;color:#292929;font-size:15px;font-weight:500}
+.authpage .sizey-profile-loading-icon{width:23px;height:23px;border-radius:6px;flex:none}
+.authpage .sizey-profile-loading-chevron{margin-left:auto;color:#aaa;font-size:26px;font-weight:300}
+.authpage .sizey-profile-loading .profile-utilities{display:block;width:100%;margin:0;padding:0}
+.authpage .sizey-profile-loading .profile-menu-stack{margin-top:0;display:block}
+.authpage .sizey-profile-loading .sizey-qr-hint{margin:12px 0 18px;text-align:center;color:#888;font-size:12px}
+.authpage .sizey-profile-loading .sizey-bonus-history{width:100%}
