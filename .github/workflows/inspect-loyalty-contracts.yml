@@ -1,6 +1,9 @@
 name: Inspect production loyalty API contracts
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-loyalty-contracts.yml'
 permissions:
   contents: read
 jobs:
