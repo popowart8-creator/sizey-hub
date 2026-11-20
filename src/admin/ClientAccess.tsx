@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 
-type Access={exists:boolean;phone:string;phoneVerified:boolean;mustChangePassword:boolean;temporaryPasswordPending:boolean};
+type Access={hasPassword:boolean;canConfirm:boolean;phone:string;phoneVerified:boolean;mustChangePassword:boolean;temporaryPasswordPending:boolean};
 type Issued={phone:string;temporaryPassword:string};
 
 async function request<T>(clientId:string,confirmation?:{identityChecked:boolean;expectedPhone:string;verificationCode?:string},signal?:AbortSignal):Promise<T>{
@@ -19,7 +19,7 @@ export default function ClientAccess({clientId,onExpired}:{clientId:string;onExp
  const [confirming,setConfirming]=useState(false);
  const [confirmed,setConfirmed]=useState(false);
  const [code,setCode]=useState('');
- const confirmingExisting=!!access?.exists&&!access.phoneVerified&&!access.mustChangePassword&&!access.temporaryPasswordPending;
+ const confirmingExisting=access?.canConfirm===true;
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [revision,setRevision]=useState(0);
@@ -80,7 +80,7 @@ export default function ClientAccess({clientId,onExpired}:{clientId:string;onExp
    <button className="primary" disabled={!confirmed||busy||(confirmingExisting&&!/^\d{8}$/.test(code))}>{busy?'Сохраняем…':confirmingExisting?'Подтвердить номер':'Выдать временный пароль'}</button>
    <button type="button" className="secondary" disabled={busy} onClick={()=>{setConfirming(false);setConfirmed(false);setCode('');setError('')}}>Отмена</button>
   </form>:access&&<button type="button" className="secondary" onClick={()=>setConfirming(true)}>
-   {confirmingExisting?'Подтвердить номер':!access.exists||access.temporaryPasswordPending?'Выдать временный пароль':'Сбросить пароль'}
+   {confirmingExisting?'Подтвердить номер':!access.hasPassword||access.temporaryPasswordPending?'Выдать временный пароль':'Сбросить пароль'}
   </button>}
  </section>;
 }
