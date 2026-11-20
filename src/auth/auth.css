@@ -253,3 +253,11 @@ button.sizey-bonus-card:disabled{cursor:default}
 /* Smaller miniature QR while retaining the full-size QR in the sheet. */
 .customerbonus .sizey-bonus-mini-qr{width:56px;height:56px;padding:4px;border-radius:7px}
 @media(max-width:390px){.customerbonus .sizey-bonus-mini-qr{width:50px;height:50px}}
+
+/* QR loading shimmer, matching the compact card and expanded sheet. */
+@keyframes sizeyQrShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sizey-qr-shimmer{display:block;width:100%;height:100%;min-height:30px;border-radius:5px;background:linear-gradient(110deg,#e8e8e8 8%,#fafafa 28%,#e8e8e8 48%);background-size:220% 100%;animation:sizeyQrShimmer 1.3s linear infinite}
+.sizey-qr-loading{width:min(68vw,290px);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;gap:12px}
+.sizey-qr-loading>.sizey-qr-shimmer{aspect-ratio:1}
+.sizey-qr-loading p{font-size:13px;text-align:center}
+@media(prefers-reduced-motion:reduce){.sizey-qr-shimmer{animation:none}}
