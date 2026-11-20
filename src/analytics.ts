@@ -1,5 +1,5 @@
-type Kind='session_start'|'screen_view'|'product_view'|'search'|'favorite_add'|'favorite_remove'|'cart_add'|'checkout_start'|'banner_click'|'engagement'|'scroll_depth'|'size_select'|'photo_view'|'photo_zoom'|'filter_open'|'filter_select'|'cart_quantity'|'cart_remove'|'login_success'|'register_success'|'password_change'|'logout'|'support_click'|'install_prompt'|'install_close'|'install_accept';
-type Details={screen?:string;productId?:number;results?:number;viewId?:string;activeMs?:number;depth?:number};
+type Kind='session_start'|'screen_view'|'product_view'|'search'|'favorite_add'|'favorite_remove'|'cart_add'|'checkout_start'|'banner_click'|'engagement'|'scroll_depth'|'size_select'|'photo_view'|'photo_zoom'|'filter_open'|'filter_select'|'cart_quantity'|'cart_remove'|'login_success'|'register_success'|'password_change'|'logout'|'support_click'|'install_prompt'|'install_close'|'install_accept'|'blog_article_open'|'blog_product_click'|'blog_collection_click';
+type Details={screen?:string;productId?:number;results?:number;viewId?:string;activeMs?:number;depth?:number;articleSlug?:string};
 type Source={type:string;detail:string};
 type Event=Details&{id:string;visitor:string;session:string;kind:Kind;device:string;formFactor:string;mode:string;source:Source};
 export function acquisition(referrer:string,href:string):Source{
@@ -24,7 +24,7 @@ export function acquisition(referrer:string,href:string):Source{
  }catch{return{type:'unknown',detail:'unknown'}}
 }
 let screenContext:Details={},documentSeen=false,source:Source=acquisition(document.referrer||'',typeof location==='undefined'?'https://hub.sizey.ru/':location.href);
-export function setScreenContext(screen:string,viewId:string){screenContext={screen,viewId}}
+export function setScreenContext(screen:string,viewId:string,articleSlug=''){screenContext={screen,viewId,...(articleSlug?{articleSlug}:{})}}
 const queue:Event[]=[];let timer:ReturnType<typeof setTimeout>|undefined,visitor='',session='',last=0,sending=false;
 const enabled=()=>navigator.doNotTrack!=='1'&&!(navigator as Navigator&{globalPrivacyControl?:boolean}).globalPrivacyControl;
 function identities(){const time=Date.now();try{const v=JSON.parse(localStorage.getItem('sizey-analytics-visitor')||'null');if(v?.id&&time-v.created<90*86400000)visitor=v.id;else{visitor=crypto.randomUUID();localStorage.setItem('sizey-analytics-visitor',JSON.stringify({id:visitor,created:time}))}const s=JSON.parse(localStorage.getItem('sizey-analytics-session')||'null');if(s?.id&&time-s.last<1800000){session=s.id;last=s.last}else if(time-last>=1800000||!session){session=crypto.randomUUID();last=0}localStorage.setItem('sizey-analytics-session',JSON.stringify({id:session,last:time}))}catch{visitor||=crypto.randomUUID();if(!session||time-last>=1800000){session=crypto.randomUUID();last=0}}const fresh=!last||time-last>=1800000;last=time;if(fresh&&documentSeen)source={type:'direct',detail:'direct'};documentSeen=true;return fresh}
