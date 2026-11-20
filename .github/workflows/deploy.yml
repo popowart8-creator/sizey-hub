@@ -174,7 +174,6 @@ jobs:
       - name: Deploy and verify production Qwen API with rollback
         env:
           SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
-          WORDSTAT_KEY: ${{ secrets.YANDEX_WORDSTAT_OAUTH_TOKEN }}
         run: |
           set -euo pipefail
           test -n "$SSHPASS"
@@ -182,9 +181,7 @@ jobs:
           target="/root/sizey-qwen-api-$GITHUB_RUN_ID"
           options=(-o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes)
           sshpass -e ssh "${options[@]}" root@95.181.213.9 "umask 077; mkdir -p '$target'"
-          tar --exclude=node_modules -czf - server deploy/install-local-qwen.py deploy/install-wordstat-secret.py | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
-          test -n "$WORDSTAT_KEY" || { echo 'Missing YANDEX_WORDSTAT_OAUTH_TOKEN secret'; exit 1; }
-          printf '%s' "$WORDSTAT_KEY" | sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 '$target/deploy/install-wordstat-secret.py'"
+          tar --exclude=node_modules -czf - server deploy/install-local-qwen.py | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
           sshpass -e ssh "${options[@]}" root@95.181.213.9 "python3 '$target/deploy/install-local-qwen.py'"
       - name: Remove SSH key
         if: always()
