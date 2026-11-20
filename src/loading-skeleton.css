@@ -104,7 +104,7 @@
  background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent)!important;
 }
 /* Profile skeleton final dimensions: identical to loaded card. */
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-card{
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card{
  display:flex!important;
  flex-direction:column!important;
  gap:0!important;
@@ -123,10 +123,10 @@
  box-shadow:none!important;
  overflow:hidden!important;
 }
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-card::before,
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-card::after{display:none!important}
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-card-bottom{margin-top:auto!important;min-height:54px}
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-card .sizey-skeleton-bone,
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-qr{background:#d5d5d8!important}
-.authpage .sizey-profile-loading.customerlayout .customerbonus .sizey-profile-loading-card .sizey-skeleton-bone::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent)!important}
-.authpage .sizey-profile-loading.customerlayout .sizey-profile-loading-menu-row{min-height:64px!important}
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card::before,
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card::after{display:none!important}
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card-bottom{margin-top:auto!important;min-height:54px}
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card .sizey-skeleton-bone,
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-qr{background:#d5d5d8!important}
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card .sizey-skeleton-bone::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent)!important}
+.authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-menu-row{min-height:64px!important}
