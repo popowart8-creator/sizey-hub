@@ -70,7 +70,7 @@ test('Qwen blog creates a valid draft from compact inference and distinct source
   return{ok:true,json:async()=>({message:{content:JSON.stringify({title:'Как выбрать пальто для повседневного гардероба',summary:'Практические советы по выбору пальто и сочетанию вещей в базовом гардеробе.',sections:['Сначала определите, с какими вещами вы планируете носить пальто, и оцените удобство посадки.','Обратите внимание на сочетание силуэта с привычными брюками, юбками и обувью, не полагаясь только на фотографии.']})}})};
  }});
  const result=await ai.generate({topic:'Как выбрать пальто и с чем носить: гид по выбору одежды',products});
- assert.equal(result.rejected,false);
+ assert.equal(result.rejected,false,JSON.stringify({sources:await ai.collectSources('Как выбрать пальто'),rank:scoreTopic('Как выбрать пальто и с чем носить: гид по выбору одежды',products,await ai.collectSources('Как выбрать пальто'))}));
  assert.equal(result.article.sources.length,4);
  assert.equal(result.article.productIds[0],1);
  assert.equal(prompt.options.num_ctx,3072);
