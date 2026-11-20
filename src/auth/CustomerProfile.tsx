@@ -43,7 +43,7 @@ export default function CustomerProfile({children,onScreenChange,onViewChange}:{
  useEffect(()=>{
   if(!loyalty?.linked||!user?.phone){setQrImage('');setQrError('');return}
   let active=true;
-  const digits=user.phone.replace(/\\D/g,'');
+  const digits=user.phone.replace(/\D/g,'');
   const cacheKey='sizey:loyalty-qr:v1:'+digits;
   let cached='';
   try{cached=localStorage.getItem(cacheKey)||''}catch{}
