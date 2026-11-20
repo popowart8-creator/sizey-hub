@@ -127,15 +127,15 @@ test('financial writes require a stable idempotency key and verified DTO fields'
  assert.equal(seen.length,4);
 });
 
-test('client creation accepts only name and phone and forwards to existing backend',async()=>{
+test('client creation requires a valid birth date and forwards to existing backend',async()=>{
  let sent;
  const fetcher=async(url,options)=>{sent={url,options};return {status:201,headers:new Headers({'content-type':'application/json'}),json:async()=>({id:'11111111-1111-4111-8111-111111111111'})}};
- const body={name:'Ирина',phone:'+79990000000'};
+ const body={name:'Ирина',phone:'+79990000000',birthDate:'1990-05-21'};
  const r=await loyaltyAdminRequest({path:'/clients',method:'POST',body,accessToken:token,fetcher});
  assert.equal(r.status,201);
  assert.equal(sent.url,'http://sizey-prod-backend:4000/api/clients');
  assert.deepEqual(JSON.parse(sent.options.body),body);
- for(const bad of [{name:'Ирина'},{name:'',phone:'+79990000000'},{...body,bonusBalance:100}]){
+ for(const bad of [{name:'Ирина'},{name:'',phone:'+79990000000'},{name:'Ирина',phone:'+79990000000'},{...body,birthDate:'invalid'},{...body,bonusBalance:100}]){
   assert.equal((await loyaltyAdminRequest({path:'/clients',method:'POST',body:bad,accessToken:token,fetcher})).status,400);
  }
 });
