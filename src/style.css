@@ -28,3 +28,15 @@
 @media(max-width:800px){.brandlogo{width:106px}.hero>picture img{object-position:center}.detailphoto{height:45svh;min-height:280px;max-height:480px}.thumbnails{padding:12px 20px}.thumbnails button{width:64px;height:80px}.deliverynote p{font-size:14px}.contactinfo a{font-size:16px;min-height:52px}.sizes button{flex-grow:1;min-width:48px}.footercontacts{width:100%;gap:14px}.footercontacts>a{font-size:19px}.footercontacts>span{font-size:15px}.footercontacts>div a{display:flex;align-items:center;min-height:48px;font-size:15px}.footerlinks{width:100%}.footerlinks button,.footerlinks a{min-height:48px;font-size:14px;display:flex;align-items:center}.footerlinks small{font-size:12px}.footercontacts>div{flex-wrap:wrap}.hero h1 em{font-family:'Manrope',sans-serif;font-style:normal}.detail .sizes button{font-size:15px}}
 .brandlogo{height:56px;max-height:none;object-fit:contain}.hero>picture img{object-position:center 30%}.hero-shade{background:linear-gradient(90deg,#0008,transparent 95%)}.hero-copy{max-width:550px}.wardrobebanner img{object-position:center 30%}
 @media(max-width:800px){.brandlogo{height:58px}.hero-shade{background:linear-gradient(0deg,#000c,transparent 85%)}.hero-copy{max-width:none}.hero>picture img{object-position:center 20%}.hero h1{font-size:clamp(46px,12vw,65px)}.hero-copy p{max-width:280px}.wardrobebanner img{height:340px;object-position:center 30%}}
+
+/* Delivery/payment sheet matches the loyalty QR bottom sheet. */
+.delivery-swipe-overlay{position:fixed;inset:0;z-index:11000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0);transition:background 260ms ease}
+.delivery-swipe-overlay.is-visible{background:rgba(0,0,0,.48)}
+.delivery-swipe-sheet{position:relative;width:100%;max-width:620px;max-height:calc(100dvh - 28px);overflow-y:auto;box-sizing:border-box;padding:8px 24px calc(30px + env(safe-area-inset-bottom,0px));border-radius:26px 26px 0 0;background:#fff;transform:translateY(105%);transition:transform 260ms cubic-bezier(.2,.75,.25,1);touch-action:pan-y}
+.delivery-swipe-overlay.is-visible .delivery-swipe-sheet{transform:translateY(0)}
+.delivery-swipe-overlay.is-closing .delivery-swipe-sheet{transform:translateY(105%)}
+.delivery-swipe-handle{width:44px;height:5px;background:#d4d4d4;border-radius:99px;margin:3px auto 22px}
+.delivery-swipe-sheet>.close{position:absolute;top:10px;right:16px}
+.delivery-swipe-sheet>h2{padding-right:44px;margin:0 0 20px}
+.delivery-swipe-sheet>p{line-height:1.6;margin:0 0 18px}
+@media(prefers-reduced-motion:reduce){.delivery-swipe-overlay,.delivery-swipe-sheet{transition-duration:0ms}}
