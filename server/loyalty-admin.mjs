@@ -58,8 +58,8 @@ function validateEmployee(body,creating){
 }
 function validateClientCreate(body){
  if(!body||typeof body!=='object'||Array.isArray(body))return false;
- if(Object.keys(body).sort().join(',')!=='name,phone')return false;
- return typeof body.name==='string'&&body.name.trim().length>0&&body.name.length<=160&&typeof body.phone==='string'&&/^\+?[0-9 ()-]{10,22}$/.test(body.phone);
+ if(Object.keys(body).sort().join(',')!=='birthDate,name,phone')return false;
+ return typeof body.name==='string'&&body.name.trim().length>0&&body.name.length<=160&&typeof body.phone==='string'&&/^\+?[0-9 ()-]{10,22}$/.test(body.phone)&&typeof body.birthDate==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(body.birthDate)&&!Number.isNaN(Date.parse(body.birthDate))&&body.birthDate<=new Date().toISOString().slice(0,10);
 }
 function validateClientPatch(body){
  if(!body||typeof body!=='object'||Array.isArray(body))return false;
