@@ -31,6 +31,7 @@ test('assistant uses Ollama and only returns allowlisted navigation', async () =
   const request = JSON.parse(options.body);
   assert.deepEqual(request.messages, messages);
   assert.equal(request.keep_alive, '5m');
+  assert.deepEqual(request.format.required, ['answer','section']);
   assert.ok(request.options.num_ctx <= 3072);
   assert.ok(request.options.num_predict <= 220);
   return Response.json({message: {content: JSON.stringify({answer: 'Откройте аналитику.', section: 'analytics'})}});
@@ -69,7 +70,7 @@ test('assistant bounds single-title generation while preserving the budget for l
  for (const content of ['Напиши короткий заголовок для пальто SIZEY', 'Напиши заголовок для пальто и описание']) {
   await ai.assistant([{role: 'user', content}], 'admin');
  }
- assert.deepEqual(budgets, [64, 220]);
+ assert.deepEqual(budgets, [96, 220]);
 });
 
 test('assistant corrections survive reopening SQLite and stay private to their author', async () => {

@@ -59,7 +59,7 @@ if(firstTextMs===undefined)throw Error('Assistant text did not stream');
 const assistantMs=Date.now()-start;
 if(!answer.answer)throw Error('No assistant reply');
 const warmStart=Date.now();
-const next=await ai.assistant(messages,'qwen-deploy-smoke');
+const next=await ai.assistant(messages,'qwen-deploy-smoke',{onProgress:()=>{}});
 if(!next.answer)throw Error('No warm assistant reply');
 console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,assistantMs,firstTextMs,warmAssistantMs:Date.now()-warmStart}));
 """
