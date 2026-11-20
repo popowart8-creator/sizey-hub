@@ -7,6 +7,7 @@ import {randomUUID} from 'node:crypto';
 import {blogStore} from './blog-store.mjs';
 import {createBlogAI,scoreTopic} from './blog-ai.mjs';
 import {analyticsStore} from './analytics.mjs';
+import {createDailyBlogDraft,autoSlug} from './blog-auto.mjs';
 
 const source=(host)=>({title:'Подробный независимый источник о моде',url:'https://'+host+'/style-guide'});
 const fixture=(overrides={})=>({title:'Как выбрать пальто для осени',slug:'how-to-choose-coat',summary:'Практическое руководство по выбору пальто для повседневного гардероба SIZEY.',sections:['Выбирайте посадку исходя из того, какую одежду планируете надевать под пальто. Примеряйте образ целиком.','Сравнивайте модели по силуэту и сочетаниям с базовыми вещами, не полагаясь только на фотографии.'],sources:[source('example.com'),source('example.org')],productIds:[1],score:90,...overrides});
@@ -48,4 +49,13 @@ test('article analytics separately count readers, product clicks, attributed car
   assert.throws(()=>store.collect({events:[event('blog_product_click',{articleSlug:'private.com/customer?phone=123',productId:1})]}),e=>e.status===400);
   assert.equal(report.metrics.cartAdds,1);
  }finally{store.close();rmSync(dir,{recursive:true,force:true})}
+});
+
+test('daily Qwen draft automation is idempotent, throttled and never auto-publishes',async()=>{
+ const dir=room(),now=Date.parse('2026-11-20T09:00:00Z');const blog=blogStore(join(dir,'blog.sqlite'),{now:()=>now});
+ const topic='Как выбрать пальто и с чем носить в повседневном гардеробе';
+ let generated=0;const ai={discover:async()=>[{topic,score:90}],generate:async()=>{generated++;return{article:fixture({slug:'temporary',score:92})}}};
+ const store={list:()=>[{id:1,cat:'Пальто',name:'Пальто',published:true,categories:['Пальто']}]};
+ try{const one=await createDailyBlogDraft({blog,blogAI:ai,store,now:()=>now});assert.equal(one.created,true);assert.equal(one.article.published,false);assert.equal(one.article.slug,autoSlug(topic));
+ const two=await createDailyBlogDraft({blog,blogAI:ai,store,now:()=>now});assert.equal(two.created,false);assert.equal(two.reason,'daily-limit');assert.equal(generated,1);assert.equal(blog.publicList().length,0)}finally{blog.close();rmSync(dir,{recursive:true,force:true})}
 });
