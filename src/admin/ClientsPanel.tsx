@@ -83,7 +83,7 @@ const qrPhonePattern=/^SIZEY:PHONE:(7\d{10})$/;
 const qrPattern=/^SIZEY:LOYALTY:([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/i;
 function QRScanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void}){
  const video=useRef<HTMLVideoElement>(null),stream=useRef<MediaStream|null>(null);
- const [error,setError]=useState(''),[manual,setManual]=useState('');
+ const [error,setError]=useState(''),[manual,setManual]=useState(''),[cameraReady,setCameraReady]=useState(false);
  const scanRef=useRef(onCode);scanRef.current=onCode;
  useEffect(()=>{
   let cancelled=false,frame=0,busy=false;
@@ -96,7 +96,7 @@ function QRScanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void
     if(cancelled){media.getTracks().forEach(t=>t.stop());return}
     stream.current=media;
     const el=video.current;if(!el)return;
-    el.srcObject=media;await el.play();
+    el.srcObject=media;await el.play();if(!cancelled)setCameraReady(true);
     const scannerUrl='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm';
     const module=await import(/* @vite-ignore */ scannerUrl);
     const decode=(module.default||module) as (data:Uint8ClampedArray,width:number,height:number,options?:{inversionAttempts:string})=>{data:string}|null;
@@ -124,7 +124,7 @@ function QRScanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void
   void start();
   return()=>{cancelled=true;cancelAnimationFrame(frame);stream.current?.getTracks().forEach(t=>t.stop());stream.current=null};
  },[]);
- return <div className="editor-overlay clients-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className="editor clients-drawer" role="dialog" aria-modal="true" aria-label="Сканер бонусной карты"><header><div><span className="overline">БОНУСНАЯ КАРТА</span><h2>Сканировать QR</h2></div><button className="icon-button" onClick={onClose} aria-label="Закрыть"><X/></button></header><div className="clients-drawer-content" style={{display:'grid',gap:14}}><p>Наведите камеру на QR-код клиента. Списание только после подтверждения.</p><video ref={video} autoPlay playsInline muted style={{width:'100%',maxHeight:320,objectFit:'cover',borderRadius:16,background:'#161616'}}/>{error&&<p role="status" className="clients-muted">{error}</p>}<form onSubmit={e=>{e.preventDefault();onCode(manual.trim())}} style={{display:'grid',gap:10}}><label>Код карты<input value={manual} onChange={e=>setManual(e.target.value)} placeholder="SIZEY:PHONE:..." autoComplete="off"/></label><button className="primary" disabled={!manual.trim()}>Найти клиента</button></form></div></section></div>
+ return <div className="editor-overlay clients-overlay clients-scanner-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><section className="editor clients-drawer clients-scanner-dialog" role="dialog" aria-modal="true" aria-label="Сканер бонусной карты"><header><div><span className="overline">БОНУСНАЯ КАРТА</span><h2>Сканировать QR</h2></div><button className="icon-button" onClick={onClose} aria-label="Закрыть"><X/></button></header><div className="clients-drawer-content clients-scanner-content"><p>Наведите камеру на QR-код клиента. Списание только после подтверждения.</p><div className="clients-scanner-camera"><video ref={video} autoPlay playsInline muted/>{!cameraReady&&!error&&<span className="clients-scanner-status" role="status">Запускаем камеру…</span>}</div>{error&&<p role="status" className="clients-muted">{error}</p>}<form onSubmit={e=>{e.preventDefault();onCode(manual.trim())}} style={{display:'grid',gap:10}}><label>Код карты<input value={manual} onChange={e=>setManual(e.target.value)} placeholder="SIZEY:PHONE:..." autoComplete="off"/></label><button className="primary" disabled={!manual.trim()}>Найти клиента</button></form></div></section></div>
 }
 export default function ClientsPanel({onExpired,openScannerOnMount=false}:Props){
  const [clients,setClients]=useState<Client[]>([]),[search,setSearch]=useState(''),[selected,setSelected]=useState<Client|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState('');
