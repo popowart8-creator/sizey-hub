@@ -56,11 +56,17 @@ export default function ClientsPanel({onExpired}:Props){
  expiredRef.current=onExpired;
  const [section,setSection]=useState<'clients'|'settings'|'employees'>('clients');
  useEffect(()=>{let active=true;async function load(){setLoading(true);setError('');try{
-  const [loyalty,registered]=await Promise.all([request('/clients?all=true'),fetch('/hub-api/admin/clients',{credentials:'same-origin',cache:'no-store'}).then(async response=>{const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.message||'Ошибка загрузки регистраций'),{status:response.status});return data})]);
-  const all=items(loyalty,'clients') as Client[];
+  // The local registration directory is independent of the loyalty backend.
+  // A failure in one source must not hide customers from the other source.
+  const [loyaltyResult,registeredResult]=await Promise.allSettled([request('/clients?all=true'),fetch('/hub-api/admin/clients',{credentials:'same-origin',cache:'no-store'}).then(async response=>{const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.message||'Ошибка загрузки регистраций'),{status:response.status});return data})]);
+  if(loyaltyResult.status==='rejected'&&registeredResult.status==='rejected')throw registeredResult.reason;
+  const all=loyaltyResult.status==='fulfilled'?[...items(loyaltyResult.value,'clients')] as Client[]:[];
   const phones=new Set(all.map(c=>normalizedPhone(phone(c))));
-  for(const account of items(registered,'clients') as Client[]){const key=normalizedPhone(phone(account));if(!phones.has(key)){all.push({...account,registeredOnly:true});phones.add(key)}}
-  if(active)setClients(all);
+  if(registeredResult.status==='fulfilled')for(const account of items(registeredResult.value,'clients') as Client[]){
+   const key=normalizedPhone(phone(account));
+   if(!phones.has(key)){all.push({...account,registeredOnly:account.loyalty===false});phones.add(key)}
+  }
+  if(active){setClients(all);if(loyaltyResult.status==='rejected'||registeredResult.status==='rejected')setError('Один из источников клиентов недоступен. Показаны доступные записи; попробуйте обновить список.');}
  }catch(e){if(active){if((e as {status?:number}).status===401)onExpired();setError((e as Error).message)}}finally{if(active)setLoading(false)}}
  void load();return()=>{active=false};
  },[reload]);
