@@ -4,6 +4,27 @@ const sections = ['overview', 'analytics', 'blog', 'products', 'banners', 'clien
 const instructions = 'Ты помощник админки SIZEY. Отвечай по-русски, кратко и по делу. Для фактов о магазине используй данные ниже. Помогай писать тексты и объясняй действия. Запись выполняет администратор. Верни JSON: answer (текст), section (overview, analytics, blog, products, banners, clients, orders или null).';
 const capabilities = 'Помогу найти товары и разобраться в аналитике. Могу подготовить описание товара, SEO или черновик статьи и подсказать, где изменить баннер, посмотреть заказы или открыть настройки лояльности.';
 
+const normalize = value => value.toLocaleLowerCase('ru').replace(/ё/g, 'е')
+ .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const rubles = new Intl.NumberFormat('ru-RU', {style: 'currency', currency: 'RUB', maximumFractionDigits: 2, minimumFractionDigits: 0});
+
+function catalogReply(question, products) {
+ if (/^сколько (?:всего )?товаров (?:у нас |сейчас )?в каталоге$/.test(question)) {
+  return {answer: `Товаров в каталоге: ${products.length}. На витрине: ${products.filter(p => p.published).length}.`, section: 'products'};
+ }
+ const price = question.match(/^(?:сколько стоит|какая цена у|цена) (.+)$/);
+ const sizes = question.match(/^(?:какие размеры у|размеры) (.+)$/);
+ const subject = price?.[1] ?? sizes?.[1];
+ if (!subject) return null;
+ const id = subject.match(/^(?:товар[а]? |id )?(\d+)$/)?.[1];
+ const exact = products.filter(product => id ? String(product.id) === id : normalize(product.name) === subject);
+ if (exact.length !== 1) return null;
+ const product = exact[0];
+ const details = price ? rubles.format(product.price) :
+  product.sizeKnown !== false && product.sizes.length ? 'размеры в карточке: ' + product.sizes.join(', ') : 'размеры не указаны';
+ return {answer: `${product.name} — ${details}.`, section: 'products'};
+}
+
 export function prepareAssistantReply(input, {store, blog, analytics}) {
  const {section, history} = input;
  if (!sections.includes(section) || !Array.isArray(history) || history.length < 1 || history.length > 7 ||
@@ -23,6 +44,8 @@ export function prepareAssistantReply(input, {store, blog, analytics}) {
  }
  const query = question.toLocaleLowerCase('ru');
  const products = store.list('products');
+ const catalog = catalogReply(normalize(question), products);
+ if (catalog) return catalog;
  const terms = query.match(/[\p{L}\p{N}]{3,}/gu) || [];
  const matches = products.map(product => {
   const name = product.name.toLocaleLowerCase('ru');

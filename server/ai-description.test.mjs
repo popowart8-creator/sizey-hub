@@ -45,3 +45,16 @@ test('assistant distinguishes a slow Ollama response from a connection error', a
  const ai = createDescriptionAI({fetchImpl: async () => { throw new DOMException('Timeout', 'TimeoutError'); }});
  await assert.rejects(ai.assistant([], 'admin'), error => error.status === 504);
 });
+
+test('catalog facts use exact matches and skip generation', async () => {
+ const {prepareAssistantReply} = await import('./admin-assistant.mjs');
+ const product = {id: 42, name: 'Пальто «Север»', price: 5900, categories: ['Пальто'], sizes: ['S', 'M'], published: true};
+ const ask = (content, products = [product]) => prepareAssistantReply({
+  section: 'products', history: [{role: 'user', content}]
+ }, {store: {list: () => products, summary: () => ({})}});
+ assert.match(ask('Сколько стоит пальто «Север»?').answer, /5\s900/);
+ assert.match(ask('Размеры товара №42').answer, /S, M/);
+ assert.match(ask('Сколько товаров в каталоге?').answer, /На витрине: 1/);
+ assert.ok(Array.isArray(ask('Сколько стоит пальто?')));
+ assert.ok(Array.isArray(ask('Цена пальто Север', [product, {...product, id: 43}])));
+});

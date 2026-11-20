@@ -49,7 +49,9 @@ const hello=prepareAssistantReply({section:'overview',history:[greeting]},{store
 const history=[greeting,{role:'assistant',content:hello.answer}];
 const help=prepareAssistantReply({section:'overview',history:[...history,{role:'user',content:'что умеешь'}]},{store});
 if(!hello.answer||!help.answer)throw Error('Assistant quick replies unavailable');
-const messages=prepareAssistantReply({section:'products',history:[...history,{role:'user',content:'Сколько стоит пальто SIZEY?'}]},{store});
+const price=prepareAssistantReply({section:'products',history:[{role:'user',content:'Сколько стоит пальто SIZEY?'}]},{store});
+if(!price.answer?.includes('900'))throw Error('Direct catalog price unavailable');
+const messages=prepareAssistantReply({section:'products',history:[...history,{role:'user',content:'Напиши короткий заголовок для пальто SIZEY'}]},{store});
 const start=Date.now();
 const answer=await ai.assistant(messages,'qwen-deploy-smoke');
 if(!answer.answer)throw Error('No assistant reply');
