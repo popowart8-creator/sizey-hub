@@ -41,10 +41,13 @@ test('forwards settings PATCH without leaking browser headers',async()=>{
  assert.deepEqual(Object.keys(seen.headers).sort(),['Authorization','Content-Type'].sort());
 });
 
-test('financial cancel is also blocked before upstream access',async()=>{
- let called=false;
- const r=await loyaltyAdminRequest({path:'/sales/11111111-1111-4111-8111-111111111111/cancel',method:'POST',accessToken:token,fetcher:async()=>{called=true;throw Error('unexpected')}});
- assert.equal(r.status,501);assert.equal(called,false);
+test('sale cancellation forwards only the verified path without a request body',async()=>{
+ let seen;
+ const id='11111111-1111-4111-8111-111111111111';
+ const fetcher=async(url,options)=>{seen={url,options};return {status:200,headers:new Headers({'content-type':'application/json'}),json:async()=>({ok:true})}};
+ const r=await loyaltyAdminRequest({path:'/sales/'+id+'/cancel',method:'POST',accessToken:token,fetcher});
+ assert.equal(r.status,200);assert.equal(seen.url,'http://sizey-prod-backend:4000/api/sales/'+id+'/cancel');assert.equal(seen.options.body,undefined);
+ assert.equal((await loyaltyAdminRequest({path:'/sales/'+id+'/cancel',method:'POST',body:{reason:'unapproved'},accessToken:token,fetcher})).status,400);
 });
 test('upstream errors preserve status for authorized read routes',async()=>{
  const fetcher=async()=>({status:403,headers:new Headers({'content-type':'application/json'}),json:async()=>({message:'Недостаточно прав'})});
