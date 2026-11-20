@@ -85,3 +85,20 @@
 .authpage .sizey-profile-loading .profile-account-actions{margin-top:0}
 .authpage .sizey-profile-loading .sizey-profile-loading-menu-row{min-height:56px}
 .authpage .sizey-profile-loading .sizey-profile-loading-menu-row .sizey-profile-loading-icon{display:block}
+
+/* Profile loading must retain the exact visual loyalty card, not flash grey. */
+.authpage .sizey-profile-loading .sizey-bonus-card.sizey-profile-loading-card{
+ background:radial-gradient(ellipse at 75% 100%,#d947bd 0%,transparent 54%),linear-gradient(125deg,#171429 5%,#29204c 52%,#6a2b91 100%)!important;
+ border:0!important;
+ border-radius:30px!important;
+ box-shadow:0 18px 45px rgba(48,24,83,.22),inset 0 1px 1px rgba(255,255,255,.3)!important;
+ min-height:252px;
+ padding:25px;
+}
+.authpage .sizey-profile-loading .sizey-bonus-card.sizey-profile-loading-card .sizey-skeleton-bone,
+.authpage .sizey-profile-loading .sizey-bonus-card.sizey-profile-loading-card .sizey-profile-loading-qr{
+ background:rgba(255,255,255,.24)!important;
+}
+.authpage .sizey-profile-loading .sizey-bonus-card.sizey-profile-loading-card .sizey-skeleton-bone::after{
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.36),transparent)!important;
+}
