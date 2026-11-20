@@ -95,3 +95,20 @@ body>.password-screen .password-card form>.blackbtn{box-sizing:border-box;width:
 .sizey-bonus-chevron--open{transform:rotate(90deg)}
 .sizey-bonus-history-content{padding:12px 4px 6px}
 .sizey-bonus-history-content>.textbtn{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px}
+
+
+/* Profile: all menu rows follow the same content-grid gutters and rhythm. */
+.authpage:has(.customerlayout){width:100%;max-width:1200px;min-width:0;margin-inline:auto}
+.authpage:has(.customerlayout) .customerlayout,
+.authpage:has(.customerlayout) .profile-account-actions{width:100%;min-width:0;box-sizing:border-box}
+.authpage:has(.customerlayout) .profile-account-actions{margin:0;padding:0 0 40px}
+.authpage:has(.customerlayout) .profilerow{display:flex;align-items:center;gap:16px;width:100%;min-height:64px;padding:18px 0;margin:0;text-align:left;font-size:15px;line-height:1.4;border-bottom:1px solid #e6e6e8;box-sizing:border-box}
+.authpage:has(.customerlayout) .profilerow>svg:first-child{flex:0 0 23px}
+.authpage:has(.customerlayout) .profilerow>svg:last-child{flex:0 0 20px;margin-left:auto}
+.authpage:has(.customerlayout) .sizey-bonus-history{margin-top:18px}
+.authpage:has(.customerlayout) .sizey-bonus-history-content{padding:12px 0 8px}
+@media(max-width:800px){
+ .authpage:has(.customerlayout){padding-inline:16px;box-sizing:border-box}
+ .authpage:has(.customerlayout) .customerlayout{margin-top:24px;gap:20px}
+ .authpage:has(.customerlayout) .profile-account-actions{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+}
