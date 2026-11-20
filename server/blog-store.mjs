@@ -38,7 +38,8 @@ export function blogStore(path,{now=Date.now}={}){
  const publicList=()=>db.prepare('SELECT * FROM blog_articles WHERE published=1 ORDER BY published_at DESC LIMIT 100').all().map(decode);
  const publicOne=slug=>{if(typeof slug!=='string'||!slugPattern.test(slug))return null;return decode(db.prepare('SELECT * FROM blog_articles WHERE published=1 AND slug=?').get(slug))};
  function save(value,id){
-  const article=normalize(value),old=id?find(id):null;
+  const old=id?find(id):null;
+  const article=normalize({...value,slug:value?.slug||old?.slug});
   if(id&&!old)fail('Статья не найдена',404);
   if(old?.published)fail('Снимите статью с публикации перед редактированием',409);
   const used=db.prepare('SELECT id FROM blog_articles WHERE slug=?').get(article.slug);
