@@ -14,7 +14,7 @@ export function createLoyaltyReader(pool){return async phone=>{
   const c=rows[0];
   const result=await db.query('SELECT id,type,balance_before,balance_after,created_at FROM transactions WHERE client_id=$1 ORDER BY created_at DESC,id DESC LIMIT 50',[c.id]);
   await db.query('COMMIT');
-  return{linked:true,name:c.name,balance:Number(c.balance),level:c.level,percent:Number(c.percent),history:result.rows.map(t=>({id:t.id,amount:t.balance_after-t.balance_before,description:labels[t.type]||'Бонусная операция',date:new Date(t.created_at).toISOString()}))};
+  return{linked:true,clientId:c.id,name:c.name,balance:Number(c.balance),level:c.level,percent:Number(c.percent),history:result.rows.map(t=>({id:t.id,amount:t.balance_after-t.balance_before,description:labels[t.type]||'Бонусная операция',date:new Date(t.created_at).toISOString()}))};
  }catch(e){await db.query('ROLLBACK').catch(()=>{});throw e}finally{db.release()}
 }}
 export function loyaltyPool(connectionString){return new pg.Pool({connectionString,max:3,connectionTimeoutMillis:5000,idleTimeoutMillis:30000,statement_timeout:5000,options:'-c default_transaction_read_only=on'})}
