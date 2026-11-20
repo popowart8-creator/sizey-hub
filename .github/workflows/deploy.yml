@@ -3,6 +3,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      deploy_qwen_api:
+        description: 'Explicitly deploy Qwen API to production'
+        required: false
+        type: boolean
+        default: false
   pull_request:
 permissions:
   contents: read
@@ -153,7 +159,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy_qwen_api:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_qwen_api == true
     needs: [build, inspect_local_ai]
     runs-on: ubuntu-latest
     timeout-minutes: 30
