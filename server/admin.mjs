@@ -63,7 +63,7 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
     if(!uid)throw new ContentError(502,'Яндекс не вернул ID пользователя');
     const hosts=await get('/user/'+encodeURIComponent(uid)+'/hosts');
     const sites=Array.isArray(hosts.hosts)?hosts.hosts:[];
-    const host=sites.find(h=>{const raw=String(h.ascii_host_url||h.unicode_host_url||h.host_id||'');try{return new URL(raw).hostname.replace(/^www\\./,'')==='sizey.ru'}catch{return /(^|[:/])sizey\\.ru([/:]|$)/.test(raw)}});
+    const host=sites.find(h=>{const raw=String(h.ascii_host_url||h.unicode_host_url||h.host_id||'');try{return new URL(raw).hostname.replace(/^www\./,'')==='sizey.ru'}catch{return /(^|[:/])sizey\.ru([/:]|$)/.test(raw)}});
     if(!host){reply(200,{connected:false,reason:'Сайт sizey.ru не найден среди доступных сайтов Яндекс Вебмастера'});return true}
     const id=encodeURIComponent(host.host_id);
     const params=new URLSearchParams({order_by:'TOTAL_SHOWS',limit:'100'});
