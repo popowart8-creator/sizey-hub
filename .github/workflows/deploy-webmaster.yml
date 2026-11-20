@@ -19,6 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      # Reapply the existing protected Webmaster credential after the frontend release.
       - name: Validate server code
         run: |
           node --check server/admin.mjs
