@@ -198,3 +198,11 @@ button.sizey-bonus-card:disabled{cursor:default}
 .authpage:has(.customerlayout) button.sizey-bonus-card:disabled{opacity:1}
 .authpage:has(.customerlayout) .customerlayout{padding-top:12px}
 @media(max-width:800px){.authpage:has(.customerlayout) .customerlayout{padding-top:18px}}
+
+
+/* Match the profile heading and content gutters to the other customer screens. */
+.authpage:has(.customerlayout){width:100%;max-width:1200px;margin-inline:auto;box-sizing:border-box}
+.authpage:has(.customerlayout) .customerlayout{margin-top:0;padding-top:0;gap:16px}
+.authpage:has(.customerlayout) .customer-profile-heading{padding:0 0 6px}
+.authpage:has(.customerlayout) .customer-profile-heading h3{font-size:clamp(24px,3vw,30px);line-height:1.2;margin:0;font-weight:700}
+@media(max-width:800px){.authpage:has(.customerlayout){padding-inline:16px}.authpage:has(.customerlayout) .customerlayout{padding-top:0;gap:14px}.authpage:has(.customerlayout) .customer-profile-heading{padding:0 0 4px}}
