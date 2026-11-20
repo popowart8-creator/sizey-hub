@@ -93,3 +93,17 @@ test('Qwen outage still returns a complete unpublished editorial draft',async()=
  const dir=room(),blog=blogStore(join(dir,'blog.sqlite'));
  try{const saved=blog.save(result.article);assert.equal(saved.published,false);assert.equal(saved.sections.length,3)}finally{blog.close();rmSync(dir,{recursive:true,force:true})}
 });
+
+test('only unpublished drafts can be deleted and public articles stay accessible',()=>{
+ const dir=room(),store=blogStore(join(dir,'blog.sqlite'));
+ try{
+  const draft=store.save(fixture({slug:'delete-me'}));
+  const published=store.save(fixture({slug:'keep-me'}));
+  store.publish(published.id,true,[{id:1,published:true}]);
+  assert.throws(()=>store.remove(published.id),e=>e.status===409);
+  assert.equal(store.remove(draft.id).id,draft.id);
+  assert.equal(store.list().some(a=>a.id===draft.id),false);
+  assert.equal(store.publicOne('keep-me').id,published.id);
+  assert.throws(()=>store.remove(draft.id),e=>e.status===404);
+ }finally{store.close();rmSync(dir,{recursive:true,force:true})}
+});
