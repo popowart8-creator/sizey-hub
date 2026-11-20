@@ -40,7 +40,7 @@ export async function loyaltyAdminRequest({path,method,query='',accessToken,body
   if(financialWrites.has(path)&&method==='POST')return {status:501,data:{message:'Финансовые операции будут доступны после проверки контрактов и защиты от повторных списаний'}};
   if(/^\/sales\/[a-f0-9-]{36}\/cancel$/i.test(path)&&method==='POST')return {status:501,data:{message:'Отмена продажи временно недоступна до проверки контракта'}};
   // Production ClientsController and UpdateClientDto were verified by the read-only contract inspection.
-  const clientPatch=method==='PATCH'&&/^\\/clients\\/[a-f0-9-]{36}$/i.test(path);
+  const clientPatch=method==='PATCH'&&/^\/clients\/[a-f0-9-]{36}$/i.test(path);
   if(clientPatch&&!validateClientPatch(body))return {status:400,data:{message:'Некорректные данные клиента'}};
   // Other write DTOs have not been verified against the production NestJS source.
   if(['POST','PATCH','PUT','DELETE'].includes(method)&&!(path==='/settings'&&method==='PATCH')&&!clientPatch&&!(path==='/sales/preview'&&method==='POST'))
