@@ -31,6 +31,18 @@ export function createBlogAI({fetchImpl=fetch,endpoint=process.env.OLLAMA_URL||'
    return xmlItems(text).slice(0,10);
   }catch{return []}finally{clearTimeout(timeout)}
  }
+ async function discover(products){
+  const categories=[...new Set(products.filter(p=>p.published!==false).flatMap(p=>[p.cat,...(p.categories||[])]) )]
+    .filter(c=>typeof c==='string'&&c.trim().length>=4&&!/^(все|новинки)/i.test(c)).slice(0,7);
+  const results=[];
+  for(const category of categories){
+   const topic='Как выбрать '+category.toLowerCase()+' и с чем носить: гид по выбору одежды';
+   const sources=await collectSources(topic),rank=scoreTopic(topic,products,sources);
+   if(rank.score>=85)results.push({topic,score:rank.score,sourceCount:sources.length,productIds:rank.productIds});
+   if(results.length>=5)break;
+  }
+  return results.sort((a,b)=>b.score-a.score);
+ }
  async function generate({topic,products}){
   if(typeof topic!=='string'||topic.trim().length<12||topic.length>140)fail('Тема должна содержать от 12 до 140 символов');
   const sources=await collectSources(topic.trim()),rank=scoreTopic(topic,products,sources);
@@ -47,6 +59,6 @@ export function createBlogAI({fetchImpl=fetch,endpoint=process.env.OLLAMA_URL||'
    return{rejected:false,article:{slug:'sizey-'+Date.now().toString(36),title:article.title,summary:article.summary,sections:article.sections,sources:sources.slice(0,6).map(s=>({title:s.title,url:s.url})),productIds:rank.productIds,score:rank.score},score:rank.score,reviewRequired:true};
   }finally{clearTimeout(timeout)}
  }
- return{generate,collectSources,scoreTopic};
+ return{generate,discover,collectSources,scoreTopic};
 }
 export {scoreTopic};
