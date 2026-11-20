@@ -7,7 +7,7 @@ const slug=text=>String(text||'').toLowerCase().replace(/[^a-z0-9а-яё\s-]/g,'
 function xmlItems(xml){
  const items=[];
  for(const match of xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)){
-  const item=match[1],field=name=>strip(item.match(new RegExp('<'+name+'(?:\s[^>]*)?>([\s\S]*?)<\/'+name+'>','i'))?.[1]||'');
+  const item=match[1],field=name=>strip(item.match(new RegExp('<'+name+'(?:\\s[^>]*)?>([\\s\\S]*?)<\\/'+name+'>','i'))?.[1]||'');
   const title=field('title'),description=field('description'),url=field('link');
   if(!title||!description||title.length>240)continue;
   try{const u=new URL(url);if(u.protocol==='https:'&&u.hostname!=='www.bing.com'&&u.hostname!=='bing.com')items.push({title,description:description.slice(0,700),url:u.href})}catch{/* ignore malformed feed */ }
