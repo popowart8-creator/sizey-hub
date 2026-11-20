@@ -79,7 +79,8 @@ function ClientDrawer({client,onClose,onExpired,onSaved,quickDebit=false}:{clien
 }
 
 
-const qrPhonePattern=/^SIZEY:PHONE:(7\\d{10})$/;\nconst qrPattern=/^SIZEY:LOYALTY:([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/i;
+const qrPhonePattern=/^SIZEY:PHONE:(7\d{10})$/;
+const qrPattern=/^SIZEY:LOYALTY:([a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})$/i;
 function QRScanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void}){
  const video=useRef<HTMLVideoElement>(null),stream=useRef<MediaStream|null>(null);
  const [error,setError]=useState(''),[manual,setManual]=useState('');
