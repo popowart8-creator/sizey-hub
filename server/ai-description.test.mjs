@@ -122,3 +122,21 @@ test('assistant exposes JSON answer text before Ollama finishes the response', a
  assert.deepEqual(await result, {answer: 'Пальто А', section: 'products'});
  assert.deepEqual(progress, ['Пальто ', 'Пальто А']);
 });
+
+test('opening multiple chats preloads one Ollama runner without generating tokens', async () => {
+ let time = 0;
+ const calls = [];
+ const ai = createDescriptionAI({now: () => time, fetchImpl: async (_url, options) => {
+  calls.push(JSON.parse(options.body));
+  return Response.json({done: true});
+ }});
+ await Promise.all([ai.warmAssistant(), ai.warmAssistant()]);
+ await ai.warmAssistant();
+ assert.equal(calls.length, 1);
+ assert.deepEqual(calls[0].messages, []);
+ assert.equal(calls[0].options.num_ctx, 3072);
+ assert.equal(calls[0].keep_alive, '5m');
+ time += 60000;
+ await ai.warmAssistant();
+ assert.equal(calls.length, 2);
+});

@@ -104,6 +104,11 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
     if(!job||job.owner!==user.id)throw new ContentError(404,'Задача не найдена или срок хранения истёк');
     reply(200,{state:job.state,...(job.state==='done'?{result:job.result}:{}),...(job.state==='failed'?{message:job.message}:{})});
    }
+   else if(path==='/hub-api/admin/ai/assistant/warm'&&req.method==='POST'){
+    await body(req,1024);
+    void descriptionAI?.warmAssistant?.().catch(()=>{});
+    reply(202,{ok:true});
+   }
    else if(path==='/hub-api/admin/ai/assistant/learn'&&req.method==='POST'){
     const result=saveAssistantAnswer(store.db,user.id,await body(req),now());
     reply(200,result);

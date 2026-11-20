@@ -52,6 +52,9 @@ if(!hello.answer||!help.answer)throw Error('Assistant quick replies unavailable'
 const price=prepareAssistantReply({section:'products',history:[{role:'user',content:'Сколько стоит пальто SIZEY?'}]},{store});
 if(!price.answer?.includes('900'))throw Error('Direct catalog price unavailable');
 const messages=prepareAssistantReply({section:'products',history:[...history,{role:'user',content:'Напиши короткий заголовок для пальто SIZEY'}]},{store});
+const preloadStart=Date.now();
+await ai.warmAssistant();
+const preloadMs=Date.now()-preloadStart;
 const start=Date.now();
 let firstTextMs;
 const answer=await ai.assistant(messages,'qwen-deploy-smoke',{onProgress:()=>{firstTextMs??=Date.now()-start;}});
@@ -61,7 +64,7 @@ if(!answer.answer)throw Error('No assistant reply');
 const warmStart=Date.now();
 const next=await ai.assistant(messages,'qwen-deploy-smoke',{onProgress:()=>{}});
 if(!next.answer)throw Error('No warm assistant reply');
-console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,assistantMs,firstTextMs,warmAssistantMs:Date.now()-warmStart}));
+console.log(JSON.stringify({model:status.model.id,generatedCharacters:description.description.length,assistantCharacters:answer.answer.length,preloadMs,assistantMs,firstTextMs,warmAssistantMs:Date.now()-warmStart}));
 """
 try:
     for name in files:shutil.copy2(source/'server'/name,base/'server'/name)

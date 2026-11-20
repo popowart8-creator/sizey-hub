@@ -1,6 +1,8 @@
 import {ContentError} from './content-store.mjs';
 import {assistantAnswer} from './admin-assistant.mjs';
 
+const assistantContext=3072;
+const assistantKeepAlive='5m';
 const assistantFormat={
  type:'object',
  properties:{answer:{type:'string'},section:{enum:[null,'overview','analytics','blog','products','banners','clients','orders']}},
@@ -47,6 +49,26 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
 
  async function wordstat(){throw new ContentError(503,'Старый API Яндекс Wordstat закрыт. Для частотности требуется подключение Yandex Search API; используйте бесплатные поисковые подсказки Google и Яндекса без частотности.')}
 
+ let warming=null,lastWarmAttempt=-Infinity;
+ async function warmAssistant(){
+  if(warming)return warming;
+  const time=now();
+  if(time-lastWarmAttempt<60000 || running.size)return;
+  lastWarmAttempt=time;
+  warming=(async()=>{
+   try{
+    const response=await call('/api/chat',{
+     method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({model,messages:[],stream:false,keep_alive:assistantKeepAlive,options:{num_ctx:assistantContext}}),
+     timeout:60000
+    });
+    if(!response.ok)throw new ContentError(503,'Не удалось загрузить модель');
+    await json(response);
+   }finally{warming=null}
+  })();
+  return warming;
+ }
+
  async function assistant(messages, actor, {onProgress,signal}={}){
   const question=messages.at(-1)?.content || '';
   const shortTitle=/^(?:напиши|придумай|предложи|составь) (?:короткий |краткий )?заголовок(?: для | к |: )[^\n]{1,140}$/iu.test(question) &&
@@ -62,7 +84,7 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
    const response=await call('/api/chat',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model,stream:!!onProgress,format:assistantFormat,messages,keep_alive:'5m',options:{temperature:0.3,num_ctx:3072,num_predict:shortTitle?96:220},think:false}),
+    body:JSON.stringify({model,stream:!!onProgress,format:assistantFormat,messages,keep_alive:assistantKeepAlive,options:{temperature:0.3,num_ctx:assistantContext,num_predict:shortTitle?96:220},think:false}),
     timeout:120000,signal
    });
    if(!response.ok)throw new ContentError(503,'Локальная модель не смогла обработать запрос');
@@ -100,5 +122,5 @@ export function createDescriptionAI({fetchImpl=fetch,now=Date.now,endpoint=proce
   }finally{running.delete(id)}
  }
 
- return{status,configure,generate,seo,wordstat,assistant};
+ return{status,configure,generate,seo,wordstat,assistant,warmAssistant};
 }
