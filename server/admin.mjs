@@ -2,6 +2,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {ContentError,storeImage} from './content-store.mjs';
+import {assistantMessages} from './admin-assistant.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
 export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
@@ -101,6 +102,11 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
     const job=id&&blogJobs.get(id);
     if(!job||job.owner!==user.id)throw new ContentError(404,'Задача не найдена или срок хранения истёк');
     reply(200,{state:job.state,...(job.state==='done'?{result:job.result}:{}),...(job.state==='failed'?{message:job.message}:{})});
+   }
+   else if(path==='/hub-api/admin/ai/assistant'&&req.method==='POST'){
+    if(!descriptionAI)throw new ContentError(503,'ИИ-помощник недоступен');
+    const messages=assistantMessages(await body(req,65536),{store,blog,analytics});
+    reply(200,await descriptionAI.assistant(messages,user.id));
    }
    else if(path==='/hub-api/admin/ai/status'&&req.method==='GET'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');reply(200,await descriptionAI.status())}
    else if(path==='/hub-api/admin/ai/settings'&&req.method==='POST'){if(!descriptionAI)throw new ContentError(503,'AI не подключён');const result=await descriptionAI.configure(await body(req));store.audit(user.id,'configure-description-ai','OpenRouter');reply(200,result)}
