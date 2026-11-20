@@ -1,3 +1,5 @@
+import LoadingSkeleton from './LoadingSkeleton';
+import './loading-skeleton.css';
 import {useEffect,useState} from 'react';
 import {ArrowLeft,BookOpen} from 'lucide-react';
 import {track} from './analytics';
@@ -43,7 +45,7 @@ export default function BlogScreen({products,initialSlug,onExplore,onProduct,onA
    <section className="sizey-blog-index">
     <h2>Блог SIZEY</h2>
 
-    {loading?<p className="sizey-blog-state" role="status">Загружаем материалы…</p>:error?<div className="sizey-blog-state" role="alert">{error}<button onClick={()=>location.reload()}>Повторить</button></div>:
+    {loading?<LoadingSkeleton variant="blog"/>:error?<div className="sizey-blog-state" role="alert">{error}<button onClick={()=>location.reload()}>Повторить</button></div>:
     articles.length===0?<div className="sizey-blog-empty"><BookOpen size={34}/><h3>Готовим полезные материалы</h3><p>Здесь появятся только проверенные статьи, которые помогут сделать выбор.</p></div>:
     <div className="sizey-blog-grid">{articles.map(article=><a className="sizey-blog-card" href={'/?blog='+encodeURIComponent(article.slug)} key={article.id} onClick={event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();open(article)}}>
       {related(article)[0]&&<img src={related(article)[0].img} alt="" loading="lazy"/>}
