@@ -48,10 +48,10 @@ export function createBlogAI({fetchImpl=fetch,endpoint=process.env.OLLAMA_URL||'
   const sources=await collectSources(topic.trim()),rank=scoreTopic(topic,products,sources);
   if(rank.score<85) return{rejected:true,score:rank.score,reason:sources.length<2?'Недостаточно независимых интернет-источников для проверенного материала':'Низкий коммерческий потенциал или нет подходящих товаров',sources};
   // Keep inference small enough for a local 1.5B model; the complete sources stay in the draft.
-  const allowedProducts=products.filter(p=>rank.productIds.includes(p.id)).slice(0,3).map(p=>({name:String(p.name||'').slice(0,100),cat:String(p.cat||'').slice(0,60),description:String(p.description||'').slice(0,180)}));
-  const evidence=sources.slice(0,5).map(s=>({title:s.title.slice(0,130),description:s.description.slice(0,220)}));
-  const system='Ты редактор магазина одежды SIZEY. Ответь одним JSON-объектом: {"title":"...","summary":"...","sections":["...","...","..."]}. Заголовок 12-140 символов, summary 40-300 символов, 3-4 абзаца по 80-350 символов. Только проверяемые сведения из данных; не придумывай факты, скидки, составы, наличие и цифры. Пиши по-русски, без markdown.';
-  const request={model,stream:false,format:'json',messages:[{role:'system',content:system},{role:'user',content:JSON.stringify({topic,sources:evidence,products:allowedProducts})}],options:{temperature:0.15,num_predict:1100,num_ctx:3072},think:false};
+  const allowedProducts=products.filter(p=>rank.productIds.includes(p.id)).slice(0,2).map(p=>({name:String(p.name||'').slice(0,100),cat:String(p.cat||'').slice(0,60),description:String(p.description||'').slice(0,100)}));
+  const evidence=sources.slice(0,3).map(s=>({title:s.title.slice(0,130),description:s.description.slice(0,110)}));
+  const system='Ты редактор магазина одежды SIZEY. Ответь одним JSON-объектом: {"title":"...","summary":"...","sections":["...","...","..."]}. Заголовок 12-140 символов, summary 35-90 символов, 2 абзаца по 55-110 символов. Только проверяемые сведения из данных; не придумывай факты, скидки, составы, наличие и цифры. Пиши по-русски, без markdown.';
+  const request={model,stream:false,format:'json',messages:[{role:'system',content:system},{role:'user',content:JSON.stringify({topic,sources:evidence,products:allowedProducts})}],options:{temperature:0.15,num_predict:320,num_ctx:1536},think:false};
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),115000);
   try{
    let response;
