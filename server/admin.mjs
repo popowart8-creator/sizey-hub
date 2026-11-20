@@ -54,6 +54,24 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
     const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p])),blogTitles=new Map((blog?.list()||[]).map(a=>[a.slug,a.title]));
     reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'})),blogArticles:report.blogArticles.map(a=>({...a,title:blogTitles.get(a.slug)||a.slug}))});
    }
+   else if(req.method==='GET'&&path==='/hub-api/admin/search-analytics'){
+    const access=process.env.YANDEX_WEBMASTER_TOKEN;
+    if(!access){reply(200,{connected:false,reason:'Укажите YANDEX_WEBMASTER_TOKEN в настройках сервера'});return true}
+    const base='https://api.webmaster.yandex.net/v4';
+    const get=async endpoint=>{const response=await fetch(base+endpoint,{headers:{Authorization:'OAuth '+access,Accept:'application/json'},signal:AbortSignal.timeout(12000)});if(!response.ok){if(response.status===401||response.status===403)throw new ContentError(502,'Яндекс отклонил доступ. Проверьте OAuth-токен и права на сайт');throw new ContentError(502,'Яндекс Вебмастер временно недоступен ('+response.status+')')}return response.json()};
+    const identity=await get('/user'),uid=identity.user_id;
+    if(!uid)throw new ContentError(502,'Яндекс не вернул ID пользователя');
+    const hosts=await get('/user/'+encodeURIComponent(uid)+'/hosts');
+    const sites=Array.isArray(hosts.hosts)?hosts.hosts:[];
+    const host=sites.find(h=>{const raw=String(h.ascii_host_url||h.unicode_host_url||h.host_id||'');try{return new URL(raw).hostname.replace(/^www\\./,'')==='sizey.ru'}catch{return /(^|[:/])sizey\\.ru([/:]|$)/.test(raw)}});
+    if(!host){reply(200,{connected:false,reason:'Сайт sizey.ru не найден среди доступных сайтов Яндекс Вебмастера'});return true}
+    const id=encodeURIComponent(host.host_id);
+    const params=new URLSearchParams({order_by:'TOTAL_SHOWS',limit:'100'});
+    for(const metric of ['TOTAL_SHOWS','TOTAL_CLICKS','AVG_SHOW_POSITION'])params.append('query_indicator',metric);
+    const data=await get('/user/'+encodeURIComponent(uid)+'/hosts/'+id+'/search-queries/popular?'+params);
+    const rows=(Array.isArray(data.queries)?data.queries:[]).map(q=>{const indicators=q.indicators||{};const shows=Number(indicators.TOTAL_SHOWS)||0,clicks=Number(indicators.TOTAL_CLICKS)||0;return {query:String(q.query_text||''),shows,clicks,ctr:shows?clicks/shows*100:0,position:Number.isFinite(Number(indicators.AVG_SHOW_POSITION))?Number(indicators.AVG_SHOW_POSITION):null}}).filter(q=>q.query);
+    reply(200,{connected:true,source:'Яндекс Вебмастер',period:'Последняя доступная неделя',rows}); 
+   }
    else if(path==='/hub-api/admin/blog'&&req.method==='GET'){if(!blog)throw new ContentError(503,'Блог недоступен');reply(200,{articles:blog.list()})}
    else if(path==='/hub-api/admin/blog/save'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);const article=blog.save(item.article,item.id);store.audit(user.id,'blog-save',article.slug);reply(200,{article})}
    else if(path==='/hub-api/admin/blog/publish'&&req.method==='POST'){if(!blog)throw new ContentError(503,'Блог недоступен');const item=await body(req);if(typeof item.id!=='string'||typeof item.published!=='boolean')throw new ContentError(400,'Неверное действие');const article=blog.publish(item.id,item.published,store.list('products'));store.audit(user.id,'blog-publish',article.slug);reply(200,{article})}
