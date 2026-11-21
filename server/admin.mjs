@@ -5,7 +5,7 @@ import {ContentError,storeImage} from './content-store.mjs';
 import {prepareAssistantReply,saveAssistantAnswer} from './admin-assistant.mjs';
 import {ApiError} from './auth.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
-export function createAdmin({store,blog,blogAI,analytics,push,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
+export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=async()=>[],descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
  const blogJobs=new Map();
  const jobExpiry=30*60*1000;
@@ -66,6 +66,12 @@ export function createAdmin({store,blog,blogAI,analytics,push,descriptionAI,keyw
     if(req.method==='GET'){reply(200,push.status());return true}
     if(req.method!=='POST')throw new ContentError(405,'Метод не поддерживается');
     const data=await body(req,4096);
+    if(data.audience==='selected'||data.audience==='group'||data.audience==='all'||!data.audience){
+     const customers=await listPushCustomers();
+     const ids=new Set(customers.map(c=>c.id));
+     if(data.audience==='selected'&&(!Array.isArray(data.customers)||data.customers.some(id=>!ids.has(id))))throw new ContentError(400,'Список получателей устарел. Обновите страницу');
+     data.registeredCustomers=customers.map(c=>c.id);
+    }
     push.enqueue(data,user.id);
     reply(202,{id:data.id});
     void push.drain().catch(error=>console.error('Push queue:',error.message));
