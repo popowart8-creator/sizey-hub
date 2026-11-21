@@ -117,7 +117,7 @@ const columns=db.prepare('PRAGMA table_info(push_subscriptions)').all().map(row=
   markRead(customer,id){db.prepare('UPDATE push_inbox SET read=1 WHERE customer=? AND id=?').run(customer,id)},
   subscribe(data){
    const item=subscription(data),id=hash(item.endpoint);
-   db.prepare('INSERT INTO push_subscriptions VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET analytics=excluded.analytics WHERE data=excluded.data').run(id,JSON.stringify(item),Number(data.analytics===true),now());
+   db.prepare('INSERT INTO push_subscriptions(id,data,analytics,created) VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET analytics=excluded.analytics WHERE data=excluded.data').run(id,JSON.stringify(item),Number(data.analytics===true),now());
   },
   unsubscribe(data){
    const item=subscription(data),id=hash(item.endpoint);
