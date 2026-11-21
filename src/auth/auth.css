@@ -521,3 +521,6 @@ button.sizey-bonus-card:disabled{cursor:default}
 @media(prefers-reduced-motion:reduce) {
  .profile-logout-dialog[open] {animation:none}
 }
+
+.customer-sheet .sizey-grades-list { margin: 16px 0; gap: 12px; }
+.customer-sheet .sizey-grades-note { margin: 0; }

@@ -6,7 +6,7 @@
     --dark-control: #2a2a2f;
     --dark-selected: #38383f;
     --dark-text: #f3f3f5;
-    --dark-muted: #d2d2da;
+    --dark-muted: #e0e0e8;
     --dark-line: #414149;
     --dark-danger: #ff9198;
   }
@@ -48,7 +48,7 @@
     .search-top > .icon-control:first-child, .product-back, .product-favorite-toolbar,
     .overlay .productmodal > .close, .sheet > .close, .sizey-blog-back,
     .install-sheet-top > .close, .profile-logout-choices button, .quantity button,
-    .outlinebtn, .whitebtn, .sizes button, .sheet input
+    .outlinebtn, .whitebtn, .sizes button, .sheet input, .customer-sheet-header .close
   ) {
     background: var(--dark-control);
     color: var(--dark-text);
@@ -71,7 +71,7 @@
   }
 
   html:root :is(
-    .productsub, .productmeta small, .detail label span, .deliverynote,
+    .productsub, .productmeta small, .detail label span,
     .cartlayout aside small, .cart-count, .authhint, .auth-field label, .auth-field button,
     .authcard--native .authtabs button:not(.active), .authcard--native form > label,
     .authpage:has(.customerlayout) .customer-profile-heading p,
@@ -86,7 +86,8 @@
 
   html:root :is(
     .sizey-blog, .sizey-blog-prose p, .search-field input,
-    .install-instruction strong, .install-instruction svg, .detail h2, .detail h3
+    .install-instruction strong, .install-instruction svg, .detail h2, .detail h3,
+    .deliverynote, .deliverynote p, .customer-sheet-body > p
   ) { color: var(--dark-text); }
 
   html:root :is(input, textarea)::placeholder { color: var(--dark-muted); }
@@ -121,11 +122,13 @@
 
   html:root body > .nav-anchor > nav.tabbar {
     background: #202024ed !important;
-    border-color: var(--dark-line) !important;
+    border-color: #303036 !important;
+    box-shadow: inset 0 1px 0 #ffffff0b, 0 8px 25px #0004;
   }
 
   html:root .tabbar .tab { color: var(--dark-muted); }
   html:root .tabbar .tab.is-active { color: var(--dark-text); background: var(--dark-selected); }
+  html:root .tabbar--ios .tab.is-active { box-shadow: inset 0 1px 0 #ffffff0e; }
   html:root .tabbar--android .tab.is-active .tab-icon { background: var(--dark-selected); }
   html:root .tabbar .tab.is-active svg { color: var(--dark-text); }
 
@@ -134,15 +137,25 @@
   }
 
   html:root :is(
-    .sizey-skeleton-bone, .image-loading-shimmer,
+    .sizey-skeleton-bone, .shimmer, .image-loading-shimmer,
     .authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card,
     .authpage:has(.customerlayout) .customerbonus .sizey-bonus-card.sizey-bonus-card--loading
   ) {
     background-color: var(--dark-control) !important;
   }
 
-  html:root :is(.sizey-skeleton-bone,.image-loading-shimmer,.sizey-profile-loading-card)::after {
+  html:root :is(.sizey-skeleton-bone,.shimmer,.image-loading-shimmer)::after,
+  html:root .authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card::after,
+  html:root .authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-card .sizey-skeleton-bone::after {
     background-image: linear-gradient(90deg,transparent,#ffffff16,transparent) !important;
+  }
+
+  html:root .authpage .sizey-profile-loading .sizey-profile-loading-menu-row {
+    border-bottom-color: var(--dark-line) !important;
+  }
+
+  html:root .customer-sheet-qr .sizey-qr-shimmer {
+    background-image: linear-gradient(110deg, var(--dark-control) 8%, var(--dark-selected) 28%, var(--dark-control) 48%);
   }
 
   html:root .authpage:has(.customerlayout) .sizey-bonus-card--loading :is(
@@ -222,13 +235,6 @@
   html:root .sizey-grades-info .sizey-grades-item .sizey-grades-dot { background: var(--loyalty-accent); }
   html:root .sizey-grades-info .sizey-grades-item.is-current strong { color: var(--loyalty-accent); }
 
-  /* The installation illustration and scannable QR keep their light canvas. */
-  .install-drawing, .sizey-qr-fullscreen, .sizey-qr-overlay, .sizey-swipe-sheet--qr {
-    color-scheme: light;
-  }
-
-  html:root .sizey-swipe-sheet.sizey-swipe-sheet--qr {
-    background: #fff;
-    color: #181818;
-  }
+  /* The installation artwork keeps its light canvas. */
+  .install-drawing { color-scheme: light; }
 }
