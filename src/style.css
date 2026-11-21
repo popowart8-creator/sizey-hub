@@ -66,3 +66,5 @@
 /* Match the search button's 48px circular surface in both themes. */
 .global-search .profile-notification-button{display:grid;place-items:center;width:48px;height:48px;min-width:48px;min-height:48px;flex-shrink:0;border:0;border-radius:50%;background:#f0f0f2;color:var(--color-primary,#161616);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 @media(prefers-color-scheme:dark){html:root .global-search .profile-notification-button{background:var(--dark-control,#2a2a2f);color:var(--color-primary,#f6f7f8)}}
+
+.native-detail-content .native-zero-state{min-height:55dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:30px 20px;box-sizing:border-box}.native-detail-content .native-zero-state h3{margin:0}.native-detail-content .native-zero-state p{max-width:310px;margin:0;line-height:1.5;opacity:.7}.native-detail-content .native-zero-state .blackbtn{margin-top:8px}
