@@ -68,6 +68,7 @@ createRoot(document.getElementById('root')!).render(<Startup><React.Suspense fal
 
 import './native.css';
 import './auth/auth.css';
+import './theme.css';
 import './dark.css';
 
 window.addEventListener('vite:preloadError',event=>{if(!navigator.onLine)return;try{const previous=Number(sessionStorage.getItem('sizey-chunk-retry')||0);if(Date.now()-previous<60000)return;sessionStorage.setItem('sizey-chunk-retry',String(Date.now()));event.preventDefault();const url=new URL(location.href);url.searchParams.set('_fresh',String(Date.now()));location.replace(url.href)}catch{}});

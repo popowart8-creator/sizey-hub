@@ -871,7 +871,7 @@ html[data-hero-tone="dark"] .home-logo img {
 .menu-list .menu-row:active {background:#f5f5f5}
 .menu-row > svg:first-child {flex:0 0 23px}
 .menu-row > svg:last-child {flex:0 0 20px;margin-left:auto}
-.menu-row > .menu-row-chevron {width:20px;height:20px;color:var(--dark-muted, #77777e)}
+.menu-row > .menu-row-chevron {width:20px;height:20px;color:var(--color-secondary)}
 
 .delivery-swipe-sheet.customer-sheet {
   padding: 8px 22px calc(24px + env(safe-area-inset-bottom, 0px));
