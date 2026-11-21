@@ -4,7 +4,7 @@ import type {PushCounts} from './analytics-types';
 type Campaign=PushCounts&{id:string;title:string;created:number};
 type Status={subscribers:number;campaigns:Campaign[]};
 type Customer={id:string;name:string;phone:string};
-type Automation={birthday:number;purchase:number};
+type Automation={birthdayTitle:string;birthdayMessage:string;purchaseTitle:string;purchaseMessage:string};
 const formatDate=new Intl.DateTimeFormat('ru-RU',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Moscow'});
 
 export default function PushPanel({request,onError}:{request:<T>(path:string,data?:unknown)=>Promise<T>;onError:(error:unknown)=>void}){
@@ -54,7 +54,7 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
  async function saveAutomation(){
   if(!automation||savingAutomation)return;
   setSavingAutomation(true);setAutomationMessage('');
-  try{const data=await request<{settings:Automation}>('/push/automation',{birthday:!!automation.birthday,purchase:!!automation.purchase});setAutomation(data.settings);setAutomationMessage('Настройки сохранены')}
+  try{const data=await request<{settings:Automation}>('/push/automation',automation);setAutomation(data.settings);setAutomationMessage('Настройки сохранены')}
   catch(reason){reportError(reason)}
   finally{setSavingAutomation(false)}
  }
@@ -111,10 +111,14 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
   </section>
   <section className="panel">
    <div className="panel-heading"><h2>Автоматические уведомления</h2></div>
-   <p>Уведомления отправляются после фактического начисления бонусов в системе лояльности. Настройки не начисляют бонусы самостоятельно.</p>
+   <p>Уведомления отправляются автоматически после начисления бонусов. Здесь можно изменить их текст. Переменная <code>{'{amount}'}</code> подставит количество начисленных бонусов.</p>
    {automation?<div className="push-audience">
-    <label className="push-confirm"><input type="checkbox" checked={!!automation.birthday} onChange={event=>{setAutomation({...automation,birthday:Number(event.target.checked)});setAutomationMessage('')}}/>День рождения — уведомить, когда начислены подарочные бонусы</label>
-    <label className="push-confirm"><input type="checkbox" checked={!!automation.purchase} onChange={event=>{setAutomation({...automation,purchase:Number(event.target.checked)});setAutomationMessage('')}}/>После покупки — уведомить о начисленных бонусах</label>
+    <h3>День рождения</h3>
+    <label>Заголовок<input maxLength={80} value={automation.birthdayTitle} onChange={event=>{setAutomation({...automation,birthdayTitle:event.target.value});setAutomationMessage('')}}/></label>
+    <label>Текст<textarea maxLength={240} rows={3} value={automation.birthdayMessage} onChange={event=>{setAutomation({...automation,birthdayMessage:event.target.value});setAutomationMessage('')}}/></label>
+    <h3>После покупки</h3>
+    <label>Заголовок<input maxLength={80} value={automation.purchaseTitle} onChange={event=>{setAutomation({...automation,purchaseTitle:event.target.value});setAutomationMessage('')}}/></label>
+    <label>Текст<textarea maxLength={240} rows={3} value={automation.purchaseMessage} onChange={event=>{setAutomation({...automation,purchaseMessage:event.target.value});setAutomationMessage('')}}/></label>
     <button type="button" className="primary" disabled={savingAutomation} onClick={()=>void saveAutomation()}>{savingAutomation?'Сохраняем…':'Сохранить настройки'}</button>
     {automationMessage&&<p role="status">{automationMessage}</p>}
    </div>:<p>Загружаем настройки…</p>}
