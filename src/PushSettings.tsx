@@ -25,6 +25,11 @@ export default function PushSettings(){
  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  const [retry,setRetry]=useState(0);
  const [open,setOpen]=useState(false);
+ useEffect(()=>{
+  if(!standalone||!supported||Notification.permission!=='default'||localStorage.getItem('sizey-push-disabled')==='1'||localStorage.getItem('sizey-push-onboarding-shown')==='1')return;
+  localStorage.setItem('sizey-push-onboarding-shown','1');
+  setOpen(true);
+ },[standalone,supported]);
 
  useEffect(()=>{
   if(requiresInstall||!supported)return;
@@ -81,15 +86,16 @@ export default function PushSettings(){
  }
 
  return <>
-  <section className="profile-utilities menu-list" aria-label="Уведомления">
+  <div aria-label="Уведомления">
    <MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>
-  </section>
+  </div>
   {open&&<CustomerSheet title="Уведомления" onClose={()=>setOpen(false)}>
    <div className="push-settings-row" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,padding:'12px 0'}}>
     <div><strong>Push-уведомления</strong><p style={{color:'var(--text-secondary, #777)',fontSize:13,margin:'6px 0 0'}}>Получайте новости, предложения и важные обновления SIZEY.</p></div>
     <input type="checkbox" role="switch" aria-label="Push-уведомления" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()} style={{width:48,height:28,accentColor:'#34c759',flexShrink:0}} {...(ios?{switch:''}: {})}/>
    </div>
    {requiresInstall?<p>Чтобы получать уведомления на iPhone, добавьте SIZEY на экран «Домой» через Safari и откройте приложение с иконки.</p>:!supported?<p>Уведомления не поддерживаются этим браузером.</p>:!ready?<p>Подключаем уведомления… <button type="button" onClick={()=>setRetry(value=>value+1)}>Повторить</button></p>:null}
+   {ready&&!current&&Notification.permission==='default'&&<button type="button" disabled={busy} onClick={()=>void toggle()}>Разрешить уведомления</button>}
    {message&&<p role="status" style={{fontSize:13}}>{message}</p>}
   </CustomerSheet>}
  </>;
