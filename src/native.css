@@ -731,13 +731,11 @@ html[data-hero-tone="dark"] .home-logo img {
   }
 }
 
-/* Product interaction: scale the image in place, never move the card or gallery. */
-.product-card .imagebutton:active,.product-card .imagebutton:hover:active,.product-screen .detail-gallery-slide:active{transform:none!important}
-.product-card .productimage{isolation:isolate}
-.product-card .productimage .imagebutton{overflow:hidden;transform:none!important;touch-action:manipulation}
-.product-card .productimage .imagebutton img{display:block;transform:scale(1);transform-origin:center center;transition:transform .22s ease-out;pointer-events:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
-.product-card .productimage .imagebutton:active img{transform:scale(1.055)!important}
-@media(hover:hover) and (pointer:fine){.product-card .productimage .imagebutton:hover img{transform:scale(1.04)}}
+/* Press feedback scales the entire product tile, not its photograph. */
+.product-card{transform-origin:center center;transition:transform .2s ease-out;will-change:transform}
+.product-card:active{transform:scale(1.035)}
+.product-card .imagebutton,.product-card .imagebutton:active{transform:none!important;touch-action:manipulation}
+.product-card .productimage img,.product-card .productimage .imagebutton:active img{display:block;transform:none!important;transition:none!important;pointer-events:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
 .product-screen .detail-gallery-slide{transform:none!important;touch-action:pan-x;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .product-screen .detail-gallery-slide img{transform:none!important;transition:none!important;pointer-events:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
-@media(prefers-reduced-motion:reduce){.product-card .productimage .imagebutton img{transition:none!important}}
+@media(prefers-reduced-motion:reduce){.product-card{transition:none!important}}
