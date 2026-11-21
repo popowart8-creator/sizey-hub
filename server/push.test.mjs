@@ -4,7 +4,7 @@ import {createECDH,randomBytes,randomUUID} from 'node:crypto';
 import {createServer} from 'node:http';
 import webPush from 'web-push';
 import {createAdmin} from './admin.mjs';
-import {createPushStore} from './push.mjs';
+import {createPushStore,validPushPath} from './push.mjs';
 
 function subscriber(name,analytics=true){
  const key=createECDH('prime256v1');
@@ -77,3 +77,8 @@ test('public subscription and admin push routes enforce separate origins and rol
  await push.drain();
  assert.equal((await (await fetch(api+'/admin/push',{headers:{Cookie:cookie}})).json()).campaigns[0].accepted,1);
 });
+
+ test('push destinations accept internal product deep links and reject external URLs',()=>{
+ for(const path of ['/', '/?tab=cart', '/?tab=favorites', '/?tab=profile', '/?tab=wardrobe', '/?product=123', '/?blog=article'])assert.equal(validPushPath(path),true,path);
+ for(const path of ['https://evil.test/', '//evil.test/', '/\\\\evil.test/', '/other', '/?x=1'])assert.equal(validPushPath(path),false,path);
+ });
