@@ -40,7 +40,7 @@ useScreenAnalytics(analyticsScreen,selected?.id||blogArticle||catalogCategory||'
 useEffect(()=>{if(selected)track('product_view',{productId:selected.id,...(blogSource?{articleSlug:blogSource}:{})})},[selected?.id]);
 useEffect(()=>{if(selected)track('photo_view',{productId:selected.id})},[selected?.id,imageIndex]);
 useEffect(()=>{if(filter)track('filter_open')},[filter]);
-useEffect(()=>{if(isStandalone()&&/iPhone|iPad|iPod/.test(navigator.userAgent)){document.querySelector('meta[name=theme-color]')?.remove();return}const meta=document.querySelector('meta[name=theme-color]');if(search||selected||page!=='shop'){const previous=meta?.getAttribute('content')||'#292c30';meta?.setAttribute('content',selected?'transparent':'#ffffff');return()=>{meta?.setAttribute('content',previous)}}},[page,search,!!selected]);
+useEffect(()=>{if(isStandalone()&&/iPhone|iPad|iPod/.test(navigator.userAgent)){document.querySelector('meta[name=theme-color]')?.remove();return}const meta=document.querySelector('meta[name=theme-color]');if(search||selected||page!=='shop'){const previous=meta?.getAttribute('content')||'#292c30';const scheme=window.matchMedia('(prefers-color-scheme: dark)');const sync=()=>meta?.setAttribute('content',scheme.matches?'#151517':selected?'transparent':'#ffffff');sync();scheme.addEventListener('change',sync);return()=>{scheme.removeEventListener('change',sync);meta?.setAttribute('content',previous)}}},[page,search,!!selected]);
 const openSearch=()=>{setTabDirection('forward');setSearch(true)};const openPhoto=(index:number)=>{track('photo_zoom',{productId:selected!.id});setImageIndex(index);setFullscreen(true)};useEffect(()=>{if(fullscreen)requestAnimationFrame(()=>fullscreenTrack.current?.scrollTo({left:imageIndex*(fullscreenTrack.current?.clientWidth||0),behavior:'instant'}))},[fullscreen]);const galleryNext=(index:number)=>{setImageIndex(index);const el=galleryTrack.current;if(el)el.scrollTo({left:index*el.clientWidth,behavior:'smooth'});const thumb=thumbnailsTrack.current?.children[index] as HTMLElement|undefined;thumb?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'})};
 useLayerBack(search,'search',()=>setSearch(false));
 useLayerBack(page==='wardrobe','wardrobe',()=>go('profile'));
@@ -76,5 +76,6 @@ createRoot(document.getElementById('root')!).render(<Startup><React.Suspense fal
 
 
 import './native.css';
+import './dark.css';
 
 window.addEventListener('vite:preloadError',event=>{if(!navigator.onLine)return;try{const previous=Number(sessionStorage.getItem('sizey-chunk-retry')||0);if(Date.now()-previous<60000)return;sessionStorage.setItem('sizey-chunk-retry',String(Date.now()));event.preventDefault();const url=new URL(location.href);url.searchParams.set('_fresh',String(Date.now()));location.replace(url.href)}catch{}});
