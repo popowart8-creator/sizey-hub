@@ -130,7 +130,24 @@ const columns=db.prepare('PRAGMA table_info(push_subscriptions)').all().map(row=
   },
   eventSeen(id){return !!db.prepare('SELECT 1 FROM push_automation_events WHERE id=?').get(id)},
   markEvent(id){db.prepare('INSERT OR IGNORE INTO push_automation_events VALUES(?,?)').run(id,now())},
-  bind(customer,data){const item=subscription(data);const id=hash(item.endpoint);return bind.run(customer,id,JSON.stringify(item)).changes>0},
+  bind(customer,data){
+   const item=subscription(data),id=hash(item.endpoint);
+   const saved=find.get(id);
+   if(!saved)return false;
+   const original=JSON.parse(saved.data);
+   if(original.endpoint!==item.endpoint||original.keys.auth!==item.keys.auth||original.keys.p256dh!==item.keys.p256dh)return false;
+   const updated=bind.run(customer,id,saved.data).changes>0;
+   if(updated){
+    // Recover previously delivered campaigns after an existing device is linked to an account.
+    db.prepare(`INSERT INTO push_inbox(id,customer,campaign,title,message,path,created,read)
+      SELECT lower(hex(randomblob(16))),?,c.id,c.title,c.message,c.path,c.created,0
+      FROM push_deliveries d JOIN push_campaigns c ON c.id=d.campaign
+      WHERE d.subscriber=? AND NOT EXISTS
+      (SELECT 1 FROM push_inbox i WHERE i.customer=? AND i.campaign=c.id)
+      GROUP BY c.id ORDER BY c.created DESC LIMIT 100`).run(customer,id,customer);
+   }
+   return updated;
+  },
   inbox(customer){return db.prepare('SELECT id,title,message,path,created,read FROM push_inbox WHERE customer=? ORDER BY created DESC LIMIT 100').all(customer)},
   markRead(customer,id){db.prepare('UPDATE push_inbox SET read=1 WHERE customer=? AND id=?').run(customer,id)},
   subscribe(data){
