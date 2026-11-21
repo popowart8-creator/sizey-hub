@@ -46,7 +46,7 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
  }
  async function submit(event:FormEvent){
   event.preventDefault();
-  if(!confirmed||!status?.subscribers||sending||!validDestination)return;
+  if(!confirmed||!status||sending||!validDestination)return;
   const campaign=id||crypto.randomUUID();
   setId(campaign);
   setSending(true);
@@ -76,7 +76,7 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
      {path==='custom'&&<label>Ссылка внутри приложения<input required placeholder="/?product=123" value={customPath} onChange={event=>{setCustomPath(event.target.value);edit()}}/><small>Укажите путь внутри SIZEY, например /?product=123. Внешние адреса не поддерживаются.</small></label>}
      <label className="push-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>Отправить всем активным подписчикам</label>
     </fieldset>
-    <button className="primary" disabled={!confirmed||!status?.subscribers||sending||!title.trim()||!message.trim()||!validDestination}>
+    <button className="primary" disabled={!confirmed||!status||sending||!title.trim()||!message.trim()||!validDestination}>
      {sending?'Ставим в очередь…':'Отправить рассылку'}
     </button>
    </form>
