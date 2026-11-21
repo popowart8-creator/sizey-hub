@@ -32,11 +32,15 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
  db.exec(`PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS push_config(id INTEGER PRIMARY KEY CHECK(id=1), keys TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS push_subscriptions(id TEXT PRIMARY KEY, data TEXT NOT NULL, analytics INTEGER NOT NULL, created INTEGER NOT NULL);
+ CREATE TABLE IF NOT EXISTS push_inbox(id TEXT PRIMARY KEY, customer TEXT NOT NULL, campaign TEXT NOT NULL, title TEXT NOT NULL, message TEXT NOT NULL, path TEXT NOT NULL, created INTEGER NOT NULL, read INTEGER NOT NULL DEFAULT 0);
+ CREATE INDEX IF NOT EXISTS push_inbox_customer ON push_inbox(customer,created DESC);
  CREATE TABLE IF NOT EXISTS push_campaigns(id TEXT PRIMARY KEY, title TEXT NOT NULL, message TEXT NOT NULL, path TEXT NOT NULL, actor TEXT NOT NULL, created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_deliveries(id TEXT PRIMARY KEY, campaign TEXT NOT NULL REFERENCES push_campaigns(id) ON DELETE CASCADE, subscriber TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'queued', attempted INTEGER, shown INTEGER, opened INTEGER);
  CREATE INDEX IF NOT EXISTS push_delivery_campaign ON push_deliveries(campaign);
  CREATE INDEX IF NOT EXISTS push_delivery_queue ON push_deliveries(state);
  CREATE INDEX IF NOT EXISTS push_campaign_date ON push_campaigns(created);`);
+const columns=db.prepare('PRAGMA table_info(push_subscriptions)').all().map(row=>row.name);
+ if(!columns.includes('customer'))db.exec('ALTER TABLE push_subscriptions ADD COLUMN customer TEXT');
  let config=db.prepare('SELECT keys FROM push_config WHERE id=1').get();
  if(!config){
   db.prepare('INSERT OR IGNORE INTO push_config VALUES (1,?)').run(JSON.stringify(webPush.generateVAPIDKeys()));
@@ -49,6 +53,7 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
    WHERE id=(SELECT id FROM push_deliveries WHERE state='queued' ORDER BY rowid LIMIT 1)
    RETURNING id,campaign,subscriber`);
  const finish=db.prepare('UPDATE push_deliveries SET state=? WHERE id=?');
+ const bind=db.prepare('UPDATE push_subscriptions SET customer=? WHERE id=? AND data=?');
  const getCampaign=db.prepare('SELECT title,message,path,created FROM push_campaigns WHERE id=?');
  let running;
  async function worker(){
@@ -73,6 +78,11 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
  }
  function enqueue(data,actor){
   const {id,path}=data;
+  const audience=data.audience||'all';
+  if(!['all','selected','group'].includes(audience))throw new ContentError(400,'Неизвестная аудитория');
+  const customers=audience==='selected'?data.customers:null;
+  if(audience==='selected'&&(!Array.isArray(customers)||!customers.length||customers.length>500||customers.some(x=>typeof x!=='string'||!/^[a-f0-9-]{16,64}$/i.test(x))))throw new ContentError(400,'Выберите получателей');
+  if(audience==='group'&&!['registered','subscribed'].includes(data.group))throw new ContentError(400,'Неизвестная группа');
   const title=typeof data.title==='string'?data.title.trim():'',message=typeof data.message==='string'?data.message.trim():'';
   if(typeof id!=='string'||!uuid.test(id)||!validPushPath(path)||!title||title.length>80||!message||message.length>240)
    throw new ContentError(400,'Укажите заголовок, текст и раздел для перехода');
@@ -83,8 +93,13 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
     throw new ContentError(409,'Рассылка с этим идентификатором уже создана');
    if(!existing){
     db.prepare('INSERT INTO push_campaigns VALUES (?,?,?,?,?,?)').run(id,title,message,path,String(actor),now());
-    db.prepare(`INSERT INTO push_deliveries(id,campaign,subscriber)
-     SELECT lower(hex(randomblob(24))),?,id FROM push_subscriptions`).run(id);
+    const chosen=audience==='selected'?new Set(customers):null;
+    const subs=db.prepare('SELECT id,customer FROM push_subscriptions').all().filter(s=>audience==='all'||audience==='group'&&data.group==='subscribed'||audience==='group'&&data.group==='registered'&&s.customer||chosen?.has(s.customer));
+    const insert=db.prepare('INSERT INTO push_deliveries(id,campaign,subscriber) VALUES(?,?,?)');
+    for(const sub of subs)insert.run(randomUUID().replaceAll('-','')+randomUUID().replaceAll('-','').slice(0,16),id,sub.id);
+    const inbox=db.prepare('INSERT INTO push_inbox VALUES(?,?,?,?,?,?,?,0)');
+    const audienceIds=audience==='selected'?customers:audience==='group'&&data.group==='registered'?data.registeredCustomers||[]:audience==='all'?data.registeredCustomers||[]:[...new Set(subs.map(s=>s.customer).filter(Boolean))];
+    for(const customer of new Set(audienceIds))inbox.run(randomUUID(),customer,id,title,message,path,now());
    }
    db.exec('COMMIT');
   }catch(error){db.exec('ROLLBACK');throw error}
@@ -97,6 +112,9 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
  const stateTimes=()=>Array(2).fill(now()-60000);
  return {
   publicKey:vapidDetails.publicKey,
+  bind(customer,data){const item=subscription(data);const id=hash(item.endpoint);return bind.run(customer,id,JSON.stringify(item)).changes>0},
+  inbox(customer){return db.prepare('SELECT id,title,message,path,created,read FROM push_inbox WHERE customer=? ORDER BY created DESC LIMIT 100').all(customer)},
+  markRead(customer,id){db.prepare('UPDATE push_inbox SET read=1 WHERE customer=? AND id=?').run(customer,id)},
   subscribe(data){
    const item=subscription(data),id=hash(item.endpoint);
    db.prepare('INSERT INTO push_subscriptions VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET analytics=excluded.analytics WHERE data=excluded.data').run(id,JSON.stringify(item),Number(data.analytics===true),now());
