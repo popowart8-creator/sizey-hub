@@ -784,3 +784,58 @@ html[data-hero-tone="dark"] .home-logo img {
 .tab-screen:has(> .home-intro) > .home-products{padding-top:16px!important}
 .home-products>.filterbar{margin-bottom:16px!important}
 .home-products>.filterbar>.chips{padding-top:0!important;padding-bottom:0!important}
+
+/* Home catalog: chips live inside the same rounded white surface as product cards. */
+.tab-screen:has(> .home-intro) > .home-products{
+ background:#fff!important;border-radius:28px 28px 0 0!important;
+ overflow:visible!important;padding-top:16px!important;
+}
+.tab-screen:has(> .home-intro) > .home-products>.filterbar{
+ width:100%!important;max-width:100%!important;
+ margin:0 0 16px!important;padding:0!important;
+ overflow:visible!important;box-sizing:border-box!important;
+}
+.tab-screen:has(> .home-intro) > .home-products>.filterbar>.chips{
+ display:flex!important;align-items:center!important;
+ width:100%!important;max-width:100%!important;
+ margin:0!important;padding:4px 16px!important;
+ box-sizing:border-box!important;
+ overflow-x:auto!important;overflow-y:hidden!important;
+ gap:8px!important;scroll-padding-inline:16px!important;
+ scrollbar-width:none;
+}
+.tab-screen:has(> .home-intro) > .home-products>.filterbar>.chips::-webkit-scrollbar{display:none}
+.tab-screen:has(> .home-intro) > .home-products>.filterbar>.chips::after{
+ content:""!important;display:block!important;
+ flex:0 0 8px!important;min-width:8px!important;
+}
+.tab-screen:has(> .home-intro) > .home-products>.filterbar>.chips>button{
+ flex-shrink:0!important;margin:0!important;align-self:center!important;
+}
+
+/* Carousel pagination: remove oversized invisible button hit-box spacing. */
+.home-intro .hero-bottom-content{bottom:38px!important}
+.home-intro .carousel-controls{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ height:18px!important;min-height:0!important;padding:0!important;margin:0!important;
+}
+.home-intro .carousel-dots{
+ display:flex!important;flex-direction:row!important;align-items:center!important;
+ justify-content:center!important;gap:5px!important;
+ width:auto!important;height:18px!important;min-height:0!important;
+ padding:0!important;margin:0!important;
+}
+.home-intro .carousel-dots>button{
+ display:grid!important;place-items:center!important;
+ flex:0 0 18px!important;width:18px!important;min-width:18px!important;
+ height:18px!important;min-height:18px!important;
+ margin:0!important;padding:0!important;border:0!important;
+ background:transparent!important;box-shadow:none!important;
+}
+.home-intro .carousel-dots>button>span{
+ display:block!important;width:6px!important;height:6px!important;
+ min-width:0!important;border-radius:99px!important;
+}
+.home-intro .carousel-dots>button[aria-current=true]>span{
+ width:16px!important;height:6px!important;
+}
