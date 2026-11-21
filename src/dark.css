@@ -277,3 +277,29 @@
 .push-onboarding-modal .push-artwork--enhanced .push-artwork-glint--two {left:18px;bottom:35px;width:5px;height:5px;opacity:.5;}
 @keyframes push-artwork-hover {0%,100%{translate:0 0}50%{translate:0 -6px}}
 @media (prefers-reduced-motion:reduce){.push-onboarding-modal .push-artwork-bell {animation:none!important;}}
+
+
+/* Responsive premium chrome: separate palette for dark mode. */
+.push-onboarding-modal .push-artwork {height:clamp(138px,23svh,184px);min-height:138px;}
+.push-onboarding-modal .push-artwork-stage {width:min(210px,70vw);height:100%;transform:translateZ(0);}
+.push-onboarding-modal .push-artwork-bell {width:clamp(98px,32vw,130px);height:clamp(98px,32vw,130px);border-radius:clamp(27px,9vw,36px);}
+.push-onboarding-modal .push-artwork-bell svg {width:60%;height:60%;}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-bell {will-change:transform;}
+@media (prefers-color-scheme:dark) {
+ .push-onboarding-modal .push-artwork-bell {color:#f1f2f6;}
+ .push-onboarding-modal .push-artwork-badge {border-color:#151517;}
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-bell {color:#e9edf7;background:linear-gradient(140deg,#8c95aa 0%,#50576a 24%,#292e3a 53%,#171a23 77%,#5b6579 100%);box-shadow:11px 19px 30px #0009,inset 3px 3px 8px #ffffff50,inset -8px -11px 17px #05060baf;}
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-bell svg {filter:drop-shadow(2px 4px 4px #000a);}
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-badge {border-color:#222631;box-shadow:2px 5px 13px #0008;}
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-halo {background:radial-gradient(ellipse,#6478a64d,transparent 72%);}
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-ring {border-color:#9ba7c16e;box-shadow:0 0 15px #657da028;}
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-glint {background:#a9b6d1;}
+}
+@media (max-width:380px), (max-height:700px) {
+ .push-onboarding-modal .push-artwork {height:136px;min-height:136px;}
+ .push-onboarding-modal .push-artwork-stage {transform:scale(.82);}
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-bell {box-shadow:7px 12px 22px #1e293b50,inset 2px 2px 6px #ffffff50,inset -5px -7px 12px #10152270;}
+}
+@media (prefers-reduced-motion:reduce) {
+ .push-onboarding-modal .push-artwork--enhanced .push-artwork-bell {will-change:auto;animation:none;}
+}
