@@ -125,6 +125,23 @@ export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,
     return reply(200,{user:publicUser(findUser(user.phone))},newCookie);
    }
    if(req.method==='POST'&&path==='/hub-api/auth/logout'){const t=readCookie(req,'__Host-sizey_session');if(t)run('DELETE FROM sessions WHERE hash=?',digest(t));return reply(200,{ok:true},cookie('__Host-sizey_session','',0))}
+   if(path==='/hub-api/notifications'&&req.method==='GET'){
+    const user=current(req);if(!user)throw new ApiError(401,'Требуется вход');
+    return reply(200,{notifications:push?.inbox(user.id)||[]});
+   }
+   if(path==='/hub-api/notifications/read'&&req.method==='POST'){
+    const user=current(req);if(!user)throw new ApiError(401,'Требуется вход');
+    const data=await body(req);
+    if(typeof data.id!=='string'||!/^[a-f0-9-]{36}$/i.test(data.id))throw new ApiError(400,'Некорректное уведомление');
+    push?.markRead(user.id,data.id);
+    return reply(200,{ok:true});
+   }
+   if(path==='/hub-api/notifications/bind'&&req.method==='POST'){
+    const user=current(req);if(!user)throw new ApiError(401,'Требуется вход');
+    if(!push)throw new ApiError(503,'Уведомления недоступны');
+    const data=await body(req);
+    return reply(200,{bound:push.bind(user.id,data)});
+   }
    if(req.method==='GET'&&path==='/hub-api/auth/me'){const user=current(req);return reply(user?200:401,user?{user:publicUser(user)}:{message:'Требуется вход'})}
    if(req.method==='GET'&&path==='/hub-api/loyalty'){
     const user=current(req);if(!user)throw new ApiError(401,'Требуется вход');if(user.must_change)throw new ApiError(403,'Сначала смените временный пароль');
