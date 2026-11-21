@@ -30,6 +30,8 @@ function subscription(data){
 export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendNotification(...args),subject='mailto:info@sizey.ru'}={}){
  const db=new DatabaseSync(file);
  db.exec(`PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;
+ CREATE TABLE IF NOT EXISTS push_automation_settings(id INTEGER PRIMARY KEY CHECK(id=1), birthday INTEGER NOT NULL DEFAULT 0, purchase INTEGER NOT NULL DEFAULT 0);
+ CREATE TABLE IF NOT EXISTS push_automation_events(id TEXT PRIMARY KEY, created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_config(id INTEGER PRIMARY KEY CHECK(id=1), keys TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS push_subscriptions(id TEXT PRIMARY KEY, data TEXT NOT NULL, analytics INTEGER NOT NULL, created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_inbox(id TEXT PRIMARY KEY, customer TEXT NOT NULL, campaign TEXT NOT NULL, title TEXT NOT NULL, message TEXT NOT NULL, path TEXT NOT NULL, created INTEGER NOT NULL, read INTEGER NOT NULL DEFAULT 0);
@@ -112,6 +114,16 @@ const columns=db.prepare('PRAGMA table_info(push_subscriptions)').all().map(row=
  const stateTimes=()=>Array(2).fill(now()-60000);
  return {
   publicKey:vapidDetails.publicKey,
+  automationSettings(){
+   return db.prepare('SELECT birthday,purchase FROM push_automation_settings WHERE id=1').get()||{birthday:0,purchase:0};
+  },
+  setAutomationSettings(data){
+   if(typeof data.birthday!=='boolean'||typeof data.purchase!=='boolean')throw new ContentError(400,'Укажите настройки уведомлений');
+   db.prepare('INSERT INTO push_automation_settings(id,birthday,purchase) VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET birthday=excluded.birthday,purchase=excluded.purchase').run(Number(data.birthday),Number(data.purchase));
+   return this.automationSettings();
+  },
+  eventSeen(id){return !!db.prepare('SELECT 1 FROM push_automation_events WHERE id=?').get(id)},
+  markEvent(id){db.prepare('INSERT OR IGNORE INTO push_automation_events VALUES(?,?)').run(id,now())},
   bind(customer,data){const item=subscription(data);const id=hash(item.endpoint);return bind.run(customer,id,JSON.stringify(item)).changes>0},
   inbox(customer){return db.prepare('SELECT id,title,message,path,created,read FROM push_inbox WHERE customer=? ORDER BY created DESC LIMIT 100').all(customer)},
   markRead(customer,id){db.prepare('UPDATE push_inbox SET read=1 WHERE customer=? AND id=?').run(customer,id)},
