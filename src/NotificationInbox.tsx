@@ -51,7 +51,7 @@ export default function NotificationInbox({onOpen,onBack}:{onOpen?:()=>void;onBa
   {open&&<main className="native-detail-content notification-screen-content">
    {loading&&<p>Загружаем уведомления…</p>}
    {error&&<p role="alert">{error}</p>}
-   {!loading&&!error&&!items.length&&<div className="notification-empty"><Bell size={38} strokeWidth={1.4}/><h3>Пока нет уведомлений</h3><p>Здесь появятся новости SIZEY, предложения и личные сообщения.</p></div>}
+   {!loading&&!error&&!items.length&&<div className="empty empty-state native-zero-state"><Bell size={54} strokeWidth={1.4}/><h3>Пока нет уведомлений</h3><p>Здесь появятся сообщения SIZEY, предложения и уведомления о начислении бонусов.</p><button type="button" className="blackbtn" onClick={()=>window.location.reload()}>Обновить уведомления</button></div>}
    <div className="notification-inbox-list">{items.map(item=><button type="button" key={item.id} className={'notification-inbox-item'+(!item.read?' is-unread':'')} onClick={()=>void read(item)}><span className="notification-inbox-heading"><strong>{item.title}</strong>{!item.read&&<span className="notification-unread-dot"/>}</span><span>{item.message}</span><small>{new Date(item.created).toLocaleString('ru-RU',{dateStyle:'medium',timeStyle:'short'})}</small></button>)}</div>
    {items.length>0&&<p className="notification-inbox-hint"><CheckCheck size={15}/> Нажмите на уведомление, чтобы открыть</p>}
   </main>}
