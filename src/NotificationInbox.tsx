@@ -13,16 +13,25 @@ export default function NotificationInbox({onOpen,onBack}:{onOpen?:()=>void;onBa
   async function load(){
    setLoading(true);setError('');
    try{
-    if('serviceWorker'in navigator){
-     const registration=await navigator.serviceWorker.ready;
-     const subscription=await registration.pushManager?.getSubscription();
-     if(subscription)await fetch('/hub-api/notifications/bind',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(subscription.toJSON())}).catch(()=>{});
-    }
     const response=await fetch('/hub-api/notifications',{credentials:'same-origin',cache:'no-store'});
     if(response.status===401)throw Error('Войдите в профиль, чтобы видеть личные уведомления.');
     if(!response.ok)throw Error('Не удалось загрузить уведомления.');
     const data=await response.json();
     if(active)setItems(data.notifications||[]);
+    // Never block the inbox on service-worker readiness; binding is optional.
+    if('serviceWorker'in navigator&&'PushManager'in window){
+     try{
+      const registration=await navigator.serviceWorker.getRegistration();
+      const subscription=await registration?.pushManager?.getSubscription();
+      if(subscription){
+       const bound=await fetch('/hub-api/notifications/bind',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(subscription.toJSON())});
+       if(bound.ok){
+        const refreshed=await fetch('/hub-api/notifications',{credentials:'same-origin',cache:'no-store'});
+        if(refreshed.ok&&active)setItems((await refreshed.json()).notifications||[]);
+       }
+      }
+     }catch{/* History remains available without push permissions. */}
+    }
    }catch(reason){if(active)setError(reason instanceof Error?reason.message:'Ошибка загрузки')}
    finally{if(active)setLoading(false)}
   }
