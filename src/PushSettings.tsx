@@ -111,7 +111,7 @@ export default function PushSettings({onboardingOnly=false,onboardingEnabled=tru
  }
 
  return <>
-  {!onboardingOnly&&<MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>}
+  {!onboardingOnly&&<MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Настройка уведомлений</MenuRow>}
   {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={dismissOnboarding} className="push-onboarding-modal" style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--dark-canvas, #fff)',color:'var(--color-primary, #333)',overflowY:'auto'}}>
    <div style={{minHeight:'100%',display:'flex',flexDirection:'column',padding:'max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))',boxSizing:'border-box'}}>
     <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',maxWidth:440,width:'100%',margin:'0 auto',gap:24}}>
