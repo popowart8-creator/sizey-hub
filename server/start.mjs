@@ -30,7 +30,16 @@ const blogAI=createBlogAI();
 scheduleDailyBlogDrafts({blog,blogAI,store});
 const descriptionAI=createDescriptionAI();
 const keywordSuggestions=createKeywordSuggestions();
-const adminHandler=createAdmin({store,blog,blogAI,analytics,push,eventOrigin:publicOrigin,descriptionAI,keywordSuggestions,staffAuth:staffBackend(),listClients:async()=>{const rows=pool?(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:[];const phones=new Set(rows.map(c=>c.phone_normalized));const auth=new DatabaseSync(database,{readOnly:true});try{for(const c of auth.prepare('SELECT id,phone FROM customers').all()){const phone=c.phone.replace(/^\+/, '');if(!phones.has(phone))rows.push({id:c.id,name:'Клиент SIZEY Hub',phone_normalized:phone,hasLoyalty:false})}}finally{auth.close()}return rows},mediaDirectory:directory+'/media'});
-const app=createAuth({database,adminHandler,getLoyaltyClient:pool?async id=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE id=$1 AND deleted_at IS NULL',[id])).rows[0]||null:null,loyalty:pool?createLoyaltyReader(pool):null,listLoyaltyCustomers:pool?async()=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:null,staffAuth:staffBackend(),secret:process.env.AUTH_SECRET,origin:publicOrigin});
+const listPushCustomers=async()=>{
+ const auth=new DatabaseSync(database,{readOnly:true});
+ try{
+  const customers=auth.prepare('SELECT id,phone FROM customers ORDER BY created DESC').all();
+  let names=new Map();
+  if(pool){try{const rows=(await pool.query('SELECT name,phone_normalized FROM clients WHERE deleted_at IS NULL')).rows;names=new Map(rows.map(row=>[String(row.phone_normalized),row.name]))}catch{/* customer list remains available */}}
+  return customers.map(row=>({id:row.id,phone:row.phone,name:names.get(row.phone.replace(/^\\+/,''))||'Клиент SIZEY Hub'}));
+ }finally{auth.close()}
+};
+const adminHandler=createAdmin({store,blog,blogAI,analytics,push,listPushCustomers,eventOrigin:publicOrigin,descriptionAI,keywordSuggestions,staffAuth:staffBackend(),listClients:async()=>{const rows=pool?(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:[];const phones=new Set(rows.map(c=>c.phone_normalized));const auth=new DatabaseSync(database,{readOnly:true});try{for(const c of auth.prepare('SELECT id,phone FROM customers').all()){const phone=c.phone.replace(/^\+/, '');if(!phones.has(phone))rows.push({id:c.id,name:'Клиент SIZEY Hub',phone_normalized:phone,hasLoyalty:false})}}finally{auth.close()}return rows},mediaDirectory:directory+'/media'});
+const app=createAuth({database,adminHandler,push,getLoyaltyClient:pool?async id=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE id=$1 AND deleted_at IS NULL',[id])).rows[0]||null:null,loyalty:pool?createLoyaltyReader(pool):null,listLoyaltyCustomers:pool?async()=>(await pool.query('SELECT id,name,phone_normalized FROM clients WHERE deleted_at IS NULL ORDER BY name')).rows:null,staffAuth:staffBackend(),secret:process.env.AUTH_SECRET,origin:publicOrigin});
 chmodSync(database,0o600);
 app.server.listen(8080,'0.0.0.0',()=>console.log('SIZEY password auth listening on 8080'));
