@@ -4,11 +4,15 @@ import type {PushCounts} from './analytics-types';
 type Campaign=PushCounts&{id:string;title:string;created:number};
 type Status={subscribers:number;campaigns:Campaign[]};
 type Customer={id:string;name:string;phone:string};
+type Automation={birthday:number;purchase:number};
 const formatDate=new Intl.DateTimeFormat('ru-RU',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Moscow'});
 
 export default function PushPanel({request,onError}:{request:<T>(path:string,data?:unknown)=>Promise<T>;onError:(error:unknown)=>void}){
  const [status,setStatus]=useState<Status>();
  const [customers,setCustomers]=useState<Customer[]>([]);
+ const [automation,setAutomation]=useState<Automation>();
+ const [savingAutomation,setSavingAutomation]=useState(false);
+ const [automationMessage,setAutomationMessage]=useState('');
  const [audience,setAudience]=useState<'all'|'selected'|'group'>('all');
  const [group,setGroup]=useState<'registered'|'subscribed'>('registered');
  const [selected,setSelected]=useState<string[]>([]);
@@ -42,11 +46,19 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
   }
   void load();
   void request<{customers:Customer[]}>('/push/customers').then(data=>{if(active)setCustomers(data.customers)}).catch(reason=>{if(active)reportError(reason)});
+  void request<{settings:Automation}>('/push/automation').then(data=>{if(active)setAutomation(data.settings)}).catch(reason=>{if(active)reportError(reason)});
   const timer=setInterval(()=>void load(),5000);
   return()=>{active=false;clearInterval(timer)};
  },[request]);
 
- function edit(){
+ async function saveAutomation(){
+  if(!automation||savingAutomation)return;
+  setSavingAutomation(true);setAutomationMessage('');
+  try{const data=await request<{settings:Automation}>('/push/automation',{birthday:!!automation.birthday,purchase:!!automation.purchase});setAutomation(data.settings);setAutomationMessage('Настройки сохранены')}
+  catch(reason){reportError(reason)}
+  finally{setSavingAutomation(false)}
+ }
+  function edit(){
   setConfirmed(false);
   setId('');
   setResult('');
@@ -82,11 +94,11 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
      </select></label>
      {path==='custom'&&<label>Ссылка внутри приложения<input required placeholder="/?product=123" value={customPath} onChange={event=>{setCustomPath(event.target.value);edit()}}/><small>Укажите путь внутри SIZEY, например /?product=123. Внешние адреса не поддерживаются.</small></label>}
      <label>Получатели<select value={audience} onChange={event=>{setAudience(event.target.value as 'all'|'selected'|'group');edit()}}>
-      <option value="all">Все пользователи</option><option value="selected">Выбранные люди</option><option value="group">Группа пользователей</option>
+      <option value="all">Все пользователи</option><option value="selected">Из списка клиентов</option><option value="group">Группа пользователей</option>
      </select></label>
      {audience==='group'&&<label>Группа<select value={group} onChange={event=>{setGroup(event.target.value as 'registered'|'subscribed');edit()}}><option value="registered">Все зарегистрированные</option><option value="subscribed">Подписчики push-уведомлений</option></select></label>}
      {audience==='selected'&&<div className="push-audience">
-      <label>Поиск по имени или телефону<input value={customerQuery} onChange={event=>setCustomerQuery(event.target.value)} placeholder="Найти клиента"/></label>
+      <label>Выбрать клиентов по имени или телефону<input value={customerQuery} onChange={event=>setCustomerQuery(event.target.value)} placeholder="Найти клиента"/></label>
       <small>Выбрано: {selected.length}. Сообщение появится в профиле выбранных клиентов.</small>
       <div className="push-audience-list">{customers.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(customerQuery.toLowerCase())).slice(0,100).map(customer=><label key={customer.id}><input type="checkbox" checked={selected.includes(customer.id)} onChange={event=>{setSelected(current=>event.target.checked?[...current,customer.id]:current.filter(id=>id!==customer.id));edit()}}/><span>{customer.name}<small>{customer.phone}</small></span></label>)}</div>
      </div>}
@@ -96,6 +108,16 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
      {sending?'Ставим в очередь…':'Отправить рассылку'}
     </button>
    </form>
+  </section>
+  <section className="panel">
+   <div className="panel-heading"><h2>Автоматические уведомления</h2></div>
+   <p>Уведомления отправляются после фактического начисления бонусов в системе лояльности. Настройки не начисляют бонусы самостоятельно.</p>
+   {automation?<div className="push-audience">
+    <label className="push-confirm"><input type="checkbox" checked={!!automation.birthday} onChange={event=>{setAutomation({...automation,birthday:Number(event.target.checked)});setAutomationMessage('')}}/>День рождения — уведомить, когда начислены подарочные бонусы</label>
+    <label className="push-confirm"><input type="checkbox" checked={!!automation.purchase} onChange={event=>{setAutomation({...automation,purchase:Number(event.target.checked)});setAutomationMessage('')}}/>После покупки — уведомить о начисленных бонусах</label>
+    <button type="button" className="primary" disabled={savingAutomation} onClick={()=>void saveAutomation()}>{savingAutomation?'Сохраняем…':'Сохранить настройки'}</button>
+    {automationMessage&&<p role="status">{automationMessage}</p>}
+   </div>:<p>Загружаем настройки…</p>}
   </section>
   <section className="panel">
    <div className="panel-heading"><h2>История рассылок</h2></div>
