@@ -71,9 +71,7 @@
   }
 
   html:root :is(
-    .menu-list .menu-row, .cartrow, .deliverynote, .sizey-grades-item,
-    .sizey-history-dialog-header, .bonusoperation, .search-screen .search-top,
-    .sizey-blog-sources, .detail .sizes button
+    .sizey-grades-item, .detail .sizes button
   ) { border-color: var(--dark-line); }
 
   html:root :is(.blackbtn, .profile-logout-choices button[type=submit]) {

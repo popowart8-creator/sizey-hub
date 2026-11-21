@@ -25,7 +25,7 @@
 .sizey-blog-product strong{font-size:15px}
 .sizey-blog-product-action{display:flex;align-items:center;gap:6px;font-weight:650}
 .sizey-blog-cta{margin:28px 0 35px}
-.sizey-blog-sources{border-top:1px solid #e4e4e4;padding-top:24px;display:grid;gap:14px}
+.sizey-blog-sources{border-top:1px solid var(--color-tertiary);padding-top:24px;display:grid;gap:14px}
 .sizey-blog-sources h3{font-size:19px}.sizey-blog-sources p{font-size:13px;color:#787878;line-height:1.6}
 .sizey-blog-sources a{font-size:14px;text-decoration:underline;text-underline-offset:3px;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
 @media(max-width:600px){.sizey-blog-grid{grid-template-columns:1fr}.sizey-blog-productgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.sizey-blog{padding:14px 16px 110px}.sizey-blog-article h2{font-size:32px}.sizey-blog-prose p{font-size:16px}.sizey-blog-card-info{padding:18px}}
