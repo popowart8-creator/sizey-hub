@@ -2,6 +2,7 @@
   --color-ink: #333333;
   --color-primary: var(--color-ink);
   --color-secondary: #9299A2;
+  --color-tertiary: rgb(0 16 36 / 22%);
   color: var(--color-primary);
 }
 

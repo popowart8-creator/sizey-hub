@@ -6,6 +6,7 @@
     --dark-control: #2a2a2f;
     --dark-selected: #38383f;
     --color-primary: #F6F7F8;
+    --color-tertiary: rgb(255 255 255 / 30%);
     --dark-line: #414149;
     --dark-danger: #ff9198;
   }
