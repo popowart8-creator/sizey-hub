@@ -260,8 +260,20 @@
 .push-onboarding-modal .push-onboarding-hero ~ div + div p { font-size: 16px; line-height: 1.5; }
 
 
-/* Lottie replaces the old CSS illustration. */
-.push-onboarding-modal .push-lottie-art {height:184px;width:100%;display:grid;place-items:center;position:relative;overflow:visible;}
-.push-onboarding-modal .push-lottie-art-player {width:210px;height:210px;max-width:100%;display:grid;place-items:center;}
-.push-onboarding-modal .push-lottie-art-player svg {width:100%;height:100%;overflow:visible;}
-.push-onboarding-modal .push-lottie-fallback {font-size:90px;line-height:1;}
+
+/* Progressive 3D push illustration: the icon is visible before enhancement. */
+.push-onboarding-modal .push-artwork {width:100%;height:184px;display:grid;place-items:center;isolation:isolate;}
+.push-onboarding-modal .push-artwork-stage {position:relative;width:210px;height:180px;display:grid;place-items:center;perspective:500px;}
+.push-onboarding-modal .push-artwork-bell {position:relative;z-index:2;width:130px;height:130px;display:grid;place-items:center;border-radius:36px;color:var(--color-primary,currentColor);background:transparent;}
+.push-onboarding-modal .push-artwork-badge {position:absolute;right:15px;top:15px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#e64760;color:white;font-size:15px;font-weight:700;border:2px solid var(--dark-canvas,#fff);}
+.push-onboarding-modal .push-artwork-halo,.push-onboarding-modal .push-artwork-ring,.push-onboarding-modal .push-artwork-glint {display:none;}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-bell {color:#f7f9ff;background:linear-gradient(140deg,#9ca5b9 0%,#555d71 36%,#2d3343 70%,#697387 100%);box-shadow:12px 20px 30px #1e293b38,inset 3px 3px 7px #ffffff8a,inset -7px -10px 16px #151b2b8c;transform:rotate(-8deg) rotateY(-15deg) rotateX(8deg);animation:push-artwork-hover 5s ease-in-out infinite;}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-bell svg {filter:drop-shadow(2px 4px 3px #11182755);}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-badge {right:-9px;top:-8px;width:36px;height:36px;border:2px solid #e5e9f2;box-shadow:2px 5px 12px #b4254755;}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-halo {display:block;position:absolute;width:178px;height:105px;border-radius:50%;background:radial-gradient(ellipse,#8498bb30,transparent 70%);filter:blur(13px);transform:translateY(23px);}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-ring {display:block;position:absolute;width:176px;height:176px;border:1px solid #a2adbf5c;border-radius:50%;transform:rotateX(69deg) rotateZ(-25deg);}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-glint {display:block;position:absolute;width:7px;height:7px;border-radius:2px;background:#9caac1;transform:rotate(35deg);}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-glint--one {right:18px;top:30px;opacity:.7;}
+.push-onboarding-modal .push-artwork--enhanced .push-artwork-glint--two {left:18px;bottom:35px;width:5px;height:5px;opacity:.5;}
+@keyframes push-artwork-hover {0%,100%{translate:0 0}50%{translate:0 -6px}}
+@media (prefers-reduced-motion:reduce){.push-onboarding-modal .push-artwork-bell {animation:none!important;}}
