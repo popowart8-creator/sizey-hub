@@ -34,7 +34,11 @@ self.addEventListener('push',event=>{
 self.addEventListener('notificationclick',event=>{
  event.notification.close();
  const {path,id}=event.notification.data||{};
- const destination=new URL(['/', '/?tab=catalog', '/?blog=1'].includes(path)?path:'/',self.location.origin);
+ let destination=new URL('/',self.location.origin);
+ try{if(typeof path==='string'&&path.length<=1024&&path.startsWith('/')&&!path.startsWith('//')&&!path.includes('\\')&&!/[\u0000-\u001f\u007f]/.test(path)){
+  const candidate=new URL(path,self.location.origin);
+  if(candidate.origin===self.location.origin&&candidate.pathname==='/')destination=candidate;
+ }}catch{}
  const open=async()=>{
   const tabs=await self.clients.matchAll({type:'window',includeUncontrolled:true});
   const tab=tabs.find(client=>client.url===destination.href)||tabs.find(client=>new URL(client.url).origin===destination.origin);
