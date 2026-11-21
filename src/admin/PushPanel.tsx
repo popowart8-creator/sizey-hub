@@ -8,6 +8,7 @@ type Automation={birthdayTitle:string;birthdayMessage:string;purchaseTitle:strin
 const formatDate=new Intl.DateTimeFormat('ru-RU',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Moscow'});
 
 export default function PushPanel({request,onError}:{request:<T>(path:string,data?:unknown)=>Promise<T>;onError:(error:unknown)=>void}){
+ const [settingsScreen,setSettingsScreen]=useState(false);
  const [status,setStatus]=useState<Status>();
  const [customers,setCustomers]=useState<Customer[]>([]);
  const [automation,setAutomation]=useState<Automation>();
@@ -79,6 +80,24 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
   finally{setSending(false)}
  }
 
+ if(settingsScreen)return <div className="push-admin push-settings-screen">
+  <button type="button" className="secondary push-settings-back" onClick={()=>setSettingsScreen(false)}>← Назад к рассылкам</button>
+  <div className="page-heading"><div><span className="overline">ПУШ-УВЕДОМЛЕНИЯ</span><h1>Автоматические уведомления</h1><p>Настройка сообщений для событий программы лояльности</p></div></div>
+  <section className="panel">
+   <div className="panel-heading"><h2>Автоматические уведомления</h2></div>
+   <p>Уведомления отправляются автоматически после начисления бонусов. Здесь можно изменить их текст. Переменная <code>{'{amount}'}</code> подставит количество начисленных бонусов.</p>
+   {automation?<div className="push-audience">
+    <h3>День рождения</h3>
+    <label>Заголовок<input maxLength={80} value={automation.birthdayTitle} onChange={event=>{setAutomation({...automation,birthdayTitle:event.target.value});setAutomationMessage('')}}/></label>
+    <label>Текст<textarea maxLength={240} rows={3} value={automation.birthdayMessage} onChange={event=>{setAutomation({...automation,birthdayMessage:event.target.value});setAutomationMessage('')}}/></label>
+    <h3>После покупки</h3>
+    <label>Заголовок<input maxLength={80} value={automation.purchaseTitle} onChange={event=>{setAutomation({...automation,purchaseTitle:event.target.value});setAutomationMessage('')}}/></label>
+    <label>Текст<textarea maxLength={240} rows={3} value={automation.purchaseMessage} onChange={event=>{setAutomation({...automation,purchaseMessage:event.target.value});setAutomationMessage('')}}/></label>
+    <button type="button" className="primary" disabled={savingAutomation} onClick={()=>void saveAutomation()}>{savingAutomation?'Сохраняем…':'Сохранить настройки'}</button>
+    {automationMessage&&<p role="status">{automationMessage}</p>}
+   </div>:<p>Загружаем настройки…</p>}
+  </section>
+ </div>;
  return <div className="push-admin">
   {error&&<div className="notice error" role="alert">{error}<button type="button" onClick={()=>void refresh()}>Обновить</button></div>}
   {result&&<p role="status">{result}</p>}
@@ -109,20 +128,7 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
     </button>
    </form>
   </section>
-  <section className="panel">
-   <div className="panel-heading"><h2>Автоматические уведомления</h2></div>
-   <p>Уведомления отправляются автоматически после начисления бонусов. Здесь можно изменить их текст. Переменная <code>{'{amount}'}</code> подставит количество начисленных бонусов.</p>
-   {automation?<div className="push-audience">
-    <h3>День рождения</h3>
-    <label>Заголовок<input maxLength={80} value={automation.birthdayTitle} onChange={event=>{setAutomation({...automation,birthdayTitle:event.target.value});setAutomationMessage('')}}/></label>
-    <label>Текст<textarea maxLength={240} rows={3} value={automation.birthdayMessage} onChange={event=>{setAutomation({...automation,birthdayMessage:event.target.value});setAutomationMessage('')}}/></label>
-    <h3>После покупки</h3>
-    <label>Заголовок<input maxLength={80} value={automation.purchaseTitle} onChange={event=>{setAutomation({...automation,purchaseTitle:event.target.value});setAutomationMessage('')}}/></label>
-    <label>Текст<textarea maxLength={240} rows={3} value={automation.purchaseMessage} onChange={event=>{setAutomation({...automation,purchaseMessage:event.target.value});setAutomationMessage('')}}/></label>
-    <button type="button" className="primary" disabled={savingAutomation} onClick={()=>void saveAutomation()}>{savingAutomation?'Сохраняем…':'Сохранить настройки'}</button>
-    {automationMessage&&<p role="status">{automationMessage}</p>}
-   </div>:<p>Загружаем настройки…</p>}
-  </section>
+  <section className="panel"><div className="panel-heading"><h2>Автоматические уведомления</h2></div><button type="button" className="action-row" onClick={()=>setSettingsScreen(true)}><span>Настроить тексты<small>День рождения и бонусы после покупки · всегда включены</small></span><span aria-hidden="true">→</span></button></section>
   <section className="panel">
    <div className="panel-heading"><h2>История рассылок</h2></div>
    {status?.campaigns.length?<div className="table-wrap"><table>
