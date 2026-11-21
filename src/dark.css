@@ -303,3 +303,19 @@
 @media (prefers-reduced-motion:reduce) {
  .push-onboarding-modal .push-artwork--enhanced .push-artwork-bell {will-change:auto;animation:none;}
 }
+
+
+/* Installation tutorial illustration follows system appearance. */
+@media (prefers-color-scheme: dark) {
+ .install-sheet .install-drawing {color-scheme:dark;background:radial-gradient(ellipse at center,#303139 0%,#25252a 48%,#202024 76%);}
+ .install-sheet .install-phone {border-color:#3b3b43;background:linear-gradient(160deg,#303037,#222229);box-shadow:0 12px 24px #0005;}
+ .install-sheet .install-preview {background:#38383f;box-shadow:0 6px 20px #0003;}
+ .install-sheet .install-preview>span {color:#c0c0c8;}
+ .install-sheet .install-preview>svg {color:#f0f0f3;}
+ .install-sheet .install-preview>img {filter:invert(1) brightness(1.9);}
+ .install-sheet .install-menu-placeholder {background:#45454d;}
+ .install-sheet .install-menu-action {background:#38383f;color:#f1f1f4;box-shadow:0 8px 24px #0004;}
+ .install-sheet .install-menu-action>svg {color:#f1f1f4;}
+ .install-sheet-android .install-menu-action>svg {background:#4b4b54;}
+ .install-sheet .install-touch {background:#dedee3;box-shadow:0 3px 15px #0004;}
+}
