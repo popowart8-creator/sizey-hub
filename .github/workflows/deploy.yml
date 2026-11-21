@@ -35,6 +35,15 @@ jobs:
       - run: npm run test:auth
       - run: npm run test:bonus-cabinet
       - run: node --test server/blog.test.mjs
+      - name: Render SIZEY app icons (PNG for iOS and Android)
+        run: |
+          python3 -m pip install --quiet --break-system-packages cairosvg
+          python3 - <<'PY'
+          import cairosvg
+          for size in (180,192,512):
+              target='public/apple-touch-icon.png' if size==180 else f'public/icon-{size}.png'
+              cairosvg.svg2png(url='public/app-icon.svg',write_to=target,output_width=size,output_height=size)
+          PY
       - run: npm run build
       - run: node deploy/precompress.mjs
       - uses: actions/upload-artifact@v4
