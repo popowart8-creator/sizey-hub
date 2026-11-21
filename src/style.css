@@ -40,3 +40,18 @@
 .delivery-swipe-sheet>h2{padding-right:44px;margin:0 0 20px}
 .delivery-swipe-sheet>p{line-height:1.6;margin:0 0 18px}
 @media(prefers-reduced-motion:reduce){.delivery-swipe-overlay,.delivery-swipe-sheet{transition-duration:0ms}}
+
+/* Profile notification inbox */
+.global-search:has(.profile-notification-button){display:flex;align-items:center;gap:10px}
+.profile-notification-button{position:relative;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:50%;background:var(--color-background,#fff);color:var(--color-primary,#161616);cursor:pointer}
+.profile-notification-dot,.notification-unread-dot{position:absolute;right:7px;top:7px;width:8px;height:8px;border-radius:50%;background:#e54949}
+.notification-inbox-list{display:grid;gap:0}
+.notification-inbox-item{display:grid;width:100%;gap:8px;text-align:left;padding:17px 3px;background:transparent;color:inherit;border:0;border-bottom:.5px solid var(--color-tertiary,#ddd);cursor:pointer}
+.notification-inbox-item.is-unread{font-weight:500}
+.notification-inbox-item>span:nth-child(2){font-size:14px;line-height:1.5;opacity:.75;font-weight:400}
+.notification-inbox-item small{font-size:12px;opacity:.5;font-weight:400}
+.notification-inbox-heading{display:flex;align-items:center;gap:10px}
+.notification-inbox-heading .notification-unread-dot{position:static;flex:none}
+.notification-empty{text-align:center;padding:55px 12px;display:grid;justify-items:center;gap:10px}
+.notification-empty h3{margin:4px 0 0}.notification-empty p{max-width:260px;margin:0;opacity:.6;line-height:1.5}
+.notification-inbox-hint{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.6}
