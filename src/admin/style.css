@@ -17,3 +17,11 @@
 .push-compose .push-confirm{display:flex;align-items:center;gap:8px}
 .push-compose .primary{justify-self:start}
 .push-empty{padding:0 18px 18px}
+
+.push-audience{display:grid;gap:10px;margin:12px 0}
+.push-audience-list{max-height:260px;overflow-y:auto;border:1px solid #ddd;border-radius:12px;padding:8px}
+.push-audience-list label{display:flex;align-items:center;gap:12px;padding:9px 8px;cursor:pointer}
+.push-audience-list label+label{border-top:1px solid #eee}
+.push-audience-list input{width:18px;height:18px;flex:none}
+.push-audience-list span{display:grid;gap:3px}
+.push-audience-list small{font-size:12px;opacity:.65}
