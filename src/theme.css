@@ -1,0 +1,39 @@
+:root {
+  --color-ink: #333333;
+  --color-primary: var(--color-ink);
+  --color-secondary: #9299A2;
+  color: var(--color-primary);
+}
+
+html:root :is(
+  body, .menu-list .menu-row:not(.profile-logout), .authcard--native .auth-field input,
+  .authcard--native .authtabs button.active, .profile-logout-dialog,
+  .tabbar .tab.is-active, .round-search, .page-top > .icon-control
+) { color: var(--color-primary); }
+
+html:root .tabbar .tab:not(.is-active) { color: var(--color-secondary); }
+
+html:root :is(
+  .productsub, .productmeta small, .detail label span,
+  .cartlayout aside small, .cart-count, .authhint, .auth-field label, .auth-field button,
+  .authcard--native .authtabs button:not(.active), .authcard--native form > label,
+  .authpage:has(.customerlayout) .customer-profile-heading p,
+  .sizey-qr-hint, .sizey-blog-eyebrow, .sizey-blog-lead,
+  .sizey-blog-card-info > span:not(.sizey-blog-eyebrow):not(.sizey-blog-more),
+  .sizey-blog-empty p, .sizey-blog-sources p, .install-modal p,
+  .install-sheet .install-instruction, .install-browser-hint, .install-skip,
+  .screen-loading, .empty-state p, .bonusoperation small
+) {
+  color: var(--color-secondary);
+}
+
+html:root :is(
+  .sizey-blog, .sizey-blog-prose p, .search-field input,
+  .install-instruction strong, .install-instruction svg, .detail h2, .detail h3,
+  .deliverynote, .deliverynote p, .customer-sheet-body > p
+) { color: var(--color-primary); }
+
+html:root :is(input, textarea)::placeholder { color: var(--color-secondary); }
+html:root .auth-field input::placeholder { color: transparent; }
+html:root .authcard--native .auth-field--prefix-only input:not(:focus) { color: transparent; }
+
