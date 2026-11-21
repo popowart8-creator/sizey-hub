@@ -7,7 +7,6 @@ import {ProfileSkeleton,BonusSkeleton} from '../Skeleton';
 import{useEffect,useState,useRef,type ChangeEvent,type ComponentPropsWithoutRef,type FormEvent,type ReactNode}from'react';
 import{createPortal}from'react-dom';
 import{LogOut,RefreshCw,KeyRound,Eye,EyeOff}from'lucide-react';
-import'./auth.css';
 export type Customer={id:string;phone:string;mustChangePassword:boolean;phoneVerified:boolean};
 type Loyalty={linked:boolean;pendingVerification?:boolean;verificationCode?:string;name?:string;clientId?:string;balance:number|null;level?:string;history:{id:string;amount:number;description:string;date:string}[]};
 export class RequestError extends Error{constructor(public status:number,message:string){super(message)}}
