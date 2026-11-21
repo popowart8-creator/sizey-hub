@@ -1,4 +1,4 @@
-const CACHE='sizey-v21';
+const CACHE='sizey-v22';
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['/','/brand/logo.svg'])));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
 async function remember(request,response){if(response.ok){const type=response.headers.get('content-type')||'';if(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(type)){const cache=await caches.open(CACHE);await cache.put(request,response.clone())}}return response}
@@ -34,7 +34,11 @@ self.addEventListener('push',event=>{
 self.addEventListener('notificationclick',event=>{
  event.notification.close();
  const {path,id}=event.notification.data||{};
- const destination=new URL(['/', '/?tab=catalog', '/?blog=1'].includes(path)?path:'/',self.location.origin);
+ let destination=new URL('/',self.location.origin);
+ try{if(typeof path==='string'&&path.length<=1024&&path.startsWith('/')&&!path.startsWith('//')&&!path.includes('\\')&&!/[\u0000-\u001f\u007f]/.test(path)){
+  const candidate=new URL(path,self.location.origin);
+  if(candidate.origin===self.location.origin&&candidate.pathname==='/')destination=candidate;
+ }}catch{}
  const open=async()=>{
   const tabs=await self.clients.matchAll({type:'window',includeUncontrolled:true});
   const tab=tabs.find(client=>client.url===destination.href)||tabs.find(client=>new URL(client.url).origin===destination.origin);

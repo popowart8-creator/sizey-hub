@@ -10,6 +10,9 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
  const [title,setTitle]=useState('');
  const [message,setMessage]=useState('');
  const [path,setPath]=useState('/');
+ const [customPath,setCustomPath]=useState('');
+ const destination=path==='custom'?customPath.trim():path;
+ const validDestination=destination.startsWith('/')&&!destination.startsWith('//')&&!destination.includes('\\')&&!/[\u0000-\u001f]/.test(destination);
  const [confirmed,setConfirmed]=useState(false);
  const [id,setId]=useState('');
  const [sending,setSending]=useState(false);
@@ -43,14 +46,14 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
  }
  async function submit(event:FormEvent){
   event.preventDefault();
-  if(!confirmed||!status?.subscribers||sending)return;
+  if(!confirmed||!status||sending||!validDestination)return;
   const campaign=id||crypto.randomUUID();
   setId(campaign);
   setSending(true);
   setError('');
   try{
-   await request('/push',{id:campaign,title,message,path});
-   setTitle('');setMessage('');setPath('/');edit();
+   await request('/push',{id:campaign,title,message,path:destination});
+   setTitle('');setMessage('');setPath('/');setCustomPath('');edit();
    setResult('Рассылка поставлена в очередь.');
    await refresh();
   }catch(reason){reportError(reason)}
@@ -62,16 +65,18 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
   {result&&<p role="status">{result}</p>}
   <section className="panel">
    <div className="panel-heading"><h2>Новая рассылка</h2>{status&&<span>Активных подписок: {status.subscribers.toLocaleString('ru-RU')}</span>}</div>
+   {status?.subscribers===0&&<p role="status">Пока нет активных подписчиков. Пользователи должны разрешить уведомления в установленном приложении.</p>}
    <form className="push-compose" onSubmit={submit}>
     <fieldset disabled={sending}>
      <label>Заголовок<input required maxLength={80} value={title} onChange={event=>{setTitle(event.target.value);edit()}}/></label>
      <label>Текст<textarea required maxLength={240} rows={3} value={message} onChange={event=>{setMessage(event.target.value);edit()}}/></label>
      <label>Куда перейти<select value={path} onChange={event=>{setPath(event.target.value);edit()}}>
-      <option value="/">Главная</option><option value="/?tab=catalog">Каталог</option><option value="/?blog=1">Блог и новости</option>
+      <option value="/">Главная</option><option value="/?tab=catalog">Каталог</option><option value="/?tab=cart">Корзина</option><option value="/?tab=favorites">Избранное</option><option value="/?tab=profile">Профиль</option><option value="/?tab=wardrobe">Гардероб</option><option value="/?blog=1">Блог и новости</option><option value="custom">Своя ссылка</option>
      </select></label>
+     {path==='custom'&&<label>Ссылка внутри приложения<input required placeholder="/?product=123" value={customPath} onChange={event=>{setCustomPath(event.target.value);edit()}}/><small>Укажите путь внутри SIZEY, например /?product=123. Внешние адреса не поддерживаются.</small></label>}
      <label className="push-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>Отправить всем активным подписчикам</label>
     </fieldset>
-    <button className="primary" disabled={!confirmed||!status?.subscribers||sending||!title.trim()||!message.trim()}>
+    <button className="primary" disabled={!confirmed||!status||sending||!title.trim()||!message.trim()||!validDestination}>
      {sending?'Ставим в очередь…':'Отправить рассылку'}
     </button>
    </form>

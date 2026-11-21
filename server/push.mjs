@@ -4,7 +4,11 @@ import webPush from 'web-push';
 import {ContentError} from './content-store.mjs';
 
 const uuid=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
-const destinations=new Set(['/', '/?tab=catalog', '/?blog=1']);
+const destinations=new Set(['/', '/?tab=catalog', '/?tab=cart', '/?tab=favorites', '/?tab=profile', '/?tab=wardrobe', '/?blog=1']);
+export function validPushPath(path){
+ if(typeof path!=='string'||path.length>1024||!path.startsWith('/')||path.startsWith('//')||path.includes('\\')||/[\u0000-\u001f\u007f]/.test(path))return false;
+ try{const url=new URL(path,'https://hub.sizey.ru');return url.origin==='https://hub.sizey.ru'&&url.username===''&&url.password===''&&url.pathname==='/'&&(destinations.has(path)||url.searchParams.has('product')||url.searchParams.has('blog')||url.searchParams.has('tab'))}catch{return false}
+}
 const ttl=86400;
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const validKey=(value,length)=>typeof value==='string'&&/^[A-Za-z0-9_-]+$/.test(value)&&Buffer.from(value,'base64url').length===length;
@@ -70,7 +74,7 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
  function enqueue(data,actor){
   const {id,path}=data;
   const title=typeof data.title==='string'?data.title.trim():'',message=typeof data.message==='string'?data.message.trim():'';
-  if(typeof id!=='string'||!uuid.test(id)||!destinations.has(path)||!title||title.length>80||!message||message.length>240)
+  if(typeof id!=='string'||!uuid.test(id)||!validPushPath(path)||!title||title.length>80||!message||message.length>240)
    throw new ContentError(400,'Укажите заголовок, текст и раздел для перехода');
   db.exec('BEGIN IMMEDIATE');
   try{
