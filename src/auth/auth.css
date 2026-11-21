@@ -360,3 +360,32 @@ button.sizey-bonus-card:disabled{cursor:default}
 .authpage:has(.customerlayout) .sizey-bonus-card--loading .sizey-bonus-brand{color:#777!important}
 .authpage:has(.customerlayout) .sizey-bonus-card--loading .sizey-bonus-orb{display:none!important}
 .sizey-bonus-loading-balance{display:block;width:118px;height:42px;border-radius:8px;margin-top:7px;background:#d5d5d8!important}
+
+/* Single loading surface: geometry shared by loaded card and grey skeleton. */
+.authpage:has(.customerlayout) .customerbonus .sizey-bonus-card,
+.authpage:has(.customerlayout) .customerbonus .sizey-profile-loading-card{
+ box-sizing:border-box!important;
+ width:100%!important;
+ height:184px!important;
+ min-height:184px!important;
+ max-height:184px!important;
+ padding:23px 24px!important;
+ border-radius:22px!important;
+}
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card{
+ display:block!important;
+ background:#e9e9eb!important;
+ background-image:none!important;
+ border:0!important;
+ box-shadow:none!important;
+}
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card::after{
+ content:"";display:block!important;position:absolute;inset:0;
+ background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.6) 50%,transparent 70%);
+ background-size:200% 100%;animation:sizey-skeleton-glide 1.5s infinite;
+ border-radius:inherit;pointer-events:none;
+}
+.authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card::before{display:none!important}
+.authpage:has(.customerlayout) .sizey-bonus-card--loading{
+ background:#e9e9eb!important;background-image:none!important;box-shadow:none!important;
+}
