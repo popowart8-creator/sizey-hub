@@ -3,10 +3,16 @@ import {useEffect,useState,type FormEvent} from 'react';
 import type {PushCounts} from './analytics-types';
 type Campaign=PushCounts&{id:string;title:string;created:number};
 type Status={subscribers:number;campaigns:Campaign[]};
+type Customer={id:string;name:string;phone:string};
 const formatDate=new Intl.DateTimeFormat('ru-RU',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Moscow'});
 
 export default function PushPanel({request,onError}:{request:<T>(path:string,data?:unknown)=>Promise<T>;onError:(error:unknown)=>void}){
  const [status,setStatus]=useState<Status>();
+ const [customers,setCustomers]=useState<Customer[]>([]);
+ const [audience,setAudience]=useState<'all'|'selected'|'group'>('all');
+ const [group,setGroup]=useState<'registered'|'subscribed'>('registered');
+ const [selected,setSelected]=useState<string[]>([]);
+ const [customerQuery,setCustomerQuery]=useState('');
  const [title,setTitle]=useState('');
  const [message,setMessage]=useState('');
  const [path,setPath]=useState('/');
@@ -35,6 +41,7 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
    catch(reason){if(active)reportError(reason)}
   }
   void load();
+  void request<{customers:Customer[]}>('/push/customers').then(data=>{if(active)setCustomers(data.customers)}).catch(reason=>{if(active)reportError(reason)});
   const timer=setInterval(()=>void load(),5000);
   return()=>{active=false;clearInterval(timer)};
  },[request]);
@@ -46,14 +53,14 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
  }
  async function submit(event:FormEvent){
   event.preventDefault();
-  if(!confirmed||!status||sending||!validDestination)return;
+  if(!confirmed||!status||sending||!validDestination||(audience==='selected'&&!selected.length))return;
   const campaign=id||crypto.randomUUID();
   setId(campaign);
   setSending(true);
   setError('');
   try{
-   await request('/push',{id:campaign,title,message,path:destination});
-   setTitle('');setMessage('');setPath('/');setCustomPath('');edit();
+   await request('/push',{id:campaign,title,message,path:destination,audience,...(audience==='selected'?{customers:selected}:audience==='group'?{group}:{})});
+   setTitle('');setMessage('');setPath('/');setCustomPath('');setAudience('all');setSelected([]);edit();
    setResult('Рассылка поставлена в очередь.');
    await refresh();
   }catch(reason){reportError(reason)}
@@ -74,9 +81,18 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
       <option value="/">Главная</option><option value="/?tab=catalog">Каталог</option><option value="/?tab=cart">Корзина</option><option value="/?tab=favorites">Избранное</option><option value="/?tab=profile">Профиль</option><option value="/?tab=wardrobe">Гардероб</option><option value="/?blog=1">Блог и новости</option><option value="custom">Своя ссылка</option>
      </select></label>
      {path==='custom'&&<label>Ссылка внутри приложения<input required placeholder="/?product=123" value={customPath} onChange={event=>{setCustomPath(event.target.value);edit()}}/><small>Укажите путь внутри SIZEY, например /?product=123. Внешние адреса не поддерживаются.</small></label>}
-     <label className="push-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>Отправить всем активным подписчикам</label>
+     <label>Получатели<select value={audience} onChange={event=>{setAudience(event.target.value as 'all'|'selected'|'group');edit()}}>
+      <option value="all">Все пользователи</option><option value="selected">Выбранные люди</option><option value="group">Группа пользователей</option>
+     </select></label>
+     {audience==='group'&&<label>Группа<select value={group} onChange={event=>{setGroup(event.target.value as 'registered'|'subscribed');edit()}}><option value="registered">Все зарегистрированные</option><option value="subscribed">Подписчики push-уведомлений</option></select></label>}
+     {audience==='selected'&&<div className="push-audience">
+      <label>Поиск по имени или телефону<input value={customerQuery} onChange={event=>setCustomerQuery(event.target.value)} placeholder="Найти клиента"/></label>
+      <small>Выбрано: {selected.length}. Сообщение появится в профиле выбранных клиентов.</small>
+      <div className="push-audience-list">{customers.filter(c=>(c.name+' '+c.phone).toLowerCase().includes(customerQuery.toLowerCase())).slice(0,100).map(customer=><label key={customer.id}><input type="checkbox" checked={selected.includes(customer.id)} onChange={event=>{setSelected(current=>event.target.checked?[...current,customer.id]:current.filter(id=>id!==customer.id));edit()}}/><span>{customer.name}<small>{customer.phone}</small></span></label>)}</div>
+     </div>}
+     <label className="push-confirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>Подтверждаю отправку: {audience==='all'?'всем пользователям':audience==='selected'?selected.length+' выбранным клиентам':'группе пользователей'}</label>
     </fieldset>
-    <button className="primary" disabled={!confirmed||!status||sending||!title.trim()||!message.trim()||!validDestination}>
+    <button className="primary" disabled={!confirmed||!status||sending||!title.trim()||!message.trim()||!validDestination||(audience==='selected'&&!selected.length)}>
      {sending?'Ставим в очередь…':'Отправить рассылку'}
     </button>
    </form>
