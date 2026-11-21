@@ -138,21 +138,16 @@
 
   html:root :is(
     .sizey-skeleton-bone, .shimmer, .image-loading-shimmer,
-    .authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card,
     .authpage:has(.customerlayout) .customerbonus .sizey-bonus-card.sizey-bonus-card--loading
   ) {
     background-color: var(--dark-control) !important;
   }
 
-  html:root :is(.sizey-skeleton-bone,.shimmer,.image-loading-shimmer)::after,
-  html:root .authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card::after,
-  html:root .authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-card .sizey-skeleton-bone::after {
+  html:root :is(.sizey-skeleton-bone,.shimmer,.image-loading-shimmer)::after {
     background-image: linear-gradient(90deg,transparent,#ffffff16,transparent) !important;
   }
 
-  html:root .authpage .sizey-profile-loading .sizey-profile-loading-menu-row {
-    border-bottom-color: var(--dark-line) !important;
-  }
+  html:root .sizey-profile-loading-chevron { color: var(--dark-line); }
 
   html:root .customer-sheet-qr .sizey-qr-shimmer {
     background-image: linear-gradient(110deg, var(--dark-control) 8%, var(--dark-selected) 28%, var(--dark-control) 48%);
