@@ -19,7 +19,7 @@ export function initializeDatabase(database){
  CREATE TABLE IF NOT EXISTS credential_audit(employee TEXT,customer TEXT,action TEXT,created INTEGER);
  CREATE INDEX IF NOT EXISTS auth_attempts_lookup ON auth_attempts(kind,subject,created);`);return db;
 }
-export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,getLoyaltyClient,staffAuth,adminHandler,now=Date.now}){
+export function createAuth({database,secret,origin,loyalty,listLoyaltyCustomers,getLoyaltyClient,staffAuth,adminHandler,push,now=Date.now}){
  if(!secret||secret.length<32)throw new Error('AUTH_SECRET must contain at least 32 characters');
  const db=initializeDatabase(database),envelope=credentialEnvelope(secret),staffSessions=new Map();let passwordJobs=0;
  const run=(s,...a)=>db.prepare(s).run(...a),get=(s,...a)=>db.prepare(s).get(...a),all=(s,...a)=>db.prepare(s).all(...a);
