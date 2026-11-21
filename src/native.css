@@ -779,3 +779,8 @@ html[data-hero-tone="dark"] .home-logo img {
 .product-screen .detail-gallery-slide img.detailphoto{transform:scale(var(--detail-scale,1))!important;transform-origin:center top!important;transition:transform 280ms cubic-bezier(.2,.8,.2,1)!important}
 .product-screen .detailgallery[data-pulling] .detail-gallery-slide .image-loading-detail,
 .product-screen .detailgallery[data-pulling] .detail-gallery-slide .detailphoto{transition:none!important}
+
+/* Equal vertical spacing around home category chips inside the rounded catalog sheet. */
+.tab-screen:has(> .home-intro) > .home-products{padding-top:16px!important}
+.home-products>.filterbar{margin-bottom:16px!important}
+.home-products>.filterbar>.chips{padding-top:0!important;padding-bottom:0!important}
