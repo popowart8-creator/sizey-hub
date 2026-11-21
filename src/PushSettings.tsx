@@ -3,6 +3,7 @@ import {Bell,Gift,Sparkles,Shirt} from 'lucide-react';
 import CustomerSheet from './CustomerSheet';
 import MenuRow from './MenuRow';
 import {platform} from './Navigation';
+import PushLottie from './PushLottie';
 
 async function pushRequest(action:string,data?:unknown){
  const response=await fetch('/hub-api/push/'+action,{
@@ -110,7 +111,7 @@ export default function PushSettings({onboardingOnly=false,onboardingEnabled=tru
   {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={dismissOnboarding} className="push-onboarding-modal" style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--dark-canvas, #fff)',color:'var(--color-primary, #333)',overflowY:'auto'}}>
    <div style={{minHeight:'100%',display:'flex',flexDirection:'column',padding:'max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))',boxSizing:'border-box'}}>
     <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',maxWidth:440,width:'100%',margin:'0 auto',gap:24}}>
-     <div className="push-onboarding-hero" aria-hidden="true"><div className="push-onboarding-halo"/><div className="push-onboarding-ring"/><div className="push-onboarding-orb"><span className="push-onboarding-orb-gloss"/><Bell size={76} strokeWidth={1.7}/><span className="push-onboarding-badge">3</span></div><span className="push-onboarding-mini-card push-onboarding-mini-card--left"><Gift size={22}/></span><span className="push-onboarding-mini-card push-onboarding-mini-card--right"><Sparkles size={22}/></span><span className="push-onboarding-spark push-onboarding-spark--one"/><span className="push-onboarding-spark push-onboarding-spark--two"/></div>
+     <PushLottie/>
      <div className="push-onboarding-heading"><h1 id="push-onboarding-title">Будь в курсе всего важного</h1><p>Включи уведомления SIZEY, чтобы ничего не пропустить.</p></div>
      <div style={{display:'grid',gap:22}}>
       <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Gift size={25} aria-hidden="true"/><div><strong>Бонусы</strong><p style={{margin:'5px 0 0',color:'var(--color-secondary)'}}>Узнавай о начислениях, бонусных предложениях и возможностях их использовать.</p></div></div>
