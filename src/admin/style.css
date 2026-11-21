@@ -25,3 +25,21 @@
 .push-audience-list input{width:18px;height:18px;flex:none}
 .push-audience-list span{display:grid;gap:3px}
 .push-audience-list small{font-size:12px;opacity:.65}
+
+/* Full-page push template editor: isolated layout, no overflow on mobile. */
+.push-admin,.push-admin .panel,.push-settings-screen{min-width:0;max-width:100%}
+.push-settings-screen .page-heading{padding:8px 0 16px}
+.push-settings-screen .page-heading h1{font-size:clamp(24px,4vw,36px);line-height:1.15}
+.push-settings-back{justify-self:start;min-height:44px}
+.push-settings-screen .push-audience{display:grid;gap:16px;padding:clamp(16px,3vw,28px);margin:0;max-width:720px}
+.push-settings-screen .push-audience label{display:grid;gap:8px;min-width:0;font-size:14px;font-weight:600}
+.push-settings-screen .push-audience input,.push-settings-screen .push-audience textarea{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #d5d5da;border-radius:12px;background:#fff;color:#191919;font:inherit;font-size:16px;line-height:1.45}
+.push-settings-screen .push-audience textarea{resize:vertical}
+.push-settings-screen .push-audience h3{margin:12px 0 0;font-size:19px}
+.push-settings-screen .push-audience .primary{justify-self:start}
+.push-admin .action-row{width:100%;text-align:left;display:flex;justify-content:space-between;gap:16px;min-width:0}
+.push-admin .action-row>span:first-child{min-width:0}
+.push-admin .action-row small{display:block;overflow-wrap:anywhere}
+.push-audience-list label{min-width:0}
+.push-audience-list span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:600px){.push-settings-screen .page-heading{padding:8px 16px}.push-settings-screen .push-settings-back{margin-left:16px}.push-settings-screen .push-audience{padding:16px}.push-admin .panel{overflow:hidden}}
