@@ -73,7 +73,7 @@ function Startup({children}:{children:React.ReactNode}){useEffect(()=>{const loa
 createRoot(document.getElementById('root')!).render(<Startup><React.Suspense fallback={<LoadingSkeleton/>}>{new URLSearchParams(window.location.search).get('staff')==='1'?<StaffAccess/>:<App/>}</React.Suspense></Startup>);if('serviceWorker'in navigator){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(sessionStorage.getItem('sizey-sw-refreshed-v21'))return;sessionStorage.setItem('sizey-sw-refreshed-v21','1');window.location.reload()});window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(async reg=>{
  await reg.update();
  const standalone=window.matchMedia('(display-mode: standalone)').matches||(navigator as Navigator&{standalone?:boolean}).standalone===true;
- if(!standalone||!('PushManager' in window)||!('Notification' in window)||Notification.permission!=='granted')return;
+ if(localStorage.getItem('sizey-push-disabled')==='1'||!standalone||!('PushManager' in window)||!('Notification' in window)||Notification.permission!=='granted')return;
  try{
   const response=await fetch('/hub-api/push/key',{cache:'no-store'});if(!response.ok)return;
   const {key}=await response.json();if(typeof key!=='string')return;
