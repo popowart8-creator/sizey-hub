@@ -199,7 +199,7 @@ jobs:
         if: always()
         run: rm -f ~/.ssh/id_ed25519
   deploy:
-    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.deploy_site == true) || (github.event_name == 'push' && (github.event.head_commit.message == 'Deploy loyalty activation to production' || contains(github.event.head_commit.message, 'deploy-push-ui-trigger') || contains(github.event.head_commit.message, 'deploy-push-onboarding-trigger') || contains(github.event.head_commit.message, 'deploy-blog-ui-api-trigger'))))
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.deploy_site == true) || (github.event_name == 'push' && (github.event.head_commit.message == 'Deploy loyalty activation to production' || contains(github.event.head_commit.message, 'deploy-push-ui-trigger') || contains(github.event.head_commit.message, 'deploy-push-onboarding-trigger') || contains(github.event.head_commit.message, 'deploy-push-fullscreen-trigger') || contains(github.event.head_commit.message, 'deploy-blog-ui-api-trigger'))))
     needs: build
     runs-on: ubuntu-latest
     steps:
