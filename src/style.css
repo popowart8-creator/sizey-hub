@@ -55,3 +55,10 @@
 .notification-empty{text-align:center;padding:55px 12px;display:grid;justify-items:center;gap:10px}
 .notification-empty h3{margin:4px 0 0}.notification-empty p{max-width:260px;margin:0;opacity:.6;line-height:1.5}
 .notification-inbox-hint{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.6}
+
+/* Native subpages follow wardrobe layout rather than bottom sheets. */
+.native-detail-content{width:100%;max-width:780px;min-height:calc(100dvh - 150px);box-sizing:border-box;margin:0 auto;padding:24px 20px calc(48px + env(safe-area-inset-bottom,0px));color:var(--color-primary,#161616)}
+.notification-screen-content .notification-inbox-list{display:grid;gap:0}
+.notification-screen-content .notification-inbox-item{padding:20px 4px}
+.bonus-history-screen .bonusoperation{padding:18px 4px;border-bottom:1px solid var(--color-tertiary,#ddd)}
+@media(max-width:600px){.native-detail-content{padding:18px 18px calc(42px + env(safe-area-inset-bottom,0px))}}
