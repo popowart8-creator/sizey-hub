@@ -17,7 +17,7 @@ const DAY=24*60*60*1000;
 const PUSH_REMINDER_KEY='sizey-push-next-reminder';
 const PUSH_DISMISSALS_KEY='sizey-push-dismissals';
 
-export default function PushSettings(){
+export default function PushSettings({onboardingOnly=false,onboardingEnabled=true}:{onboardingOnly?:boolean;onboardingEnabled?:boolean}={}){
  const [ready,setReady]=useState<{registration:ServiceWorkerRegistration;key:Uint8Array<ArrayBuffer>}>();
  const [current,setCurrent]=useState<PushSubscription|null>(null);
  const [busy,setBusy]=useState(false);
@@ -42,11 +42,11 @@ export default function PushSettings(){
  }
  useEffect(()=>{if(!onboarding)return;const dialog=onboardingDialog.current;if(!dialog)return;dialog.showModal();requestAnimationFrame(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur()});return()=>dialog.close()},[onboarding]);
  useEffect(()=>{
-  if(!standalone||!supported||Notification.permission!=='default')return;
+  if(!onboardingOnly||!onboardingEnabled||!standalone||!supported||Notification.permission!=='default')return;
   const next=Number(localStorage.getItem(PUSH_REMINDER_KEY)||'0');
   if(Number.isFinite(next)&&next>Date.now())return;
   setOnboarding(true);
- },[standalone,supported]);
+ },[onboardingOnly,onboardingEnabled,standalone,supported]);
 
  useEffect(()=>{
   if(requiresInstall||!supported)return;
@@ -106,7 +106,7 @@ export default function PushSettings(){
  }
 
  return <>
-  <MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>
+  {!onboardingOnly&&<MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>}
   {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={dismissOnboarding} className="push-onboarding-modal" style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--dark-canvas, #fff)',color:'var(--color-primary, #333)',overflowY:'auto'}}>
    <div style={{minHeight:'100%',display:'flex',flexDirection:'column',padding:'max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))',boxSizing:'border-box'}}>
     <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',maxWidth:440,width:'100%',margin:'0 auto',gap:24}}>
@@ -122,7 +122,7 @@ export default function PushSettings(){
     </div>
    </div>
   </dialog>}
-  {open&&<CustomerSheet title="Уведомления" onClose={()=>setOpen(false)}>
+  {!onboardingOnly&&open&&<CustomerSheet title="Уведомления" onClose={()=>setOpen(false)}>
    <div className="push-settings-row" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,padding:'12px 0'}}>
     <div><strong>Push-уведомления</strong><p style={{color:'var(--text-secondary, #777)',fontSize:13,margin:'6px 0 0'}}>Получайте новости, предложения и важные обновления SIZEY.</p></div>
     <input type="checkbox" role="switch" aria-label="Push-уведомления" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()} style={{accentColor:'#34c759',flexShrink:0}} {...(ios?{switch:''}: {})}/>
