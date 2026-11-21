@@ -348,3 +348,15 @@ button.sizey-bonus-card:disabled{cursor:default}
 .authpage .sizey-profile-loading .customerlayout .sizey-profile-loading-card .sizey-skeleton-bone::after{
  background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent)!important;
 }
+
+/* During balance refresh, never show a black/purple card. */
+.authpage:has(.customerlayout) .sizey-bonus-card.sizey-bonus-card--loading{
+ background:#ededee!important;
+ background-image:none!important;
+ box-shadow:none!important;
+ color:#555!important;
+}
+.authpage:has(.customerlayout) .sizey-bonus-card--loading .sizey-bonus-caption,
+.authpage:has(.customerlayout) .sizey-bonus-card--loading .sizey-bonus-brand{color:#777!important}
+.authpage:has(.customerlayout) .sizey-bonus-card--loading .sizey-bonus-orb{display:none!important}
+.sizey-bonus-loading-balance{display:block;width:118px;height:42px;border-radius:8px;margin-top:7px;background:#d5d5d8!important}
