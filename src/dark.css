@@ -6,7 +6,7 @@
     --dark-control: #2a2a2f;
     --dark-selected: #38383f;
     --dark-text: #f3f3f5;
-    --dark-muted: #b7b7c0;
+    --dark-muted: #d2d2da;
     --dark-line: #414149;
     --dark-danger: #ff9198;
   }
@@ -56,13 +56,18 @@
   }
 
   html:root :is(
-    .filterbar .chips .chosen, .authcard--native .authtabs button.active,
     .sizey-grades-item.is-current, .menu-list .menu-row:active, .icon-control:active,
-    .sizes button.chosen, .sizes button.active, .sizes button.selected
+    .sizes button.active, .sizes button.selected
   ) {
     background: var(--dark-selected);
     color: var(--dark-text);
     border-color: #696974;
+  }
+
+  html:root :is(.filterbar .chips button.chosen, .sizes button.chosen, .authcard--native .authtabs button.active) {
+    background: #fff;
+    color: #18181b;
+    border-color: #fff;
   }
 
   html:root :is(
