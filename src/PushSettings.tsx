@@ -14,6 +14,9 @@ async function pushRequest(action:string,data?:unknown){
  return response.json();
 }
 
+async function bindCustomer(subscription:PushSubscription){
+ await fetch('/hub-api/notifications/bind',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(subscription.toJSON())}).catch(()=>{});
+}
 const DAY=24*60*60*1000;
 const PUSH_REMINDER_KEY='sizey-push-next-reminder';
 const PUSH_DISMISSALS_KEY='sizey-push-dismissals';
@@ -59,7 +62,7 @@ export default function PushSettings({onboardingOnly=false,onboardingEnabled=tru
    const applicationKey=Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
    const saved=await registration.pushManager.getSubscription();
    if(active){setCurrent(saved);setReady({registration,key:applicationKey});setMessage('')}
-   if(saved&&localStorage.getItem('sizey-push-disabled')!=='1'){await pushRequest('subscribe',{...saved.toJSON(),analytics:navigator.doNotTrack!=='1'}).catch(()=>{})}
+   if(saved&&localStorage.getItem('sizey-push-disabled')!=='1'){await pushRequest('subscribe',{...saved.toJSON(),analytics:navigator.doNotTrack!=='1'}).catch(()=>{});await bindCustomer(saved)}
   }
   void setup().catch(()=>{if(active)setMessage('Не удалось подключиться к сервису уведомлений.')});
   return()=>{active=false};
@@ -94,6 +97,7 @@ export default function PushSettings({onboardingOnly=false,onboardingEnabled=tru
     await next.unsubscribe().catch(()=>{});
     throw error;
    }
+   await bindCustomer(next);
    localStorage.removeItem('sizey-push-disabled');
    setCurrent(next);
    localStorage.removeItem(PUSH_REMINDER_KEY);
