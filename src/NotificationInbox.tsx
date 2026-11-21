@@ -18,7 +18,7 @@ export default function NotificationInbox({onOpen,onBack}:{onOpen?:()=>void;onBa
     if(!response.ok)throw Error('Не удалось загрузить уведомления.');
     const data=await response.json();
     if(active)setItems(data.notifications||[]);
-    // Load the inbox first; service-worker subscription binding must never block history.
+    // Always fetch saved messages first, even when push permissions are disabled.
     if('serviceWorker'in navigator&&'PushManager'in window){
      try{
       const registration=await navigator.serviceWorker.getRegistration();
