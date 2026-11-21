@@ -19,7 +19,7 @@ def run(args,timeout=240):
             print('Qwen canary probe failed (last 1600 chars): '+(p.stderr or p.stdout)[-1600:],flush=True)
         raise RuntimeError('Command failed: '+args[0]+'; private logs saved on server')
     return p.stdout
-files=['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','loyalty-admin.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','admin.mjs','analytics.mjs','geo.mjs','blog-store.mjs','blog-ai.mjs','blog-auto.mjs','content-store.mjs','ai-description.mjs','admin-assistant.mjs','keyword-suggestions.mjs','catalog-seed.json','categories-seed.json']
+files=['Dockerfile','package.json','package-lock.json','auth.mjs','start.mjs','loyalty.mjs','loyalty-admin.mjs','import-customers.mjs','passwords.mjs','staff.mjs','provision-passwords.mjs','admin.mjs','analytics.mjs','push.mjs','geo.mjs','blog-store.mjs','blog-ai.mjs','blog-auto.mjs','content-store.mjs','ai-description.mjs','admin-assistant.mjs','keyword-suggestions.mjs','catalog-seed.json','categories-seed.json']
 for name in files: assert (source/'server'/name).is_file()
 assert 'qwen2.5:1.5b' in run(['docker','exec','sizey-local-ollama','ollama','list'])
 run(['docker','network','inspect','sizey_ai_internal']) if subprocess.run(['docker','network','inspect','sizey_ai_internal'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0 else run(['docker','network','create','--internal','sizey_ai_internal'])

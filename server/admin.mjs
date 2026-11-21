@@ -5,7 +5,7 @@ import {ContentError,storeImage} from './content-store.mjs';
 import {prepareAssistantReply,saveAssistantAnswer} from './admin-assistant.mjs';
 import {ApiError} from './auth.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
-export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
+export function createAdmin({store,blog,blogAI,analytics,push,descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
  const blogJobs=new Map();
  const jobExpiry=30*60*1000;
@@ -17,9 +17,25 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
  async function actor(req){const sid=token(req),session=sid&&sessions.get(hash(sid));if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');let user;try{user=await staffAuth.me(session.accessToken)}catch{sessions.delete(hash(sid));throw new ContentError(401,'Сессия завершилась. Войдите снова.')}if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');return user}
  return async(req,res,customerAccess)=>{
   const path=new URL(req.url,'http://internal').pathname;
-  if(!path.startsWith('/hub-api/blog')&&path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/'))return false;
+  if(!path.startsWith('/hub-api/blog')&&path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/')&&!path.startsWith('/hub-api/push/'))return false;
   const reply=(status,data,setCookie)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(setCookie?{'Set-Cookie':setCookie}:{})});res.end(JSON.stringify(data))};
   try{
+   if(path.startsWith('/hub-api/push/')){
+    if(!push)throw new ContentError(503,'Уведомления временно недоступны');
+    if(req.method==='GET'&&path==='/hub-api/push/key'){reply(200,{key:push.publicKey});return true}
+    if(req.method!=='POST')throw new ContentError(405,'Метод не поддерживается');
+    if(req.headers.origin!==eventOrigin)throw new ContentError(403,'Недопустимый источник запроса');
+    if(!String(req.headers['content-type']).startsWith('application/json'))throw new ContentError(415,'Ожидается JSON');
+    const key=hash('push:'+String(req.headers['x-real-ip']||req.socket.remoteAddress)),minute=Math.floor(now()/60000);
+    const rate=ingestRates.get(key);
+    if(rate?.minute===minute&&rate.count>=120)throw new ContentError(429,'Слишком много запросов');
+    if(rate?.minute===minute)rate.count++;else ingestRates.set(key,{minute,count:1});
+    if(ingestRates.size>10000)for(const[k,v]of ingestRates)if(v.minute!==minute)ingestRates.delete(k);
+    const action={'/hub-api/push/subscribe':'subscribe','/hub-api/push/unsubscribe':'unsubscribe','/hub-api/push/event':'record'}[path];
+    if(!action)throw new ContentError(404,'Маршрут не найден');
+    push[action](await body(req,4096));
+    reply(200,{ok:true});return true;
+   }
    if(path==='/hub-api/events'){
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
     if(req.method!=='POST')throw new ContentError(405,'Метод не поддерживается');
@@ -45,6 +61,16 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
    }
    if(path==='/hub-api/admin/logout'&&req.method==='POST'){const sid=token(req);if(sid)sessions.delete(hash(sid));reply(200,{ok:true},cookie('',0));return true}
    const user=await actor(req);
+   if(path==='/hub-api/admin/push'){
+    if(!push)throw new ContentError(503,'Уведомления временно недоступны');
+    if(req.method==='GET'){reply(200,push.status());return true}
+    if(req.method!=='POST')throw new ContentError(405,'Метод не поддерживается');
+    const data=await body(req,4096);
+    push.enqueue(data,user.id);
+    reply(202,{id:data.id});
+    void push.drain().catch(error=>console.error('Push queue:',error.message));
+    return true;
+   }
    const accessRoute=/^\/hub-api\/admin\/clients\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\/access$/i.exec(path);
    if(accessRoute){
     if(!customerAccess)throw new ContentError(503,'Доступ клиентов временно недоступен');
@@ -64,7 +90,7 @@ export function createAdmin({store,blog,blogAI,analytics,descriptionAI,keywordSu
    else if(req.method==='GET'&&path==='/hub-api/admin/analytics'){
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
     const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p])),blogTitles=new Map((blog?.list()||[]).map(a=>[a.slug,a.title]));
-    reply(200,{...report,products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'})),blogArticles:report.blogArticles.map(a=>({...a,title:blogTitles.get(a.slug)||a.slug}))});
+    reply(200,{...report,push:push?.report(report.from,report.to),products:report.products.map(p=>({...p,name:catalog.get(p.id)?.name||'Товар #'+p.id,img:catalog.get(p.id)?.img||'/brand/logo.svg'})),blogArticles:report.blogArticles.map(a=>({...a,title:blogTitles.get(a.slug)||a.slug}))});
    }
    else if(req.method==='GET'&&path==='/hub-api/admin/search-analytics'){
     const access=process.env.YANDEX_WEBMASTER_TOKEN;
