@@ -231,3 +231,26 @@
  .push-onboarding-modal .push-onboarding-orb svg { filter: drop-shadow(3px 6px 4px #0008); }
  .push-onboarding-modal .push-onboarding-spark { background: linear-gradient(135deg,#777c8b,#303440); box-shadow: 5px 8px 14px #0008; }
 }
+
+
+/* Layered 3D notification sculpture. */
+.push-onboarding-modal .push-onboarding-hero { isolation: isolate; }
+.push-onboarding-modal .push-onboarding-halo { position:absolute; width:205px;height:150px;border-radius:50%;background:radial-gradient(ellipse,#a4b4ed45 0%,#a4b4ed00 72%);filter:blur(15px);transform:translateY(15px); }
+.push-onboarding-modal .push-onboarding-ring { position:absolute;width:184px;height:184px;border:1.5px solid #9ca8c259;border-radius:50%;transform:rotateX(67deg) rotateZ(-24deg);box-shadow:0 0 18px #9aa8d326; }
+.push-onboarding-modal .push-onboarding-orb { position:relative;z-index:2;overflow:visible;transform:rotate(-9deg) rotateY(-19deg) rotateX(13deg);background:linear-gradient(145deg,#ffffff 0%,#e8ecf5 42%,#9eaac1 100%);box-shadow:18px 24px 36px #303d6540,inset 3px 4px 10px #fff,inset -9px -12px 18px #5b6c9259;animation:push-hero-float 5s ease-in-out infinite; }
+.push-onboarding-modal .push-onboarding-orb-gloss { position:absolute;inset:8px;border-radius:27px;border:1px solid #ffffff99;pointer-events:none; }
+.push-onboarding-modal .push-onboarding-badge {position:absolute;top:-12px;right:-12px;width:39px;height:39px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#ff868c,#e92f52);color:#fff;font-size:19px;font-weight:700;box-shadow:3px 7px 15px #a92c5073,inset 1px 2px 3px #ffffff88;transform:rotate(10deg);}
+.push-onboarding-modal .push-onboarding-mini-card {position:absolute;z-index:3;display:grid;place-items:center;width:49px;height:49px;border-radius:17px;color:#525e80;background:linear-gradient(145deg,#fff,#dce3f3);box-shadow:8px 12px 20px #36466b38,inset 2px 2px 4px #fff; }
+.push-onboarding-modal .push-onboarding-mini-card--left {left:calc(50% - 113px);bottom:18px;transform:rotate(-17deg);}
+.push-onboarding-modal .push-onboarding-mini-card--right {right:calc(50% - 119px);top:15px;transform:rotate(14deg);}
+.push-onboarding-modal .push-onboarding-spark--one {right:13%;top:35px;background:linear-gradient(135deg,#fff,#9caee0);}
+.push-onboarding-modal .push-onboarding-spark--two {left:15%;bottom:34px;}
+@keyframes push-hero-float {0%,100%{translate:0 0}50%{translate:0 -7px}}
+@media (prefers-reduced-motion:reduce) {.push-onboarding-modal .push-onboarding-orb {animation:none;}}
+@media (prefers-color-scheme:dark) {
+ .push-onboarding-modal .push-onboarding-halo {background:radial-gradient(ellipse,#647bd35c 0%,#647bd300 72%);}
+ .push-onboarding-modal .push-onboarding-ring {border-color:#9aa8ef66;box-shadow:0 0 22px #7c8edc2a;}
+ .push-onboarding-modal .push-onboarding-orb {background:linear-gradient(145deg,#858ca7 0%,#4a526d 43%,#24283a 100%);box-shadow:18px 24px 38px #000a,inset 3px 4px 10px #ffffff44,inset -9px -12px 18px #0008;}
+ .push-onboarding-modal .push-onboarding-orb-gloss {border-color:#ffffff35;}
+ .push-onboarding-modal .push-onboarding-mini-card {color:#dce3ff;background:linear-gradient(145deg,#626c8b,#292e43);box-shadow:8px 12px 22px #0009,inset 2px 2px 5px #ffffff35;}
+}
