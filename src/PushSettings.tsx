@@ -1,5 +1,5 @@
-import {useEffect,useState} from 'react';
-import {Bell} from 'lucide-react';
+import {useEffect,useRef,useState} from 'react';
+import {Bell,Gift,Sparkles,Shirt,X} from 'lucide-react';
 import CustomerSheet from './CustomerSheet';
 import MenuRow from './MenuRow';
 import {platform} from './Navigation';
@@ -25,10 +25,13 @@ export default function PushSettings(){
  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  const [retry,setRetry]=useState(0);
  const [open,setOpen]=useState(false);
+ const [onboarding,setOnboarding]=useState(false);
+ const onboardingDialog=useRef<HTMLDialogElement>(null);
+ useEffect(()=>{if(!onboarding)return;const dialog=onboardingDialog.current;if(!dialog)return;dialog.showModal();return()=>dialog.close()},[onboarding]);
  useEffect(()=>{
   if(!standalone||!supported||Notification.permission!=='default'||localStorage.getItem('sizey-push-disabled')==='1'||localStorage.getItem('sizey-push-onboarding-shown')==='1')return;
   localStorage.setItem('sizey-push-onboarding-shown','1');
-  setOpen(true);
+  setOnboarding(true);
  },[standalone,supported]);
 
  useEffect(()=>{
@@ -87,10 +90,27 @@ export default function PushSettings(){
 
  return <>
   <MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>
+  {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={()=>setOnboarding(false)} style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--background, #fff)',color:'inherit',overflowY:'auto'}}>
+   <div style={{minHeight:'100%',display:'flex',flexDirection:'column',padding:'max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))',boxSizing:'border-box'}}>
+    <button type="button" aria-label="Закрыть" onClick={()=>setOnboarding(false)} style={{alignSelf:'flex-end',border:0,background:'transparent',color:'inherit',padding:8}}><X size={26}/></button>
+    <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',maxWidth:440,width:'100%',margin:'0 auto',gap:24}}>
+     <Bell size={56} strokeWidth={1.5} aria-hidden="true"/>
+     <div><h1 id="push-onboarding-title" style={{fontSize:30,lineHeight:1.15,margin:'0 0 12px'}}>Будь в курсе всего важного</h1><p style={{fontSize:16,lineHeight:1.5,opacity:.7,margin:0}}>Включи уведомления SIZEY, чтобы ничего не пропустить.</p></div>
+     <div style={{display:'grid',gap:22}}>
+      <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Gift size={25} aria-hidden="true"/><div><strong>Бонусы</strong><p style={{margin:'5px 0 0',opacity:.7}}>Узнавай о начислениях, бонусных предложениях и возможностях их использовать.</p></div></div>
+      <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Sparkles size={25} aria-hidden="true"/><div><strong>Новости и предложения</strong><p style={{margin:'5px 0 0',opacity:.7}}>Получай новости SIZEY, специальные предложения и важные обновления.</p></div></div>
+      <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Shirt size={25} aria-hidden="true"/><div><strong>Новые коллекции</strong><p style={{margin:'5px 0 0',opacity:.7}}>Первым узнавай о новых поступлениях и коллекциях.</p></div></div>
+     </div>
+     {message&&<p role="status">{message}</p>}
+     <button type="button" className="blackbtn" disabled={!ready||busy} onClick={()=>void toggle()}>{busy?'Подключаем…':ready?'Включить уведомления':'Подключаем сервис…'}</button>
+     <button type="button" onClick={()=>setOnboarding(false)} style={{background:'transparent',border:0,color:'inherit',padding:12}}>Не сейчас</button>
+    </div>
+   </div>
+  </dialog>}
   {open&&<CustomerSheet title="Уведомления" onClose={()=>setOpen(false)}>
    <div className="push-settings-row" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,padding:'12px 0'}}>
     <div><strong>Push-уведомления</strong><p style={{color:'var(--text-secondary, #777)',fontSize:13,margin:'6px 0 0'}}>Получайте новости, предложения и важные обновления SIZEY.</p></div>
-    <input type="checkbox" role="switch" aria-label="Push-уведомления" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()} style={{width:48,height:28,accentColor:'#34c759',flexShrink:0}} {...(ios?{switch:''}: {})}/>
+    <input type="checkbox" role="switch" aria-label="Push-уведомления" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()} style={{accentColor:'#34c759',flexShrink:0}} {...(ios?{switch:''}: {})}/>
    </div>
    {requiresInstall?<p>Чтобы получать уведомления на iPhone, добавьте SIZEY на экран «Домой» через Safari и откройте приложение с иконки.</p>:!supported?<p>Уведомления не поддерживаются этим браузером.</p>:!ready?<p>Подключаем уведомления… <button type="button" onClick={()=>setRetry(value=>value+1)}>Повторить</button></p>:null}
    {ready&&!current&&Notification.permission==='default'&&<button type="button" disabled={busy} onClick={()=>void toggle()}>Разрешить уведомления</button>}
