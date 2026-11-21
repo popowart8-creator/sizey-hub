@@ -254,3 +254,7 @@
  .push-onboarding-modal .push-onboarding-orb-gloss {border-color:#ffffff35;}
  .push-onboarding-modal .push-onboarding-mini-card {color:#dce3ff;background:linear-gradient(145deg,#626c8b,#292e43);box-shadow:8px 12px 22px #0009,inset 2px 2px 5px #ffffff35;}
 }
+
+/* Match the subtitle to the benefit descriptions. */
+.push-onboarding-modal .push-onboarding-heading p { font-size: 16px; line-height: 1.5; }
+.push-onboarding-modal .push-onboarding-hero ~ div + div p { font-size: 16px; line-height: 1.5; }
