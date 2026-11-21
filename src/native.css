@@ -753,3 +753,29 @@ html[data-hero-tone="dark"] .home-logo img {
  border-radius:28px 28px 0 0;
  isolation:isolate;
 }
+
+/* Full-bleed home sheet: match 16px product inset at the top and at both chip ends. */
+.tab-screen:has(> .home-intro) > .home-products{padding-top:16px!important}
+.home-products>.filterbar>.chips{padding:2px 0 2px 16px!important;gap:8px!important}
+.home-products>.filterbar>.chips::after{content:"";display:block;flex:0 0 8px!important;min-width:8px}
+.home-products>.filterbar>.chips>button{flex-shrink:0}
+
+/* Keep banner image sharp, without the previous feathered blur overlay. */
+.home-intro .carousel-art{-webkit-mask-image:none!important;mask-image:none!important}
+.home-intro .carousel-art::before,.home-intro .carousel-art::after{display:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+
+/* Compact pagination and raise it above the catalog sheet. */
+.home-intro .hero-bottom-content{bottom:34px!important}
+.home-intro .carousel-controls{height:28px!important}
+.home-intro .carousel-dots{gap:3px!important}
+.home-intro .carousel-dots button{width:26px!important;height:26px!important;min-height:0!important;padding:0!important}
+.home-intro .carousel-dots span{height:6px!important;width:6px!important}
+.home-intro .carousel-dots [aria-current=true] span{width:19px!important;height:6px!important}
+
+/* Product detail pull-to-stretch: gallery grows downward while image remains anchored. */
+.product-screen .detailgallery{--detail-pull:0px;--detail-scale:1}
+.product-screen .detail-gallery-slide .image-loading-detail,
+.product-screen .detail-gallery-slide .detailphoto{height:calc(58svh + env(safe-area-inset-top,0px) + var(--detail-pull,0px))!important;transition:height 280ms cubic-bezier(.2,.8,.2,1)!important}
+.product-screen .detail-gallery-slide img.detailphoto{transform:scale(var(--detail-scale,1))!important;transform-origin:center top!important;transition:transform 280ms cubic-bezier(.2,.8,.2,1)!important}
+.product-screen .detailgallery[data-pulling] .detail-gallery-slide .image-loading-detail,
+.product-screen .detailgallery[data-pulling] .detail-gallery-slide .detailphoto{transition:none!important}
