@@ -1,4 +1,5 @@
 import {createPushStore} from './push.mjs';
+import {randomUUID} from 'node:crypto';
 import {scheduleDailyBlogDrafts} from './blog-auto.mjs';
 import {blogStore} from './blog-store.mjs';
 import {createBlogAI} from './blog-ai.mjs';
@@ -24,6 +25,43 @@ chmodSync(directory+'/push.sqlite',0o600);
 const drainPush=()=>void push.drain().catch(error=>console.error('Push queue:',error.message));
 drainPush();
 setInterval(drainPush,60000).unref();
+// Read-only loyalty event watcher: never modifies balances or awards bonuses.
+let automationSince=new Date();
+let automationRunning=false;
+async function scanBonusNotifications(){
+ if(automationRunning||!pool)return;
+ const settings=push.automationSettings();
+ if(!settings.birthday&&!settings.purchase){automationSince=new Date();return}
+ automationRunning=true;
+ try{
+  const from=new Date(Math.max(automationSince.getTime()-60000,Date.now()-48*3600000));
+  const {rows}=await pool.query(`SELECT t.id,t.type,t.balance_before,t.balance_after,t.created_at,c.phone_normalized
+    FROM transactions t JOIN clients c ON c.id=t.client_id
+    WHERE t.created_at >= $1 AND t.created_at <= NOW() AND c.deleted_at IS NULL
+    AND t.balance_after > t.balance_before
+    ORDER BY t.created_at ASC LIMIT 1000`,[from]);
+  const auth=new DatabaseSync(database,{readOnly:true});
+  let accounts;
+  try{accounts=new Map(auth.prepare('SELECT id,phone FROM customers').all().map(row=>[row.phone.replace(/^\\+/,''),row.id]))}
+  finally{auth.close()}
+  for(const row of rows){
+   const birthday=/BIRTHDAY|BIRTH|ДЕНЬ_РОЖД/i.test(String(row.type));
+   if(birthday?!settings.birthday:!settings.purchase)continue;
+   const customer=accounts.get(String(row.phone_normalized));
+   if(!customer)continue;
+   const key='loyalty:'+row.id;
+   if(push.eventSeen(key))continue;
+   const amount=Number(row.balance_after)-Number(row.balance_before);
+   const title=birthday?'Бонусы ко дню рождения':'Бонусы за покупку';
+   push.enqueue({id:randomUUID(),title,message:`Вам начислено ${amount} бонусов. Посмотрите баланс в профиле.`,path:'/?tab=profile',audience:'selected',customers:[customer]},'loyalty-automation');
+   push.markEvent(key);
+  }
+  automationSince=new Date();
+  void push.drain().catch(error=>console.error('Bonus push queue:',error.message));
+ }catch(error){console.error('Bonus notification scan:',error.message)}
+ finally{automationRunning=false}
+}
+setInterval(()=>void scanBonusNotifications(),60000).unref();
 const publicOrigin=process.env.PUBLIC_ORIGIN||'https://hub.sizey.ru';
 const blog=blogStore(directory+'/blog.sqlite');
 const blogAI=createBlogAI();
