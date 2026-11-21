@@ -6,7 +6,7 @@ declare global {interface Window {lottie?:LottiePlayer}}
 let playerPromise:Promise<LottiePlayer>|undefined;
 function loadPlayer():Promise<LottiePlayer>{
  if(window.lottie)return Promise.resolve(window.lottie);
- if(!playerPromise)playerPromise=new Promise((resolve,reject)=>{
+ if(!playerPromise)playerPromise=new Promise<LottiePlayer>((resolve,reject)=>{
   const script=document.createElement('script');
   script.src='https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.min.js';
   script.async=true;
@@ -14,7 +14,7 @@ function loadPlayer():Promise<LottiePlayer>{
   script.onerror=()=>reject(new Error('Lottie script unavailable'));
   document.head.appendChild(script);
  }).catch(error=>{playerPromise=undefined;throw error});
- return playerPromise;
+ return playerPromise!;
 }
 export default function PushLottie(){
  const target=useRef<HTMLDivElement>(null);
