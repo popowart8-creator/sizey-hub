@@ -31,7 +31,6 @@ let automationRunning=false;
 async function scanBonusNotifications(){
  if(automationRunning||!pool)return;
  const settings=push.automationSettings();
- if(!settings.birthday&&!settings.purchase){automationSince=new Date();return}
  automationRunning=true;
  try{
   const from=new Date(Math.max(automationSince.getTime()-60000,Date.now()-48*3600000));
@@ -46,14 +45,15 @@ async function scanBonusNotifications(){
   finally{auth.close()}
   for(const row of rows){
    const birthday=/BIRTHDAY|BIRTH|ДЕНЬ_РОЖД/i.test(String(row.type));
-   if(birthday?!settings.birthday:!settings.purchase)continue;
    const customer=accounts.get(String(row.phone_normalized));
    if(!customer)continue;
    const key='loyalty:'+row.id;
    if(push.eventSeen(key))continue;
    const amount=Number(row.balance_after)-Number(row.balance_before);
-   const title=birthday?'Бонусы ко дню рождения':'Бонусы за покупку';
-   push.enqueue({id:randomUUID(),title,message:`Вам начислено ${amount} бонусов. Посмотрите баланс в профиле.`,path:'/?tab=profile',audience:'selected',customers:[customer]},'loyalty-automation');
+   const title=birthday?settings.birthdayTitle:settings.purchaseTitle;
+   const template=birthday?settings.birthdayMessage:settings.purchaseMessage;
+   const message=template.replaceAll('{amount}',String(amount));
+   push.enqueue({id:randomUUID(),title,message,path:'/?tab=profile',audience:'selected',customers:[customer]},'loyalty-automation');
    push.markEvent(key);
   }
   automationSince=new Date();
