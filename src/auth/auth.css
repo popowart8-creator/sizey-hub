@@ -75,9 +75,7 @@
 .sizey-bonus-footer{align-items:center}
 .sizey-bonus-chip{padding:9px 11px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);border-radius:12px;font-size:10px;letter-spacing:.08em;backdrop-filter:blur(10px)}
 .sizey-bonus-footer-text{font-size:10px;text-align:right;color:#e6d6f4}
-.sizey-bonus-history,.sizey-bonus-connect{margin-top:23px}
-.sizey-bonus-history-head{display:flex;align-items:center;justify-content:space-between}
-.sizey-bonus-history-head h3{margin:0 0 12px}
+.sizey-bonus-connect{margin-top:23px}
 @media(max-width:390px){.sizey-bonus-card{padding:21px;min-height:235px;border-radius:25px}.sizey-bonus-card-content{min-height:193px}.sizey-bonus-footer-text{max-width:100px}}
 
 
@@ -88,11 +86,6 @@
 @media(prefers-reduced-motion:reduce){.sizey-bonus-card{transform:none!important;transition:none!important}.sizey-bonus-card:after{display:none}}
 
 
-.sizey-bonus-history-toggle{width:100%;text-align:left}
-.sizey-bonus-history-toggle svg:last-child{margin-left:auto;transition:transform .2s ease}
-.sizey-bonus-chevron--open{transform:rotate(90deg)}
-.sizey-bonus-history-content{padding:12px 4px 6px}
-.sizey-bonus-history-content>.textbtn{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px}
 
 
 /* Profile: all menu rows follow the same content-grid gutters and rhythm. */
@@ -103,8 +96,6 @@
 .authpage:has(.customerlayout) .profilerow:not(.menu-row){display:flex;align-items:center;gap:16px;width:100%;min-height:64px;padding:18px 0;margin:0;text-align:left;font-size:15px;line-height:1.4;border-bottom:1px solid #e6e6e8;box-sizing:border-box}
 .authpage:has(.customerlayout) .profilerow>svg:first-child{flex:0 0 23px}
 .authpage:has(.customerlayout) .profilerow>svg:last-child{flex:0 0 20px;margin-left:auto}
-.authpage:has(.customerlayout) .sizey-bonus-history{margin-top:18px}
-.authpage:has(.customerlayout) .sizey-bonus-history-content{padding:12px 0 8px}
 @media(max-width:800px){
  .authpage:has(.customerlayout){padding-inline:16px;box-sizing:border-box}
  .authpage:has(.customerlayout) .customerlayout{margin-top:24px;gap:20px}
@@ -135,7 +126,6 @@
 .authpage:has(.customerlayout) .customer-profile-heading h3{font-size:clamp(23px,4vw,30px);font-weight:700;line-height:1.15;letter-spacing:-.035em;margin:0 0 5px}
 .authpage:has(.customerlayout) .customer-profile-heading p{font-size:13px;line-height:1.4;margin:0;color:#888}
 .authpage:has(.customerlayout) .customerbonus{width:100%}
-.authpage:has(.customerlayout) .sizey-bonus-history{margin-top:10px}
 .authpage:has(.customerlayout) .profile-account-actions{width:100%;margin:0;padding:0 0 36px}
 .authpage:has(.customerlayout) .profilerow:not(.menu-row){padding-inline:0!important;margin-inline:0!important}
 .authpage:has(.customerlayout) .sizey-bonus-card{--grade-start:#242424;--grade-end:#0a0a0b;--grade-ink:#d3d3d3;min-height:184px;padding:23px 24px;border-radius:22px;background:linear-gradient(125deg,var(--grade-start),var(--grade-end));box-shadow:0 10px 26px rgba(0,0,0,.13)}
@@ -152,10 +142,8 @@
 
 /* Unified full-width profile navigation: wardrobe through contacts and account rows. */
 .authpage:has(.customerlayout)>.profile-utilities,
-.authpage:has(.customerlayout)>.profile-account-actions,
-.authpage:has(.customerlayout) .sizey-bonus-history{width:100%!important;max-width:none!important;min-width:0!important;box-sizing:border-box!important;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}
-.authpage:has(.customerlayout)>.profile-utilities .profilerow,
-.authpage:has(.customerlayout) .sizey-bonus-history .profilerow{width:100%!important;box-sizing:border-box!important;padding-left:0!important;padding-right:0!important;transform:none!important}
+.authpage:has(.customerlayout)>.profile-account-actions{width:100%!important;max-width:none!important;min-width:0!important;box-sizing:border-box!important;margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important}
+.authpage:has(.customerlayout)>.profile-utilities .profilerow{width:100%!important;box-sizing:border-box!important;padding-left:0!important;padding-right:0!important;transform:none!important}
 .authpage:has(.customerlayout) .customer-profile-heading{padding-bottom:0}
 .sizey-history-overlay{position:fixed;z-index:10000;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:rgba(0,0,0,.52);box-sizing:border-box}
 .sizey-history-dialog{width:min(100%,520px);max-height:min(82vh,740px);display:flex;flex-direction:column;overflow:hidden;background:#fff;color:#181818;border-radius:24px;box-shadow:0 24px 80px rgba(0,0,0,.25)}
@@ -423,7 +411,6 @@ button.sizey-bonus-card:disabled{cursor:default}
 .authpage .sizey-profile-loading .customerbonus .sizey-profile-loading-card{width:100%!important;height:184px!important;min-height:184px!important;max-height:184px!important;padding:0!important;margin:0!important;box-sizing:border-box!important;border:0!important;border-radius:22px!important;background:#e9e9eb!important}
 .authpage .sizey-profile-loading .customerbonus .sizey-profile-loading-card::after{content:""!important;display:block!important;position:absolute!important;inset:0!important;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent)!important;background-size:100% 100%!important;animation:sizey-skeleton-glide 1.6s ease-in-out infinite!important}
 .authpage .sizey-profile-loading .customerbonus .sizey-profile-loading-hint{margin:10px auto 0!important}
-.authpage .sizey-profile-loading .customerbonus .sizey-bonus-history{margin-top:10px!important}
 .authpage .sizey-profile-loading .sizey-profile-loading-menu-row{height:64px!important;min-height:64px!important;max-height:64px!important;padding:18px 0!important;margin:0!important}
 .authpage .sizey-profile-loading .profile-menu-stack{margin:0!important;padding:0!important}
 
@@ -480,14 +467,57 @@ button.sizey-bonus-card:disabled{cursor:default}
   padding-inline: 16px;
 }
 
-.profile-logout-dialog{
- width:min(320px,calc(100% - 40px));margin:auto;padding:0;border:0;border-radius:18px;
- background:#fff;color:#171717;box-shadow:0 16px 56px #0003;text-align:center;
+.profile-logout-dialog {
+ position:fixed;
+ inset:0;
+ width:min(360px,calc(100% - 32px));
+ max-width:none;
+ margin:auto;
+ padding:24px;
+ border:0;
+ border-radius:24px;
+ background:#fff;
+ color:#181818;
+ box-shadow:0 20px 64px #0003;
 }
-.profile-logout-dialog::backdrop{background:#0006}
-.profile-logout-dialog h2{margin:0;padding:22px 20px;font-size:17px;font-weight:650;line-height:1.35}
-.profile-logout-choices{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e6e6e8}
-.profile-logout-choices button{min-height:48px;font-size:16px}
-.profile-logout-choices button+button{border-left:1px solid #e6e6e8;font-weight:650}
-.profile-logout-choices button:focus-visible{outline:2px solid #555;outline-offset:-4px}
-.profile-logout-choices button[type=submit]{color:#b62929}
+.profile-logout-dialog::backdrop {
+ background:#17171b66;
+ -webkit-backdrop-filter:blur(5px);
+ backdrop-filter:blur(5px);
+}
+.profile-logout-dialog[open] {
+ animation:profile-dialog-in .2s cubic-bezier(.2,.8,.2,1) both;
+}
+.profile-logout-dialog h2 {
+ margin:0 0 22px;
+ font-size:21px;
+ font-weight:650;
+ line-height:1.25;
+ letter-spacing:-.02em;
+ text-align:center;
+ text-wrap:balance;
+}
+.profile-logout-choices {
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+}
+.profile-logout-choices button {
+ min-height:48px;
+ padding:10px 16px;
+ border-radius:14px;
+ background:#f0f0f2;
+ color:#181818;
+ font-size:16px;
+ font-weight:600;
+}
+.profile-logout-choices button[type=submit] {background:#191919;color:#fff}
+.profile-logout-choices button:active {opacity:.76}
+.profile-logout-choices button:focus-visible {outline:2px solid #555;outline-offset:3px}
+@keyframes profile-dialog-in {
+ from {opacity:0;transform:translateY(8px) scale(.97)}
+ to {opacity:1;transform:none}
+}
+@media(prefers-reduced-motion:reduce) {
+ .profile-logout-dialog[open] {animation:none}
+}
