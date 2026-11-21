@@ -839,3 +839,17 @@ html[data-hero-tone="dark"] .home-logo img {
 .home-intro .carousel-dots>button[aria-current=true]>span{
  width:16px!important;height:6px!important;
 }
+
+/* Full-width chip strip within the rounded catalog sheet, independent of card gutters. */
+.tab-screen:has(> .home-intro) > .home-products>.filterbar{
+ width:100vw!important;max-width:none!important;
+ margin-left:calc(50% - 50vw)!important;
+ margin-right:calc(50% - 50vw)!important;
+ margin-bottom:16px!important;
+ overflow:hidden!important;
+}
+.tab-screen:has(> .home-intro) > .home-products>.filterbar>.chips{
+ width:100%!important;max-width:none!important;
+ padding-left:16px!important;padding-right:16px!important;
+ box-sizing:border-box!important;
+}
