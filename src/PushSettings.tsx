@@ -13,6 +13,10 @@ async function pushRequest(action:string,data?:unknown){
  return response.json();
 }
 
+const DAY=24*60*60*1000;
+const PUSH_REMINDER_KEY='sizey-push-next-reminder';
+const PUSH_DISMISSALS_KEY='sizey-push-dismissals';
+
 export default function PushSettings(){
  const [ready,setReady]=useState<{registration:ServiceWorkerRegistration;key:Uint8Array<ArrayBuffer>}>();
  const [current,setCurrent]=useState<PushSubscription|null>(null);
@@ -27,10 +31,20 @@ export default function PushSettings(){
  const [open,setOpen]=useState(false);
  const [onboarding,setOnboarding]=useState(false);
  const onboardingDialog=useRef<HTMLDialogElement>(null);
+ function dismissOnboarding(){
+  if(Notification.permission!=='granted'&&!current){
+   const previous=Number(localStorage.getItem(PUSH_DISMISSALS_KEY)||'0');
+   const count=previous+1;
+   localStorage.setItem(PUSH_DISMISSALS_KEY,String(count));
+   localStorage.setItem(PUSH_REMINDER_KEY,String(Date.now()+(count===1?3:5)*DAY));
+  }
+  setOnboarding(false);
+ }
  useEffect(()=>{if(!onboarding)return;const dialog=onboardingDialog.current;if(!dialog)return;dialog.showModal();return()=>dialog.close()},[onboarding]);
  useEffect(()=>{
-  if(!standalone||!supported||Notification.permission!=='default'||localStorage.getItem('sizey-push-disabled')==='1'||localStorage.getItem('sizey-push-onboarding-shown')==='1')return;
-  localStorage.setItem('sizey-push-onboarding-shown','1');
+  if(!standalone||!supported||Notification.permission!=='default')return;
+  const next=Number(localStorage.getItem(PUSH_REMINDER_KEY)||'0');
+  if(Number.isFinite(next)&&next>Date.now())return;
   setOnboarding(true);
  },[standalone,supported]);
 
@@ -81,6 +95,9 @@ export default function PushSettings(){
    }
    localStorage.removeItem('sizey-push-disabled');
    setCurrent(next);
+   localStorage.removeItem(PUSH_REMINDER_KEY);
+   localStorage.removeItem(PUSH_DISMISSALS_KEY);
+   setOnboarding(false);
    setMessage('Уведомления включены.');
   }catch(error){
    if(Notification.permission==='denied'&&!current)setMessage('Разрешите уведомления для SIZEY в настройках устройства или браузера.');
@@ -90,9 +107,9 @@ export default function PushSettings(){
 
  return <>
   <MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>
-  {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={()=>setOnboarding(false)} style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--background, #fff)',color:'inherit',overflowY:'auto'}}>
+  {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={dismissOnboarding} style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--background, #fff)',color:'inherit',overflowY:'auto'}}>
    <div style={{minHeight:'100%',display:'flex',flexDirection:'column',padding:'max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))',boxSizing:'border-box'}}>
-    <button type="button" aria-label="Закрыть" onClick={()=>setOnboarding(false)} style={{alignSelf:'flex-end',border:0,background:'transparent',color:'inherit',padding:8}}><X size={26}/></button>
+    <button type="button" aria-label="Закрыть" onClick={dismissOnboarding} style={{alignSelf:'flex-end',border:0,background:'transparent',color:'inherit',padding:8}}><X size={26}/></button>
     <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',maxWidth:440,width:'100%',margin:'0 auto',gap:24}}>
      <Bell size={56} strokeWidth={1.5} aria-hidden="true"/>
      <div><h1 id="push-onboarding-title" style={{fontSize:30,lineHeight:1.15,margin:'0 0 12px'}}>Будь в курсе всего важного</h1><p style={{fontSize:16,lineHeight:1.5,opacity:.7,margin:0}}>Включи уведомления SIZEY, чтобы ничего не пропустить.</p></div>
