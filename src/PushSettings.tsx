@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {Bell,Gift,Sparkles,Shirt,X} from 'lucide-react';
+import {Bell,Gift,Sparkles,Shirt} from 'lucide-react';
 import CustomerSheet from './CustomerSheet';
 import MenuRow from './MenuRow';
 import {platform} from './Navigation';
@@ -40,7 +40,7 @@ export default function PushSettings(){
   }
   setOnboarding(false);
  }
- useEffect(()=>{if(!onboarding)return;const dialog=onboardingDialog.current;if(!dialog)return;dialog.showModal();return()=>dialog.close()},[onboarding]);
+ useEffect(()=>{if(!onboarding)return;const dialog=onboardingDialog.current;if(!dialog)return;dialog.showModal();requestAnimationFrame(()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur()});return()=>dialog.close()},[onboarding]);
  useEffect(()=>{
   if(!standalone||!supported||Notification.permission!=='default')return;
   const next=Number(localStorage.getItem(PUSH_REMINDER_KEY)||'0');
@@ -107,20 +107,18 @@ export default function PushSettings(){
 
  return <>
   <MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>
-  {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={dismissOnboarding} style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--dark-canvas, #fff)',color:'var(--color-primary, #333)',overflowY:'auto'}}>
+  {onboarding&&<dialog ref={onboardingDialog} aria-labelledby="push-onboarding-title" onCancel={dismissOnboarding} className="push-onboarding-modal" style={{position:'fixed',inset:0,width:'100%',height:'100%',maxWidth:'none',maxHeight:'none',margin:0,border:0,padding:0,background:'var(--dark-canvas, #fff)',color:'var(--color-primary, #333)',overflowY:'auto'}}>
    <div style={{minHeight:'100%',display:'flex',flexDirection:'column',padding:'max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))',boxSizing:'border-box'}}>
-    <button type="button" aria-label="Закрыть" onClick={dismissOnboarding} style={{alignSelf:'flex-end',border:0,background:'transparent',color:'inherit',padding:8}}><X size={26}/></button>
     <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',maxWidth:440,width:'100%',margin:'0 auto',gap:24}}>
-     <Bell size={56} strokeWidth={1.5} aria-hidden="true"/>
-     <div><h1 id="push-onboarding-title" style={{fontSize:30,lineHeight:1.15,margin:'0 0 12px'}}>Будь в курсе всего важного</h1><p style={{fontSize:16,lineHeight:1.5,opacity:.7,margin:0}}>Включи уведомления SIZEY, чтобы ничего не пропустить.</p></div>
+     <div className="push-onboarding-hero" aria-hidden="true"><div className="push-onboarding-orb"><Bell size={80} strokeWidth={1.5}/></div><span className="push-onboarding-spark push-onboarding-spark--one"/><span className="push-onboarding-spark push-onboarding-spark--two"/></div>
+     <div className="push-onboarding-heading"><h1 id="push-onboarding-title">Будь в курсе всего важного</h1><p>Включи уведомления SIZEY, чтобы ничего не пропустить.</p></div>
      <div style={{display:'grid',gap:22}}>
-      <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Gift size={25} aria-hidden="true"/><div><strong>Бонусы</strong><p style={{margin:'5px 0 0',opacity:.7}}>Узнавай о начислениях, бонусных предложениях и возможностях их использовать.</p></div></div>
+      <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Gift size={25} aria-hidden="true"/><div><strong>Бонусы</strong><p style={{margin:'5px 0 0',color:'var(--color-secondary)'}}>Узнавай о начислениях, бонусных предложениях и возможностях их использовать.</p></div></div>
       <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Sparkles size={25} aria-hidden="true"/><div><strong>Новости и предложения</strong><p style={{margin:'5px 0 0',opacity:.7}}>Получай новости SIZEY, специальные предложения и важные обновления.</p></div></div>
       <div style={{display:'flex',gap:16,alignItems:'flex-start'}}><Shirt size={25} aria-hidden="true"/><div><strong>Новые коллекции</strong><p style={{margin:'5px 0 0',opacity:.7}}>Первым узнавай о новых поступлениях и коллекциях.</p></div></div>
      </div>
      {message&&<p role="status">{message}</p>}
-     <button type="button" className="blackbtn" disabled={!ready||busy} onClick={()=>void toggle()}>{busy?'Подключаем…':ready?'Включить уведомления':'Подключаем сервис…'}</button>
-     <button type="button" onClick={()=>setOnboarding(false)} style={{background:'transparent',border:0,color:'inherit',padding:12}}>Не сейчас</button>
+     <div className="push-onboarding-actions"><button type="button" className="blackbtn" disabled={!ready||busy} onClick={()=>void toggle()}>{busy?'Подключаем…':ready?'Включить уведомления':'Подключаем сервис…'}</button><button type="button" onClick={dismissOnboarding} className="push-onboarding-later">Не сейчас</button></div>
     </div>
    </div>
   </dialog>}
