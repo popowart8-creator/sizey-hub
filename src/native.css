@@ -935,3 +935,6 @@ html[data-hero-tone="dark"] .home-logo img {
   background: #fff;
   border-radius: 12px;
 }
+
+/* Give the install confirmation button more breathing room below the instructions. */
+.install-sheet .install-actions {margin-top:18px;}
