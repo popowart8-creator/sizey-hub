@@ -41,7 +41,7 @@ async function scanBonusNotifications(){
     ORDER BY t.created_at ASC LIMIT 1000`,[from]);
   const auth=new DatabaseSync(database,{readOnly:true});
   let accounts;
-  try{accounts=new Map(auth.prepare('SELECT id,phone FROM customers').all().map(row=>[row.phone.replace(/^\\+/,''),row.id]))}
+  try{accounts=new Map(auth.prepare('SELECT id,phone FROM customers').all().map(row=>[String(row.phone).replace(/^\+/,''),row.id]))}
   finally{auth.close()}
   for(const row of rows){
    const birthday=/BIRTHDAY|BIRTH|ДЕНЬ_РОЖД/i.test(String(row.type));
