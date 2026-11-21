@@ -13,3 +13,11 @@ Customers must enter the current/temporary password to change it. Password chang
 Loyalty is read directly through the dedicated read-only role. Available points follow the existing unexpired-bonus-lot rules; balances and records in the original system are not modified. A local on-server SQLite snapshot is saved before migration. The setup reloads only the inner hub Caddy and updates only the customer API, not the employee bonus containers.
 
 Run npm ci --prefix server && npm run test:auth, then npm run build. Customer identity and password provisioning scripts are idempotent. Never store real passwords, AUTH_SECRET, database credentials or private SSH keys in Git, artifacts or chat.
+
+## Web Push
+
+На iPhone и iPad подписка доступна в SIZEY, добавленном на экран «Домой» (iOS/iPadOS 16.4 и новее). В профиле покупатель включает или отключает уведомления. Сервер отправляет только подписавшимся браузерам.
+
+Раздел админки «Пуш-уведомления» показывает подписки, позволяет отправить рассылку и показывает её статус. В аналитике итог относится к дате создания рассылки по Москве. «Принято сервисом» означает успешный ответ push-провайдера. «Показано» и «Открыто» основаны на событиях от приложения и зависят от его подключения к интернету и настроек приватности браузера.
+
+Первый запуск API генерирует VAPID-ключи в `/data/push.sqlite`. Сохраняйте базу при обновлениях и включайте её в резервные копии. При утрате ключей покупателям потребуется повторная подписка. API нужен исходящий доступ по HTTPS к push-сервисам браузеров. После слияния запустите workflow Build and deploy SIZEY на main с параметром `deploy_qwen_api`. Проверьте, что `GET /hub-api/push/key` возвращает публичный ключ. Затем запустите этот workflow с параметром `deploy_site` для публикации витрины и админки из того же коммита.
