@@ -853,3 +853,7 @@ html[data-hero-tone="dark"] .home-logo img {
  padding-left:16px!important;padding-right:16px!important;
  box-sizing:border-box!important;
 }
+
+.menu-list {
+  padding-inline: 16px;
+}
