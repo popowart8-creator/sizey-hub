@@ -62,3 +62,7 @@
 .notification-screen-content .notification-inbox-item{padding:20px 4px}
 .bonus-history-screen .bonusoperation{padding:18px 4px;border-bottom:1px solid var(--color-tertiary,#ddd)}
 @media(max-width:600px){.native-detail-content{padding:18px 18px calc(42px + env(safe-area-inset-bottom,0px))}}
+
+/* Match the search button's 48px circular surface in both themes. */
+.global-search .profile-notification-button{display:grid;place-items:center;width:48px;height:48px;min-width:48px;min-height:48px;flex-shrink:0;border:0;border-radius:50%;background:#f0f0f2;color:var(--color-primary,#161616);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+@media(prefers-color-scheme:dark){html:root .global-search .profile-notification-button{background:var(--dark-control,#2a2a2f);color:var(--color-primary,#f6f7f8)}}
