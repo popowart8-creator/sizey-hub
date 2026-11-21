@@ -744,3 +744,12 @@ html[data-hero-tone="dark"] .home-logo img {
 .home-products>.filterbar{width:100vw;max-width:none;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);overflow:hidden}
 .home-products>.filterbar>.chips{width:100%;min-width:0;box-sizing:border-box;padding:2px 16px;scroll-padding-inline:16px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
 .home-products>.filterbar>.chips::after{content:'';flex:0 0 0px}
+
+/* Home catalog is one continuous rounded sheet overlapping the blurred hero edge. */
+.tab-screen:has(> .home-intro) > .home-products{
+ position:relative;z-index:2;background:#fff;
+ width:100%;max-width:none;box-sizing:border-box;
+ margin-top:-24px;padding-top:32px;
+ border-radius:28px 28px 0 0;
+ isolation:isolate;
+}
