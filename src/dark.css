@@ -152,6 +152,71 @@
     background: var(--dark-control);
   }
 
+  :is(.sizey-card-interactive, .sizey-grades-item)[data-grade] {
+    --loyalty-accent: #dedee5;
+    --loyalty-start: #36363e;
+    --loyalty-end: #24242a;
+  }
+
+  :is(.sizey-card-interactive, .sizey-grades-item)[data-grade="bronze"] {
+    --loyalty-accent: #ffc2a0;
+    --loyalty-start: #624233;
+    --loyalty-end: #352621;
+  }
+
+  :is(.sizey-card-interactive, .sizey-grades-item)[data-grade="silver"] {
+    --loyalty-accent: #e1ecff;
+    --loyalty-start: #505d6b;
+    --loyalty-end: #2b323d;
+  }
+
+  :is(.sizey-card-interactive, .sizey-grades-item)[data-grade="gold"] {
+    --loyalty-accent: #ffe09a;
+    --loyalty-start: #695226;
+    --loyalty-end: #382e21;
+  }
+
+  :is(.sizey-card-interactive, .sizey-grades-item)[data-grade="platinum"] {
+    --loyalty-accent: #e2dbff;
+    --loyalty-start: #514967;
+    --loyalty-end: #2c283c;
+  }
+
+  html:root .customerbonus .sizey-card-interactive .sizey-bonus-card:not(.sizey-bonus-card--loading) {
+    background: linear-gradient(125deg, var(--loyalty-start), var(--loyalty-end));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loyalty-accent) 24%, transparent);
+  }
+
+  html:root .customerbonus .sizey-bonus-card:not(.sizey-bonus-card--loading)
+    :is(.sizey-bonus-caption, .sizey-bonus-level, .sizey-bonus-number small) {
+    color: var(--loyalty-accent);
+  }
+
+  html:root .customerbonus .sizey-card-interactive .sizey-grade-info-trigger {
+    color: var(--loyalty-accent);
+    background: color-mix(in srgb, var(--loyalty-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--loyalty-accent) 44%, transparent);
+  }
+
+  html:root .sizey-grades-info > p,
+  html:root .sizey-grades-info .sizey-grades-item small {
+    color: var(--dark-muted);
+    opacity: 1;
+  }
+
+  html:root .sizey-grades-info .sizey-grades-item {
+    background: var(--dark-control);
+    border-color: var(--dark-line);
+  }
+
+  html:root .sizey-grades-info .sizey-grades-item.is-current {
+    background: color-mix(in srgb, var(--loyalty-accent) 13%, var(--dark-surface));
+    border-color: color-mix(in srgb, var(--loyalty-accent) 60%, var(--dark-surface));
+  }
+
+  html:root .sizey-grades-info .sizey-grades-item .sizey-grades-dot { background: var(--loyalty-accent); }
+  html:root .sizey-grades-info .sizey-grades-item.is-current strong { color: var(--loyalty-accent); }
+
   /* The installation illustration and scannable QR keep their light canvas. */
   .install-drawing, .sizey-qr-fullscreen, .sizey-qr-overlay, .sizey-swipe-sheet--qr {
     color-scheme: light;
