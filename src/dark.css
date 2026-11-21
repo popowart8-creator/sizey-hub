@@ -207,3 +207,27 @@
   /* The installation artwork keeps its light canvas. */
   .install-drawing { color-scheme: light; }
 }
+
+
+/* Full-screen push permission onboarding: consistent in light and dark themes. */
+.push-onboarding-modal { color-scheme: light; }
+.push-onboarding-modal:focus,
+.push-onboarding-modal :focus:not(:focus-visible) { outline: none !important; box-shadow: none !important; }
+.push-onboarding-modal .push-onboarding-heading { text-align: center; }
+.push-onboarding-modal .push-onboarding-heading h1 { font-size: clamp(25px, 6.8vw, 30px); line-height: 1.16; margin: 0 0 12px; }
+.push-onboarding-modal .push-onboarding-heading p { font-size: 16px; line-height: 1.5; color: var(--color-secondary); margin: 0; }
+.push-onboarding-modal .push-onboarding-hero { height: 184px; width: 100%; display: grid; place-items: center; position: relative; perspective: 600px; }
+.push-onboarding-modal .push-onboarding-orb { width: 140px; height: 140px; border-radius: 35px; display: grid; place-items: center; transform: rotate(-10deg) rotateY(-18deg) rotateX(12deg); color: #424650; background: linear-gradient(135deg, #fff 5%, #e1e4eb 53%, #a8aebb 100%); box-shadow: 16px 24px 32px #33394b2c, inset 3px 3px 9px #ffffff, inset -8px -10px 16px #737b8a55; }
+.push-onboarding-modal .push-onboarding-orb svg { filter: drop-shadow(3px 6px 3px #42465050); }
+.push-onboarding-modal .push-onboarding-spark { position: absolute; border-radius: 50%; background: linear-gradient(135deg,#fff,#b6bbc8); box-shadow: 5px 8px 12px #33394b35; }
+.push-onboarding-modal .push-onboarding-spark--one { width: 27px; height: 27px; top: 20px; right: 17%; }
+.push-onboarding-modal .push-onboarding-spark--two { width: 15px; height: 15px; bottom: 22px; left: 19%; }
+.push-onboarding-modal .push-onboarding-actions { display: grid; gap: 10px; margin-top: clamp(24px, 6vh, 54px); padding-bottom: 8px; }
+.push-onboarding-modal .push-onboarding-actions .blackbtn { width: 100%; min-height: 52px; }
+.push-onboarding-modal .push-onboarding-later { background: transparent; border: 0; color: var(--color-secondary); padding: 14px; font: inherit; }
+@media (prefers-color-scheme: dark) {
+ .push-onboarding-modal { color-scheme: dark; }
+ .push-onboarding-modal .push-onboarding-orb { color: #f0f0f5; background: linear-gradient(135deg,#626674,#373b48 52%,#1e202a); box-shadow: 16px 24px 36px #0009, inset 3px 3px 10px #ffffff33, inset -8px -10px 15px #0008; }
+ .push-onboarding-modal .push-onboarding-orb svg { filter: drop-shadow(3px 6px 4px #0008); }
+ .push-onboarding-modal .push-onboarding-spark { background: linear-gradient(135deg,#777c8b,#303440); box-shadow: 5px 8px 14px #0008; }
+}
