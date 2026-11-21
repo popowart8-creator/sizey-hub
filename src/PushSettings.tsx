@@ -36,7 +36,7 @@ export default function PushSettings(){
    const applicationKey=Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
    const saved=await registration.pushManager.getSubscription();
    if(active){setCurrent(saved);setReady({registration,key:applicationKey});setMessage('')}
-   if(saved){await pushRequest('subscribe',{...saved.toJSON(),analytics:navigator.doNotTrack!=='1'}).catch(()=>{})}
+   if(saved&&localStorage.getItem('sizey-push-disabled')!=='1'){await pushRequest('subscribe',{...saved.toJSON(),analytics:navigator.doNotTrack!=='1'}).catch(()=>{})}
   }
   void setup().catch(()=>{if(active)setMessage('Не удалось подключиться к сервису уведомлений.')});
   return()=>{active=false};
