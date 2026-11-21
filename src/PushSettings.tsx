@@ -50,6 +50,7 @@ export default function PushSettings(){
    if(current){
     await pushRequest('unsubscribe',current.toJSON());
     await current.unsubscribe();
+    localStorage.setItem('sizey-push-disabled','1');
     setCurrent(null);
     setMessage('Уведомления отключены.');
     return;
@@ -70,6 +71,7 @@ export default function PushSettings(){
     await next.unsubscribe().catch(()=>{});
     throw error;
    }
+   localStorage.removeItem('sizey-push-disabled');
    setCurrent(next);
    setMessage('Уведомления включены.');
   }catch(error){
