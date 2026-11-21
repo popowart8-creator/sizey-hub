@@ -1,5 +1,6 @@
 import {useEffect,useState} from 'react';
 import {Bell} from 'lucide-react';
+import CustomerSheet from './CustomerSheet';
 import MenuRow from './MenuRow';
 import {platform} from './Navigation';
 
@@ -23,6 +24,7 @@ export default function PushSettings(){
  const requiresInstall=ios&&!standalone;
  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  const [retry,setRetry]=useState(0);
+ const [open,setOpen]=useState(false);
 
  useEffect(()=>{
   if(requiresInstall||!supported)return;
@@ -34,6 +36,7 @@ export default function PushSettings(){
    const applicationKey=Uint8Array.from(atob(key.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
    const saved=await registration.pushManager.getSubscription();
    if(active){setCurrent(saved);setReady({registration,key:applicationKey});setMessage('')}
+   if(saved){await pushRequest('subscribe',{...saved.toJSON(),analytics:navigator.doNotTrack!=='1'}).catch(()=>{})}
   }
   void setup().catch(()=>{if(active)setMessage('Не удалось подключиться к сервису уведомлений.')});
   return()=>{active=false};
@@ -55,6 +58,10 @@ export default function PushSettings(){
     setMessage('Разрешите уведомления для SIZEY в настройках устройства или браузера.');
     return;
    }
+   if(Notification.permission==='default'){
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted'){setMessage('Для включения уведомлений разрешите их в настройках устройства.');return}
+   }
    const next=await ready.registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:ready.key});
    try{
     const privacy=navigator as Navigator&{globalPrivacyControl?:boolean};
@@ -71,12 +78,17 @@ export default function PushSettings(){
   }finally{setBusy(false)}
  }
 
- return <section className="profile-utilities menu-list" aria-label="Уведомления">
-  {requiresInstall?<p>Чтобы получать уведомления на iPhone или iPad, откройте SIZEY в Safari, выберите «Поделиться» → «На экран Домой» и запустите приложение с иконки.</p>:
-   !supported?<p>Этот браузер не поддерживает push-уведомления SIZEY.</p>:
-   <MenuRow icon={<Bell size={23}/>} onClick={()=>ready?void toggle():setRetry(value=>value+1)} disabled={busy||!ready&&!message} chevron={false}>
-    {ready?(current?'Отключить уведомления':'Включить уведомления'):message?'Повторить подключение уведомлений':'Подключение уведомлений…'}
-   </MenuRow>}
-  {message&&<p role="status">{message}</p>}
- </section>;
+ return <>
+  <section className="profile-utilities menu-list" aria-label="Уведомления">
+   <MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Уведомления</MenuRow>
+  </section>
+  {open&&<CustomerSheet title="Уведомления" onClose={()=>setOpen(false)}>
+   <div className="push-settings-row" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,padding:'12px 0'}}>
+    <div><strong>Push-уведомления</strong><p style={{color:'var(--text-secondary, #777)',fontSize:13,margin:'6px 0 0'}}>Получайте новости, предложения и важные обновления SIZEY.</p></div>
+    <input type="checkbox" role="switch" aria-label="Push-уведомления" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()} style={{width:48,height:28,accentColor:'#34c759',flexShrink:0}} {...(ios?{switch:''}: {})}/>
+   </div>
+   {requiresInstall?<p>Чтобы получать уведомления на iPhone, добавьте SIZEY на экран «Домой» через Safari и откройте приложение с иконки.</p>:!supported?<p>Уведомления не поддерживаются этим браузером.</p>:!ready?<p>Подключаем уведомления… <button type="button" onClick={()=>setRetry(value=>value+1)}>Повторить</button></p>:null}
+   {message&&<p role="status" style={{fontSize:13}}>{message}</p>}
+  </CustomerSheet>}
+ </>;
 }
