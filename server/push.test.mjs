@@ -82,3 +82,24 @@ test('public subscription and admin push routes enforce separate origins and rol
  for(const path of ['/', '/?tab=cart', '/?tab=favorites', '/?tab=profile', '/?tab=wardrobe', '/?product=123', '/?blog=article'])assert.equal(validPushPath(path),true,path);
  for(const path of ['https://evil.test/', '//evil.test/', '/\\\\evil.test/', '/other', '/?x=1'])assert.equal(validPushPath(path),false,path);
  });
+
+test('targeted campaigns reach only selected customers and create private inbox entries',async()=>{
+ const received=[];
+ const push=createPushStore(':memory:',{send:async(sub,payload)=>received.push({endpoint:sub.endpoint,payload:JSON.parse(payload)})});
+ const alice=subscriber('alice'),bob=subscriber('bob');
+ push.subscribe(alice);push.subscribe(bob);
+ assert.equal(push.bind('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',alice),true);
+ assert.equal(push.bind('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',bob),true);
+ const campaign={id:randomUUID(),title:'Личное предложение',message:'Для вас',path:'/?tab=profile',audience:'selected',customers:['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']};
+ push.enqueue(campaign,'admin');
+ await push.drain();
+ assert.equal(received.length,1);
+ assert.equal(received[0].endpoint,alice.endpoint);
+ assert.equal(push.inbox('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb').length,0);
+ const notices=push.inbox('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+ assert.equal(notices.length,1);
+ assert.equal(notices[0].read,0);
+ push.markRead('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',notices[0].id);
+ assert.equal(push.inbox('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')[0].read,1);
+ assert.throws(()=>push.enqueue({...campaign,id:randomUUID(),customers:[]},'admin'),{status:400});
+});
