@@ -284,14 +284,24 @@ jobs:
           sshpass -e ssh "${options[@]}" root@95.181.213.9 "umask 077; mkdir -p '$target'"
           tar --exclude=node_modules -czf - server | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
           sshpass -e ssh "${options[@]}" root@95.181.213.9 "set -eu; cp -a '$target/server/.' /opt/sizey/hub-api/server/; cd /opt/sizey/hub-api; docker compose build auth; docker compose up -d --no-deps auth"
-      - name: Verify notifications API
+      - name: Verify API after restart and inspect failures
+        env:
+          SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}
         run: |
-          set -eu
-          for i in $(seq 1 20); do
-            if curl --fail --silent --show-error --max-time 8 https://hub.sizey.ru/hub-api/health > /dev/null; then break; fi
+          set -euo pipefail
+          ok=0
+          for i in $(seq 1 30); do
+            health=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 8 https://hub.sizey.ru/hub-api/health || true)
+            inbox=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 8 https://hub.sizey.ru/hub-api/notifications || true)
+            echo "API health: $health; unauthenticated inbox: $inbox (attempt $i)"
+            if [ "$health" = 200 ] && [ "$inbox" = 401 ]; then ok=1; break; fi
             sleep 3
           done
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' https://hub.sizey.ru/hub-api/notifications)" = 401
+          if [ "$ok" != 1 ]; then
+            options=(-o ConnectTimeout=20 -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes)
+            sshpass -e ssh "${options[@]}" root@95.181.213.9 "docker inspect --format 'API container: {{.State.Status}} (restarts: {{.RestartCount}})' sizey-hub-api; docker logs --tail 35 sizey-hub-api 2>&1 | sed -E 's/(password|token|secret|authorization|cookie)([=: ]+)[^ ]+/\\1\\2[REDACTED]/Ig'" || true
+            exit 1
+          fi
       - name: Remove SSH key
         if: always()
         run: rm -f ~/.ssh/id_ed25519
