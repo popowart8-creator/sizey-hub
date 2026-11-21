@@ -61,6 +61,15 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
    }
    if(path==='/hub-api/admin/logout'&&req.method==='POST'){const sid=token(req);if(sid)sessions.delete(hash(sid));reply(200,{ok:true},cookie('',0));return true}
    const user=await actor(req);
+   if(path==='/hub-api/admin/push/customers'&&req.method==='GET'){
+    reply(200,{customers:await listPushCustomers()});return true;
+   }
+   if(path==='/hub-api/admin/push/automation'){
+    if(!push)throw new ContentError(503,'Уведомления недоступны');
+    if(req.method==='GET'){reply(200,{settings:push.automationSettings()});return true}
+    if(req.method==='POST'){const settings=push.setAutomationSettings(await body(req,4096));reply(200,{settings});return true}
+    throw new ContentError(405,'Метод не поддерживается');
+   }
    if(path==='/hub-api/admin/push'){
     if(!push)throw new ContentError(503,'Уведомления временно недоступны');
     if(req.method==='GET'){reply(200,push.status());return true}
