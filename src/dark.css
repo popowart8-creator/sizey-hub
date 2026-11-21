@@ -1,0 +1,164 @@
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --dark-canvas: #151517;
+    --dark-surface: #202024;
+    --dark-control: #2a2a2f;
+    --dark-selected: #38383f;
+    --dark-text: #f3f3f5;
+    --dark-muted: #b7b7c0;
+    --dark-line: #414149;
+    --dark-danger: #ff9198;
+  }
+
+  html:root,
+  html:root body {
+    background: var(--dark-canvas);
+    color: var(--dark-text);
+  }
+
+  html:root :is(
+    .product-screen, .product-screen .productmodal, .overlay .productmodal,
+    .overlay:has(.productmodal), .search-screen, .search-screen .search-top,
+    .password-screen, .sizey-blog-article, .home-intro .editorial-hero
+  ) {
+    background: var(--dark-canvas);
+    color: var(--dark-text);
+  }
+
+  html:root .tab-screen:has(> .home-intro) > .home-products {
+    background: var(--dark-canvas) !important;
+  }
+
+  html:root :is(
+    .sheet, .delivery-swipe-sheet, .sizey-swipe-sheet, .sizey-history-dialog,
+    .profile-logout-dialog, .install-modal, .install-sheet, .install-screen,
+    .cartlayout aside, .sizey-blog-card, .sizey-blog-empty, .sizey-blog-state,
+    .sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-card
+  ) {
+    background: var(--dark-surface);
+    color: var(--dark-text);
+    border-color: var(--dark-line);
+  }
+
+  html:root :is(
+    .search-field, .search, .search input, .filter, .filterbar .chips button,
+    .authcard--native .auth-field input, .authcard--native .authtabs,
+    .global-search .round-search, .page-top > .icon-control,
+    .search-top > .icon-control:first-child, .product-back, .product-favorite-toolbar,
+    .overlay .productmodal > .close, .sheet > .close, .sizey-blog-back,
+    .install-sheet-top > .close, .profile-logout-choices button, .quantity button,
+    .outlinebtn, .whitebtn, .sizes button, .sheet input
+  ) {
+    background: var(--dark-control);
+    color: var(--dark-text);
+    border-color: var(--dark-line);
+  }
+
+  html:root :is(
+    .filterbar .chips .chosen, .authcard--native .authtabs button.active,
+    .sizey-grades-item.is-current, .menu-list .menu-row:active, .icon-control:active,
+    .sizes button.chosen, .sizes button.active, .sizes button.selected
+  ) {
+    background: var(--dark-selected);
+    color: var(--dark-text);
+    border-color: #696974;
+  }
+
+  html:root :is(
+    .productsub, .productmeta small, .detail label span, .deliverynote,
+    .cartlayout aside small, .cart-count, .authhint, .auth-field label, .auth-field button,
+    .authcard--native .authtabs button:not(.active), .authcard--native form > label,
+    .authpage:has(.customerlayout) .customer-profile-heading p,
+    .sizey-qr-hint, .sizey-blog-eyebrow, .sizey-blog-lead,
+    .sizey-blog-card-info > span:not(.sizey-blog-eyebrow):not(.sizey-blog-more),
+    .sizey-blog-empty p, .sizey-blog-sources p, .install-modal p,
+    .install-sheet .install-instruction, .install-browser-hint, .install-skip,
+    .screen-loading, .empty-state p, .bonusoperation small
+  ) {
+    color: var(--dark-muted);
+  }
+
+  html:root :is(
+    .sizey-blog, .sizey-blog-prose p, .search-field input,
+    .install-instruction strong, .install-instruction svg, .detail h2, .detail h3
+  ) { color: var(--dark-text); }
+
+  html:root :is(input, textarea)::placeholder { color: var(--dark-muted); }
+  html:root .auth-field input::placeholder { color: transparent; }
+  html:root .authcard--native .auth-field--prefix-only input:not(:focus) { color: transparent; }
+
+  html:root :is(
+    .menu-list .menu-row, .cartrow, .deliverynote, .sizey-grades-item,
+    .sizey-history-dialog-header, .bonusoperation, .search-screen .search-top,
+    .sizey-blog-sources, .detail .sizes button
+  ) { border-color: var(--dark-line); }
+
+  html:root :is(.blackbtn, .profile-logout-choices button[type=submit]) {
+    background: #eeeef1;
+    color: #161618;
+    border-color: transparent;
+  }
+
+  html:root .product-screen .detail-cart-action {
+    background: #eeeef1;
+    color: #161618 !important;
+    -webkit-text-fill-color: #161618 !important;
+  }
+
+  html:root :is(.autherror, .auth-error-toast) {
+    background: #47272c;
+    color: #ffd1d4 !important;
+  }
+
+  html:root .profile-account-actions .profile-logout { color: var(--dark-danger); }
+  html:root .profile-logout-choices button:focus-visible { outline-color: var(--dark-text); }
+
+  html:root body > .nav-anchor > nav.tabbar {
+    background: #202024ed !important;
+    border-color: var(--dark-line) !important;
+  }
+
+  html:root .tabbar .tab { color: var(--dark-muted); }
+  html:root .tabbar .tab.is-active { color: var(--dark-text); background: var(--dark-selected); }
+  html:root .tabbar--android .tab.is-active .tab-icon { background: var(--dark-selected); }
+  html:root .tabbar .tab.is-active svg { color: var(--dark-text); }
+
+  html:root :is(.productimage, .image-loading-wrap, .detailgallery, .detail-gallery-slide) {
+    background: var(--dark-surface);
+  }
+
+  html:root :is(
+    .sizey-skeleton-bone, .image-loading-shimmer,
+    .authpage .sizey-profile-loading .customerlayout .customerbonus .sizey-profile-loading-card,
+    .authpage:has(.customerlayout) .customerbonus .sizey-bonus-card.sizey-bonus-card--loading
+  ) {
+    background-color: var(--dark-control) !important;
+  }
+
+  html:root :is(.sizey-skeleton-bone,.image-loading-shimmer,.sizey-profile-loading-card)::after {
+    background-image: linear-gradient(90deg,transparent,#ffffff16,transparent) !important;
+  }
+
+  html:root .authpage:has(.customerlayout) .sizey-bonus-card--loading :is(
+    .sizey-bonus-brand,.sizey-bonus-caption,.sizey-bonus-client-name,.sizey-bonus-number
+  ) { color: var(--dark-muted) !important; }
+
+  html:root :is(.delivery-swipe-handle,.sizey-swipe-handle) {
+    background: #686872 !important;
+  }
+
+  html:root :is(.install-browser-note,.install-steps li > b) {
+    background: var(--dark-control);
+  }
+
+  /* The installation illustration and scannable QR keep their light canvas. */
+  .install-drawing, .sizey-qr-fullscreen, .sizey-qr-overlay, .sizey-swipe-sheet--qr {
+    color-scheme: light;
+  }
+
+  html:root .sizey-swipe-sheet.sizey-swipe-sheet--qr {
+    background: #fff;
+    color: #181818;
+  }
+}
