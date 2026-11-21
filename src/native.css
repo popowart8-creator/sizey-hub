@@ -739,3 +739,8 @@ html[data-hero-tone="dark"] .home-logo img {
 .product-screen .detail-gallery-slide{transform:none!important;touch-action:pan-x;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .product-screen .detail-gallery-slide img{transform:none!important;transition:none!important;pointer-events:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
 @media(prefers-reduced-motion:reduce){.product-card{transition:none!important}}
+
+/* Home category chips span the viewport, with 16px inset at both scroll ends. */
+.home-products>.filterbar{width:100vw;max-width:none;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);overflow:hidden}
+.home-products>.filterbar>.chips{width:100%;min-width:0;box-sizing:border-box;padding:2px 16px;scroll-padding-inline:16px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.home-products>.filterbar>.chips::after{content:'';flex:0 0 0px}
