@@ -1,4 +1,4 @@
-const CACHE='sizey-v22';
+const CACHE='sizey-v23';
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['/','/brand/logo.svg'])));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
 async function remember(request,response){if(response.ok){const type=response.headers.get('content-type')||'';if(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(type)){const cache=await caches.open(CACHE);await cache.put(request,response.clone())}}return response}
@@ -27,7 +27,7 @@ self.addEventListener('push',event=>{
  try{data=event.data?.json()}catch{}
  const {title='SIZEY',body='Откройте SIZEY, чтобы узнать о новостях магазина.',path='/',id}=data||{};
  event.waitUntil(self.registration.showNotification(title,{
-  body,icon:'/icon-192.png',data:{path,id}
+  body,icon:'/push-icon.svg',badge:'/push-icon.svg',data:{path,id}
  }).then(()=>reportPush(id,'shown')));
 });
 
