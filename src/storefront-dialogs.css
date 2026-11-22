@@ -1,0 +1,93 @@
+:root {
+  --dialog-surface: #202024;
+  --dialog-scrim: #17171b66;
+  --dialog-blur: blur(5px);
+}
+
+html:root :is(.product-screen, .product-screen .productmodal, .search-screen,
+  .search-screen .search-top, .password-screen, .sizey-blog-article,
+  .overlay > .sheet, .customer-sheet, .profile-logout-dialog) {
+  color-scheme: dark;
+  --color-primary: #f6f7f8;
+  --color-secondary: #b5b5be;
+  --color-tertiary: #ffffff30;
+  --dark-control: #303036;
+  background: var(--dialog-surface);
+  color: var(--color-primary);
+}
+
+html:root :is(.product-screen, .overlay > .sheet, .customer-sheet,
+  .profile-logout-dialog, .password-screen) .blackbtn {
+  background: #eeeef1;
+  color: #202024 !important;
+  -webkit-text-fill-color: #202024 !important;
+}
+
+html:root :is(.overlay > .sheet, .customer-sheet, .profile-logout-dialog) p {
+  color: var(--color-secondary);
+}
+
+html:root :is(.overlay > .sheet, .password-screen, .search-screen) input:not([type=checkbox]) {
+  color: var(--color-primary);
+  background: var(--dark-control);
+  border-color: var(--color-tertiary);
+}
+
+html:root .search-screen :is(.search-field, .search-field input) {
+  background: var(--dark-control);
+}
+
+html:root .detail-favorite-action.saved svg {
+  color: #ff1744;
+}
+
+.product-popup-backdrop,
+.delivery-swipe-overlay.is-visible,
+.overlay,
+.profile-logout-dialog::backdrop,
+.fullscreen-photo {
+  -webkit-backdrop-filter: var(--dialog-blur);
+  backdrop-filter: var(--dialog-blur);
+}
+
+.product-popup-backdrop,
+.profile-logout-dialog::backdrop {
+  background: var(--dialog-scrim);
+}
+
+.fullscreen-photo {
+  background: #101013ed;
+}
+
+@media (min-width: 960px) and (hover: hover) and (pointer: fine) {
+  #root:has(> .search-screen)::before,
+  body:has(> .password-screen)::before,
+  .tab-screen:has(.sizey-blog-article)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: var(--dialog-scrim);
+    -webkit-backdrop-filter: var(--dialog-blur);
+    backdrop-filter: var(--dialog-blur);
+  }
+
+  #root:has(> .search-screen)::before { z-index: 34; }
+  body:has(> .password-screen)::before { z-index: 109; }
+  .tab-screen:has(.sizey-blog-article)::before { z-index: 1; }
+}
+
+html:root .product-screen .sizes button:not(.chosen) {
+  background: var(--dark-control);
+  border-color: var(--color-tertiary);
+  color: var(--color-primary);
+}
+
+html:root .product-screen .sizes button.chosen {
+  background: #eeeef1;
+  border-color: #eeeef1;
+  color: #202024;
+}
+
+html:root .sizey-blog-article .sizey-blog-prose p {
+  color: var(--color-primary);
+}
