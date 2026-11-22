@@ -1,4 +1,4 @@
-const CACHE='sizey-v28';
+const CACHE='sizey-v29';
 const MEDIA_CACHE='sizey-media-v1';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -8,19 +8,24 @@ self.addEventListener('install',event=>{
   if(!home.ok)throw Error('Offline shell unavailable');
   await cache.put('/',home.clone());
   const html=await home.text();
-  const urls=['/brand/logo.svg','/manifest.webmanifest','/offline.html'];
-  const manifest=await fetch('/offline-assets.json',{cache:'no-store'});
-  if(!manifest.ok)throw Error('Offline asset inventory unavailable');
-  const assets=await manifest.json();
-  if(!Array.isArray(assets)||!assets.some(x=>typeof x==='string'&&x.endsWith('.js')))throw Error('Offline asset inventory invalid');
-  urls.push(...assets.filter(x=>typeof x==='string'&&x.startsWith('/assets/')));
-  for(const match of html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g))urls.push(match[1]);
-  const results=await Promise.allSettled([...new Set(urls)].map(async url=>{
-   const response=await fetch(url,{cache:'no-store'});
-   if(!response.ok||(/\.(?:js|css)(?:\?|$)/.test(url)&&!/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))throw Error('Offline asset failed: '+url);
-   await cache.put(url,response);
-  }));
-  if(results.some(result=>result.status==='rejected'))throw Error('Offline assets incomplete');
+  // Cache the app entrypoint first. Optional admin/media assets must not prevent SW installation.
+  const entry=[...html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g)].map(match=>match[1]);
+  const urls=['/brand/logo.svg','/manifest.webmanifest','/offline.html',...entry];
+  const manifest=await fetch('/offline-assets.json',{cache:'no-store'}).catch(()=>null);
+  if(manifest?.ok){
+   const assets=await manifest.json().catch(()=>[]);
+   if(Array.isArray(assets))urls.push(...assets.filter(x=>typeof x==='string'&&x.startsWith('/assets/')));
+  }
+  for(const url of [...new Set(urls)]){
+   try{
+    const response=await fetch(url,{cache:'no-store'});
+    if(!response.ok)continue;
+    if(/\\.(?:js|css)(?:\\?|$)/.test(url)&&!/(javascript|text\\/css)/.test(response.headers.get('content-type')||''))continue;
+    await cache.put(url,response);
+   }catch{}
+  }
+  // Do not activate an incomplete shell: the initial JS/CSS is required offline.
+  for(const url of entry)if(!await cache.match(url))throw Error('Offline entry asset unavailable: '+url);
  })());
  self.skipWaiting();
 });
