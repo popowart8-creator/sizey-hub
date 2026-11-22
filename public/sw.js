@@ -9,7 +9,7 @@ self.addEventListener('install',event=>{
   await cache.put('/',home.clone());
   const html=await home.text();
   // Cache the app entrypoint first. Optional admin/media assets must not prevent SW installation.
-  const entry=[...html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g)].map(match=>match[1]);
+  const entry=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g)].map(match=>match[1]);
   const urls=['/brand/logo.svg','/manifest.webmanifest','/offline.html',...entry];
   const manifest=await fetch('/offline-assets.json',{cache:'no-store'}).catch(()=>null);
   if(manifest?.ok){
