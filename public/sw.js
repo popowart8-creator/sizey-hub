@@ -74,7 +74,9 @@ self.addEventListener('fetch',event=>{
    const cache=await caches.open(CACHE);
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),1800);
    try{
-    const cached=await cache.match('/');\n    if(cached){event.waitUntil(fetch(request,{cache:'no-store'}).then(response=>response.ok?cache.put('/',response):undefined).catch(()=>{}));return cached;}\n    const response=await fetch(request,{cache:'no-store',signal:controller.signal});
+    const cached=await cache.match('/');
+    if(cached){event.waitUntil(fetch(request,{cache:'no-store'}).then(response=>response.ok?cache.put('/',response):undefined).catch(()=>{}));return cached;}
+    const response=await fetch(request,{cache:'no-store',signal:controller.signal});
     if(response.ok)await cache.put('/',response.clone());
     return response.ok?response:(await cache.match('/')||await cache.match('/offline.html')||response);
    }catch{return await cache.match('/')||await cache.match('/offline.html')||Response.error()}
