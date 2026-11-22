@@ -1,4 +1,4 @@
-const CACHE='sizey-v31';
+const CACHE='sizey-v32';
 const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -75,9 +75,10 @@ self.addEventListener('fetch',event=>{
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),1800);
    try{
     const cached=await cache.match('/');
-    if(cached){event.waitUntil(fetch(request,{cache:'no-store'}).then(response=>response.ok?cache.put('/',response):undefined).catch(()=>{}));return cached;}
+    if(cached)return cached;
     const response=await fetch(request,{cache:'no-store',signal:controller.signal});
-    if(response.ok)await cache.put('/',response.clone());
+    // A new HTML shell is safe to persist only when its matching JS/CSS are cached.
+    if(response.ok){const html=await response.clone().text();const assets=[...html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g)].map(match=>match[1]);if((await Promise.all(assets.map(asset=>cache.match(asset)))).every(Boolean))await cache.put('/',response.clone());}
     return response.ok?response:(await cache.match('/')||await cache.match('/offline.html')||response);
    }catch{return await cache.match('/')||await cache.match('/offline.html')||Response.error()}
    finally{clearTimeout(timer)}
