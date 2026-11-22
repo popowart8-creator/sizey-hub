@@ -5,7 +5,7 @@ export const isAdminPhoto=(url:string)=>typeof url==='string'&&url.startsWith('/
 let opening:Promise<IDBDatabase>|undefined;
 function database():Promise<IDBDatabase>{
  if(!('indexedDB' in window))return Promise.reject(Error('IndexedDB unavailable'));
- return opening??=new Promise((resolve,reject)=>{
+ return opening??=new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(DB,1);
   request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(STORE))request.result.createObjectStore(STORE)};
   request.onsuccess=()=>{request.result.onversionchange=()=>request.result.close();resolve(request.result)};
