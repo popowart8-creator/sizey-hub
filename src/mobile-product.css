@@ -1,0 +1,11 @@
+.product-screen:not([role="dialog"]) .detail-gallery-slide {
+  aspect-ratio: 3 / 4;
+}
+
+.product-screen:not([role="dialog"]) .detail-gallery-slide :is(.image-loading-detail, .detailphoto) {
+  width: 100%;
+  height: 100% !important;
+  min-height: 0;
+  max-height: none;
+  object-fit: cover;
+}
