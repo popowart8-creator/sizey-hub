@@ -1,4 +1,4 @@
-const CACHE='sizey-v33';
+const CACHE='sizey-v34';
 const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -23,13 +23,14 @@ self.addEventListener('install',event=>{
   // Publish the shell only after every entrypoint asset is safely on disk.
   await cache.put('/',new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));
  })());
- self.skipWaiting();
+ // Keep activation inside the install lifetime so iOS cannot terminate it prematurely.
+ event.waitUntil(self.skipWaiting());
 });
 self.addEventListener('activate',event=>{
  event.waitUntil((async()=>{await self.clients.claim();const keys=await caches.keys();const old=keys.filter(key=>/^sizey-v\\d+$/.test(key)&&key!==CACHE);const current=await caches.open(CACHE);if(await current.match('/'))await Promise.all(old.map(key=>caches.delete(key)));})());
 });
 async function cacheResponse(cache,request,response){
- if(response.ok&&response.type!=='opaque'&&(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))await cache.put(request,response.clone());
+ if(response.ok&&response.type!=='opaque'&&(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))try{await cache.put(request,response.clone())}catch{/* Storage quota must never prevent displaying the fetched asset. */}
  return response;
 }
 // Keep catalog thumbnails on disk, even if their cards were not scrolled into view.
