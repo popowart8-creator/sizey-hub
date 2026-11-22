@@ -1,4 +1,4 @@
-import {isStandalone} from './InstallPrompt';
+import {isStandalone} from './displayMode';
 import {useEffect,useRef,useState} from 'react';
 
 const defaultSlides=[
