@@ -40,6 +40,7 @@ jobs:
       - run: npm run test:auth
       - run: npm run test:bonus-cabinet
       - run: node --test server/blog.test.mjs
+      - run: node --test server/catalog-options.test.mjs
       - name: Render SIZEY app icons (PNG for iOS and Android)
         run: |
           python3 -m pip install --quiet --break-system-packages cairosvg
