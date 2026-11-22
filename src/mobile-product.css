@@ -9,3 +9,15 @@
   max-height: none;
   object-fit: cover;
 }
+
+html:root .product-screen:not([role="dialog"]) .detail-description {
+  color: var(--color-primary);
+  font-size: 14px !important;
+  line-height: 1.8 !important;
+}
+
+html:root .product-screen:not([role="dialog"]) .detail-delivery {
+  color: #777870;
+  font-size: 13px;
+  line-height: 1.5;
+}
