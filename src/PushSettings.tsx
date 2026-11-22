@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {Bell} from 'lucide-react';
+import CustomerSheet from './CustomerSheet';
 import './push-settings.css';
 import {platform} from './Navigation';
 
@@ -15,7 +15,7 @@ async function pushRequest(action:string,data?:unknown){
 async function bindCustomer(subscription:PushSubscription){
  await fetch('/hub-api/notifications/bind',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(subscription.toJSON())}).catch(()=>{});
 }
-export default function PushSettings({backgroundOnly=false}:{backgroundOnly?:boolean}={}){
+export default function PushSettings({visible,onClose}:{visible:boolean;onClose:()=>void}){
  const [ready,setReady]=useState<{registration:ServiceWorkerRegistration;key:Uint8Array<ArrayBuffer>}>();
  const [current,setCurrent]=useState<PushSubscription|null>(null);
  const [busy,setBusy]=useState(false);
@@ -81,14 +81,13 @@ export default function PushSettings({backgroundOnly=false}:{backgroundOnly?:boo
   }finally{setBusy(false)}
  }
 
- if(backgroundOnly)return null;
- return <div className="push-settings">
-  <label className="menu-row push-settings-row">
-   <Bell size={23} aria-hidden="true"/>
+ if(!visible)return null;
+ return <CustomerSheet title="Настройки уведомлений" onClose={onClose}>
+  <label className="push-settings-row">
    <span>Push-уведомления</span>
-   <input type="checkbox" role="switch" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()}/>
+   <input type="checkbox" role="switch" {...{switch:""}} checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()}/>
   </label>
   {requiresInstall?<p>Чтобы получать уведомления на iPhone, добавьте SIZEY на экран «Домой» через Safari и откройте приложение с иконки.</p>:!supported?<p>Уведомления не поддерживаются этим браузером.</p>:!ready?<p>{message||'Подключаем уведомления…'} <button type="button" onClick={()=>setRetry(value=>value+1)}>Повторить</button></p>:null}
   {ready&&message&&<p role="status">{message}</p>}
- </div>;
+ </CustomerSheet>;
 }
