@@ -2,6 +2,9 @@ import {useEffect,useState} from 'react';
 
 // Keep already decoded images visible immediately when switching tabs and remounting cards.
 const loadedImages=new Set<string>();
+// Retain decoded image elements across route changes, including admin-uploaded URLs.
+const decodedImages=new Map<string,HTMLImageElement>();
+const rememberImage=(url:string)=>{if(decodedImages.has(url))return;const image=new Image();image.src=url;decodedImages.set(url,image);if(decodedImages.size>160){const oldest=decodedImages.keys().next().value;if(oldest)decodedImages.delete(oldest)}};
 const imageCache='sizey-media-v2';
 const sameOrigin=(url:string)=>{try{return new URL(url,location.href).origin===location.origin}catch{return false}};
 export default function ProductImage({src,alt,className,width,height,loading}:{src:string;alt:string;className?:string;width?:number;height?:number;loading?:'lazy'|'eager'}){
@@ -9,7 +12,7 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  const [status,setStatus]=useState<'loading'|'ready'|'error'>(()=>loadedImages.has(src)?'ready':'loading');
  useEffect(()=>{setCurrent(src);setStatus(loadedImages.has(src)?'ready':'loading')},[src]);
  useEffect(()=>{
-  if(!('caches' in window)||!sameOrigin(src))return;
+  if(navigator.onLine||!('caches' in window)||!sameOrigin(src))return;
   let active=true;let objectUrl:string|undefined;
   (async()=>{for(const url of [src,src.replace('-360.webp','.webp')]){
    try{const saved=await caches.match(url);if(!saved||!saved.ok)continue;
@@ -36,6 +39,6 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  return <span className={'image-loading-wrap '+(className==='detailphoto'?'image-loading-detail':'')+(status==='loading'?' is-loading':'')+(status==='error'?' image-unavailable':'')}>
   {status==='loading'&&<span className="shimmer image-loading-shimmer" aria-hidden="true"/>}
   {status==='error'&&<span className="image-unavailable-label" role="img" aria-label="Фото недоступно">Фото недоступно</span>}
-  <img className={className} src={current} alt={alt} width={width} height={height} loading={loading||'lazy'} decoding="async" onLoad={()=>{loadedImages.add(src);setStatus('ready');persist(src)}} onError={failed} style={{opacity:status==='ready'?1:0}}/>
+  <img className={className} src={current} alt={alt} width={width} height={height} loading={loading||'lazy'} decoding="async" onLoad={()=>{loadedImages.add(src);rememberImage(src);setStatus('ready');persist(src)}} onError={failed} style={{opacity:status==='ready'?1:0}}/>
  </span>;
 }
