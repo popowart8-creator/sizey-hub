@@ -3,6 +3,8 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  const [current,setCurrent]=useState(src);
  const [status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
  useEffect(()=>{setCurrent(src);setStatus('loading')},[src]);
+ // Offline WebKit may leave image requests pending forever without firing onError.
+ useEffect(()=>{if(status!=='loading')return;const timeout=setTimeout(()=>setStatus('error'),navigator.onLine?12000:2500);return()=>clearTimeout(timeout)},[current,status]);
  const failed=()=>{
   if(current.includes('-360.webp')){setCurrent(current.replace('-360.webp','.webp'));setStatus('loading');return}
   setStatus('error');
