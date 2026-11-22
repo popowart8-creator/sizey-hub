@@ -952,3 +952,16 @@ html[data-hero-tone="dark"] .home-logo img {
  body:has(.product-screen)>.product-back,
  body:has(.product-screen)>.product-favorite-toolbar{z-index:1101!important}
 }
+
+/* Stable native tab layout: route changes replace content without translating the
+   underlying viewport. Only actual overlay screens animate. */
+@media(max-width:800px){
+ .tab-screen,.tab-screen--back{animation:none!important;transform:none!important;opacity:1!important}
+ body>.nav-anchor{visibility:visible!important}
+ body>.nav-anchor>nav.tabbar{animation:none!important;transition:none!important}
+ /* Product detail covers the fixed navigation; the navigation itself never hides
+    and never has to reappear when the product sheet slides out. */
+ body:has(.product-screen) .product-screen{z-index:1100!important}
+ body:has(.product-screen)>.product-back,
+ body:has(.product-screen)>.product-favorite-toolbar{z-index:1101!important}
+}
