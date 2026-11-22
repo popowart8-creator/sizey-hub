@@ -82,3 +82,9 @@
 .native-skeleton-bonus-details .native-skeleton-date{width:34%}
 .native-skeleton-amount{width:68px;height:20px;flex:none}
 @media(prefers-reduced-motion:reduce){.native-list-skeleton .sizey-skeleton-bone{animation:none!important}}
+
+/* Product thumbnail label: legible in both color schemes. */
+.productimage .tag{z-index:2;display:inline-flex;align-items:center;gap:7px;top:14px;left:13px;padding:9px 13px;border:1px solid rgba(255,255,255,.65);border-radius:999px;background:rgba(255,255,255,.94);color:#20201e!important;font-size:10px;font-weight:800;letter-spacing:.11em;line-height:1;text-transform:uppercase;box-shadow:0 3px 16px rgba(0,0,0,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);text-shadow:none}
+.productimage .tag::before{content:'';display:block;flex:none;width:6px;height:6px;border-radius:50%;background:#a77443;box-shadow:0 0 0 3px rgba(167,116,67,.14)}
+@media(max-width:600px){.productimage .tag{top:10px;left:9px;padding:8px 10px;font-size:9px;letter-spacing:.075em;gap:6px}}
+@media(prefers-color-scheme:dark){.productimage .tag{background:rgba(250,248,244,.96);color:#20201e!important;border-color:rgba(255,255,255,.55)}}
