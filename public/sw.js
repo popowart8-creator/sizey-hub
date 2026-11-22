@@ -1,5 +1,5 @@
-const CACHE='sizey-v29';
-const MEDIA_CACHE='sizey-media-v1';
+const CACHE='sizey-v30';
+const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
  event.waitUntil((async()=>{
@@ -10,7 +10,7 @@ self.addEventListener('install',event=>{
   const html=await home.text();
   // Cache the app entrypoint first. Optional admin/media assets must not prevent SW installation.
   const entry=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g)].map(match=>match[1]);
-  const urls=['/brand/logo.svg','/manifest.webmanifest','/offline.html',...entry];
+  const urls=['/brand/logo.svg','/brand/857220148072.webp','/brand/943151810212.webp','/brand/673427758392.webp','/manifest.webmanifest','/offline.html',...entry];
   const manifest=await fetch('/offline-assets.json',{cache:'no-store'}).catch(()=>null);
   if(manifest?.ok){
    const assets=await manifest.json().catch(()=>[]);
@@ -40,7 +40,7 @@ async function cacheResponse(cache,request,response){
 // Keep catalog thumbnails on disk, even if their cards were not scrolled into view.
 self.addEventListener('message',event=>{
  if(event.data?.type!=='CACHE_CATALOG_IMAGES'||!Array.isArray(event.data.urls))return;
- const urls=[...new Set(event.data.urls)].filter(url=>typeof url==='string'&&url.startsWith('/brand/')&&!url.includes('..')).slice(0,80);
+ const urls=[...new Set(event.data.urls)].filter(url=>typeof url==='string'&&url.startsWith('/brand/')&&!url.includes('..')).slice(0,500);
  event.waitUntil((async()=>{
   const cache=await caches.open(MEDIA_CACHE);
   let index=0;
