@@ -302,6 +302,17 @@ jobs:
           cp -a "$1/server/." server/
           "${compose[@]}" build auth
           "${compose[@]}" up -d --no-deps auth
+          # Compose recreation drops manually attached AI network; restore it every time.
+          if docker network inspect sizey_ai_internal >/dev/null 2>&1 && docker container inspect sizey-local-ollama >/dev/null 2>&1; then
+            docker start sizey-local-ollama >/dev/null
+            if ! docker inspect --format '{{json .NetworkSettings.Networks}}' sizey-local-ollama | grep -q '"sizey_ai_internal"'; then
+              docker network connect sizey_ai_internal sizey-local-ollama
+            fi
+            if ! docker inspect --format '{{json .NetworkSettings.Networks}}' sizey-hub-api | grep -q '"sizey_ai_internal"'; then
+              docker network connect sizey_ai_internal sizey-hub-api
+            fi
+            docker exec sizey-hub-api node --input-type=module -e "const r=await fetch(process.env.OLLAMA_URL+'/api/tags',{signal:AbortSignal.timeout(15000)});if(!r.ok)process.exit(1);const d=await r.json();if(!(d.models||[]).some(m=>m.name==='qwen2.5:1.5b'))process.exit(1);console.log('Qwen connectivity verified')"
+          fi
           REMOTE
       - name: Verify API after restart and inspect failures
         env:
