@@ -1,4 +1,5 @@
-const CACHE='sizey-v25';
+const CACHE='sizey-v26';
+const MEDIA_CACHE='sizey-media-v1';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
  event.waitUntil((async()=>{
@@ -8,16 +9,17 @@ self.addEventListener('install',event=>{
   await cache.put('/',home.clone());
   const html=await home.text();
   const urls=['/brand/logo.svg','/manifest.webmanifest'];
+  try{const manifest=await fetch('/offline-assets.json',{cache:'no-store'});if(manifest.ok){const assets=await manifest.json();if(Array.isArray(assets))urls.push(...assets.filter(x=>typeof x==='string'&&x.startsWith('/assets/')))}}catch{}
   for(const match of html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g))urls.push(match[1]);
   await Promise.allSettled([...new Set(urls)].map(async url=>{
    const response=await fetch(url,{cache:'no-store'});
-   if(response.ok)await cache.put(url,response);
+   if(response.ok&&(/\.(?:js|css)(?:\?|$)/.test(url)?/(javascript|text\/css)/.test(response.headers.get('content-type')||''):true))await cache.put(url,response);
   }));
  })());
  self.skipWaiting();
 });
 self.addEventListener('activate',event=>{
- event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE).map(key=>caches.delete(key)))));
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE&&key!==MEDIA_CACHE).map(key=>caches.delete(key)))));
  self.clients.claim();
 });
 async function cacheResponse(cache,request,response){
@@ -29,7 +31,7 @@ self.addEventListener('message',event=>{
  if(event.data?.type!=='CACHE_CATALOG_IMAGES'||!Array.isArray(event.data.urls))return;
  const urls=[...new Set(event.data.urls)].filter(url=>typeof url==='string'&&url.startsWith('/brand/')&&!url.includes('..')).slice(0,80);
  event.waitUntil((async()=>{
-  const cache=await caches.open(CACHE);
+  const cache=await caches.open(MEDIA_CACHE);
   let index=0;
   await Promise.all(Array.from({length:4},async()=>{
    while(index<urls.length){
@@ -77,6 +79,8 @@ self.addEventListener('fetch',event=>{
  if(url.pathname.startsWith('/assets/')){
   event.respondWith((async()=>{
    const cache=await caches.open(CACHE);
+   const saved=await cache.match(request);
+   if(saved)return saved;
    try{
     const response=await fetch(request,{cache:'no-store'});
     return await cacheResponse(cache,request,response);
@@ -85,7 +89,7 @@ self.addEventListener('fetch',event=>{
   return;
  }
  event.respondWith((async()=>{
-  const cache=await caches.open(CACHE);
+  const cache=await caches.open(request.destination==='image'?MEDIA_CACHE:CACHE);
   const saved=await cache.match(request);
   if(saved)return saved;
   try{return await cacheResponse(cache,request,await fetch(request))}catch{return Response.error()}
