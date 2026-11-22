@@ -4,7 +4,10 @@ import {useEffect,useState} from 'react';
 const loadedImages=new Set<string>();
 // Retain decoded image elements across route changes, including admin-uploaded URLs.
 const decodedImages=new Map<string,HTMLImageElement>();
-const rememberImage=(url:string)=>{if(decodedImages.has(url))return;const image=new Image();image.src=url;decodedImages.set(url,image);if(decodedImages.size>160){const oldest=decodedImages.keys().next().value;if(oldest)decodedImages.delete(oldest)}};
+const rememberImage=(url:string)=>{if(!url||decodedImages.has(url))return;const image=new Image();image.decoding='async';image.src=url;decodedImages.set(url,image);if(decodedImages.size>240){const oldest=decodedImages.keys().next().value;if(oldest)decodedImages.delete(oldest)}};
+// Admin-uploaded images have no /brand/ thumbnail. Warm their browser decode cache
+// when catalog data arrives, before a category is opened.
+export const preloadAdminImages=(urls:string[])=>{for(const url of urls){if(url&&!url.startsWith('/brand/'))rememberImage(url)}};
 const imageCache='sizey-media-v2';
 const sameOrigin=(url:string)=>{try{return new URL(url,location.href).origin===location.origin}catch{return false}};
 export default function ProductImage({src,alt,className,width,height,loading}:{src:string;alt:string;className?:string;width?:number;height?:number;loading?:'lazy'|'eager'}){
@@ -40,6 +43,6 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  return <span className={'image-loading-wrap '+(className==='detailphoto'?'image-loading-detail':'')+(status==='loading'?' is-loading':'')+(status==='error'?' image-unavailable':'')}>
   {status==='loading'&&!adminImage&&<span className="shimmer image-loading-shimmer" aria-hidden="true"/>}
   {status==='error'&&<span className="image-unavailable-label" role="img" aria-label="Фото недоступно">Фото недоступно</span>}
-  <img className={className} src={current} alt={alt} width={width} height={height} loading={loading||'lazy'} decoding="async" onLoad={()=>{loadedImages.add(src);rememberImage(src);setStatus('ready');persist(src)}} onError={failed} style={{opacity:adminImage||status==='ready'?1:0}}/>
+  <img className={className} src={current} alt={alt} width={width} height={height} loading={loading||(adminImage?'eager':'lazy')} decoding="async" onLoad={()=>{loadedImages.add(src);rememberImage(src);setStatus('ready');persist(src)}} onError={failed} style={{opacity:adminImage||status==='ready'?1:0}}/>
  </span>;
 }
