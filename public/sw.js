@@ -8,7 +8,7 @@ self.addEventListener('install',event=>{
   await cache.put('/',home.clone());
   const html=await home.text();
   const urls=['/brand/logo.svg','/manifest.webmanifest'];
-  for(const match of html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g))urls.push(match[1]);
+  for(const match of html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g))urls.push(match[1]);
   await Promise.allSettled([...new Set(urls)].map(async url=>{
    const response=await fetch(url,{cache:'no-store'});
    if(response.ok)await cache.put(url,response);
