@@ -1,4 +1,4 @@
-const CACHE='sizey-v26';
+const CACHE='sizey-v27';
 const MEDIA_CACHE='sizey-media-v1';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -9,12 +9,18 @@ self.addEventListener('install',event=>{
   await cache.put('/',home.clone());
   const html=await home.text();
   const urls=['/brand/logo.svg','/manifest.webmanifest'];
-  try{const manifest=await fetch('/offline-assets.json',{cache:'no-store'});if(manifest.ok){const assets=await manifest.json();if(Array.isArray(assets))urls.push(...assets.filter(x=>typeof x==='string'&&x.startsWith('/assets/')))}}catch{}
+  const manifest=await fetch('/offline-assets.json',{cache:'no-store'});
+  if(!manifest.ok)throw Error('Offline asset inventory unavailable');
+  const assets=await manifest.json();
+  if(!Array.isArray(assets)||!assets.some(x=>typeof x==='string'&&x.endsWith('.js')))throw Error('Offline asset inventory invalid');
+  urls.push(...assets.filter(x=>typeof x==='string'&&x.startsWith('/assets/')));
   for(const match of html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g))urls.push(match[1]);
-  await Promise.allSettled([...new Set(urls)].map(async url=>{
+  const results=await Promise.allSettled([...new Set(urls)].map(async url=>{
    const response=await fetch(url,{cache:'no-store'});
-   if(response.ok&&(/\.(?:js|css)(?:\?|$)/.test(url)?/(javascript|text\/css)/.test(response.headers.get('content-type')||''):true))await cache.put(url,response);
+   if(!response.ok||(/\.(?:js|css)(?:\?|$)/.test(url)&&!/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))throw Error('Offline asset failed: '+url);
+   await cache.put(url,response);
   }));
+  if(results.some(result=>result.status==='rejected'))throw Error('Offline assets incomplete');
  })());
  self.skipWaiting();
 });
@@ -70,7 +76,7 @@ self.addEventListener('fetch',event=>{
    try{
     const response=await fetch(request,{cache:'no-store',signal:controller.signal});
     if(response.ok)await cache.put('/',response.clone());
-    return response;
+    return response.ok?response:(await cache.match('/')||response);
    }catch{return await cache.match('/')||Response.error()}
    finally{clearTimeout(timer)}
   })());
