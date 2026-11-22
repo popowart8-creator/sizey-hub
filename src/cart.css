@@ -158,7 +158,8 @@
 }
 
 
-/* Mobile and installed-app cart: desktop information hierarchy without summary cards. */
+/* Mobile and installed-app cart: desktop information hierarchy without summary cards.
+   Keep the checkout action edge-to-edge within the page gutter. */
 @media (max-width: 959px) {
   .cartpage {
     width: 100%;
