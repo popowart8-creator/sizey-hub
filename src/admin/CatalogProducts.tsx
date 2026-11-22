@@ -50,7 +50,7 @@ export default function CatalogProducts({products,revision,loading,request,onPro
  }
 
  function duplicate(product:Product){
-  onEdit({...product,id:0,version:0,updated:0,published:true,name:product.name.slice(0,192).trimEnd()+' (копия)'});
+  onEdit({...product,id:0,version:0,updated:0,published:true,img:'',gallery:[],name:product.name.slice(0,192).trimEnd()+' (копия)'});
  }
 
  function drop(e:DragEvent,id:number){if(!e.dataTransfer.types.includes('text/sizey-product'))return;e.preventDefault();setOver(null);void move(Number(e.dataTransfer.getData('text/sizey-product')),id)}
