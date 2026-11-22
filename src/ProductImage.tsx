@@ -16,12 +16,12 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  const [status,setStatus]=useState<'loading'|'ready'|'error'>(()=>loadedImages.has(src)?'ready':'loading');
  useEffect(()=>{setCurrent(src);setStatus(loadedImages.has(src)?'ready':'loading')},[src]);
  useEffect(()=>{
-  if(navigator.onLine||!('caches' in window)||!sameOrigin(src))return;
+  if(!('caches' in window)||!sameOrigin(src)||!src.startsWith('/hub-api/media/'))return;
   let active=true;let objectUrl:string|undefined;
   (async()=>{for(const url of [src,src.replace('-360.webp','.webp')]){
    try{const saved=await caches.match(url);if(!saved||!saved.ok)continue;
     const blob=await saved.blob();if(!active)return;
-    objectUrl=URL.createObjectURL(blob);setCurrent(objectUrl);return;
+    objectUrl=URL.createObjectURL(blob);setCurrent(objectUrl);setStatus('ready');return;
    }catch{}
   }})();
   return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl)};
