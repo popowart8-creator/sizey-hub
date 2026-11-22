@@ -36,7 +36,7 @@ async function cacheResponse(cache,request,response){
 // Keep catalog thumbnails on disk, even if their cards were not scrolled into view.
 self.addEventListener('message',event=>{
  if(event.data?.type!=='CACHE_CATALOG_IMAGES'||!Array.isArray(event.data.urls))return;
- const urls=[...new Set(event.data.urls)].filter(value=>{if(typeof value!=='string'||value.includes('..'))return false;try{const url=new URL(value,self.location.origin);return url.origin===self.location.origin&&url.protocol==='https:'&&url.pathname!=='/sw.js'&&!url.pathname.startsWith('/hub-api/')&&/\.(webp|png|jpe?g|avif|gif)(?:$|\?)/i.test(url.pathname+url.search)}catch{return false}}).slice(0,500);
+ const urls=[...new Set(event.data.urls)].filter(value=>{if(typeof value!=='string'||value.includes('..'))return false;try{const url=new URL(value,self.location.origin);return url.origin===self.location.origin&&url.protocol==='https:'&&url.pathname!=='/sw.js'&&(!url.pathname.startsWith('/hub-api/')||url.pathname.startsWith('/hub-api/media/'))&&/\.(webp|png|jpe?g|avif|gif)(?:$|\?)/i.test(url.pathname+url.search)}catch{return false}}).slice(0,500);
  event.waitUntil((async()=>{
   const cache=await caches.open(MEDIA_CACHE);
   let index=0;
@@ -53,6 +53,11 @@ self.addEventListener('message',event=>{
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin)return;
+ if(url.pathname.startsWith('/hub-api/media/')&&/^\/hub-api\/media\/[a-f0-9]{64}\.(jpg|png|webp)$/.test(url.pathname)){
+  // Public immutable admin uploads: persist to the same disk cache as catalog photos.
+  event.respondWith((async()=>{const cache=await caches.open(MEDIA_CACHE);const saved=await cache.match(request);if(saved)return saved;try{const response=await fetch(request);return await cacheResponse(cache,request,response)}catch{return Response.error()}})());
+  return;
+ }
  if(url.pathname.startsWith('/hub-api/')){
   // Cache only public, anonymous catalog/blog data; never store private API responses.
   if(!OFFLINE_API.has(url.pathname)||request.headers.has('authorization'))return;
