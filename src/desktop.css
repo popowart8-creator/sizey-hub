@@ -179,6 +179,19 @@
     pointer-events: auto;
   }
 
+  .fullscreen-gallery-controls {
+    z-index: 2;
+  }
+
+  .fullscreen-gallery-controls button {
+    color: #181818;
+    background: #ffffffe6;
+  }
+
+  .fullscreen-gallery-controls button:hover {
+    background: #fff;
+  }
+
   @media (prefers-color-scheme: dark) {
     .desktop-brand img {
       filter: brightness(0) invert(1);
