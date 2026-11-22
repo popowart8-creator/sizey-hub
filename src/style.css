@@ -84,7 +84,7 @@
 @media(prefers-reduced-motion:reduce){.native-list-skeleton .sizey-skeleton-bone{animation:none!important}}
 
 /* New-arrival badge: reference-sized violet-to-purple pill, no shadow. */
-.productimage .tag{z-index:2;display:inline-flex;align-items:center;justify-content:center;top:14px;left:13px;min-height:35px;box-sizing:border-box;padding:9px 17px;border:0;border-radius:999px;background:linear-gradient(110deg,#d116ed 0%,#b00cd5 48%,#8708ad 100%);color:#fff!important;font-size:13px;font-weight:750;letter-spacing:.015em;line-height:1.1;text-transform:uppercase;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-shadow:none}
+.productimage .tag{z-index:2;display:inline-flex;align-items:center;justify-content:center;top:14px;left:13px;min-height:29px;box-sizing:border-box;padding:6px 10px;border:0;border-radius:999px;background:linear-gradient(110deg,#d116ed 0%,#b00cd5 48%,#8708ad 100%);color:#fff!important;font-size:13px;font-weight:750;letter-spacing:.015em;line-height:1.1;text-transform:uppercase;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-shadow:none}
 .productimage .tag::before{content:none}
-@media(max-width:600px){.productimage .tag{top:11px;left:10px;min-height:32px;padding:8px 14px;font-size:12px;letter-spacing:.01em}}
+@media(max-width:600px){.productimage .tag{top:11px;left:10px;min-height:27px;padding:6px 9px;font-size:11px;letter-spacing:.01em}}
 @media(prefers-color-scheme:dark){.productimage .tag{background:linear-gradient(110deg,#d116ed 0%,#b00cd5 48%,#8708ad 100%);color:#fff!important;border:0;box-shadow:none}}
