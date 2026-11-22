@@ -1,4 +1,4 @@
-const CACHE='sizey-v24';
+const CACHE='sizey-v25';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
  event.waitUntil((async()=>{
@@ -24,6 +24,23 @@ async function cacheResponse(cache,request,response){
  if(response.ok&&response.type!=='opaque'&&(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))await cache.put(request,response.clone());
  return response;
 }
+// Keep catalog thumbnails on disk, even if their cards were not scrolled into view.
+self.addEventListener('message',event=>{
+ if(event.data?.type!=='CACHE_CATALOG_IMAGES'||!Array.isArray(event.data.urls))return;
+ const urls=[...new Set(event.data.urls)].filter(url=>typeof url==='string'&&url.startsWith('/brand/')&&!url.includes('..')).slice(0,80);
+ event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE);
+  let index=0;
+  await Promise.all(Array.from({length:4},async()=>{
+   while(index<urls.length){
+    const path=urls[index++];
+    const request=new Request(path,{credentials:'omit'});
+    if(await cache.match(request))continue;
+    try{const response=await fetch(request);if(response.ok&&response.headers.get('content-type')?.startsWith('image/'))await cache.put(request,response)}catch{}
+   }
+  }));
+ })());
+});
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==self.location.origin)return;
