@@ -33,7 +33,7 @@
   html:root :is(
     .sheet, .delivery-swipe-sheet, .sizey-swipe-sheet, .sizey-history-dialog,
     .profile-logout-dialog, .install-modal, .install-sheet, .install-screen,
-    .cartlayout aside, .sizey-blog-card, .sizey-blog-empty, .sizey-blog-state,
+    .sizey-blog-card, .sizey-blog-empty, .sizey-blog-state,
     .sizey-blog .sizey-loading-skeleton--blog .sizey-skeleton-card
   ) {
     background: var(--dark-surface);
