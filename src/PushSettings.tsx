@@ -1,7 +1,6 @@
 import {useEffect,useState} from 'react';
 import {Bell} from 'lucide-react';
-import CustomerSheet from './CustomerSheet';
-import MenuRow from './MenuRow';
+import './push-settings.css';
 import {platform} from './Navigation';
 
 async function pushRequest(action:string,data?:unknown){
@@ -27,7 +26,6 @@ export default function PushSettings({backgroundOnly=false}:{backgroundOnly?:boo
  const requiresInstall=ios&&!standalone;
  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
  const [retry,setRetry]=useState(0);
- const [open,setOpen]=useState(false);
  useEffect(()=>{
   if(requiresInstall||!supported)return;
   let active=true;
@@ -84,16 +82,13 @@ export default function PushSettings({backgroundOnly=false}:{backgroundOnly?:boo
  }
 
  if(backgroundOnly)return null;
- return <>
-  <MenuRow icon={<Bell size={23}/>} opensDialog onClick={()=>setOpen(true)}>Настройка уведомлений</MenuRow>
-  {open&&<CustomerSheet title="Уведомления" onClose={()=>setOpen(false)}>
-   <div className="push-settings-row" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,padding:'12px 0'}}>
-    <div><strong>Push-уведомления</strong><p style={{color:'var(--text-secondary, #777)',fontSize:13,margin:'6px 0 0'}}>Получайте новости, предложения и важные обновления SIZEY.</p></div>
-    <input type="checkbox" role="switch" aria-label="Push-уведомления" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()} style={{accentColor:'#34c759',flexShrink:0}} {...(ios?{switch:''}: {})}/>
-   </div>
-   {requiresInstall?<p>Чтобы получать уведомления на iPhone, добавьте SIZEY на экран «Домой» через Safari и откройте приложение с иконки.</p>:!supported?<p>Уведомления не поддерживаются этим браузером.</p>:!ready?<p>Подключаем уведомления… <button type="button" onClick={()=>setRetry(value=>value+1)}>Повторить</button></p>:null}
-   {ready&&!current&&Notification.permission==='default'&&<button type="button" disabled={busy} onClick={()=>void toggle()}>Разрешить уведомления</button>}
-   {message&&<p role="status" style={{fontSize:13}}>{message}</p>}
-  </CustomerSheet>}
- </>;
+ return <div className="push-settings">
+  <label className="menu-row push-settings-row">
+   <Bell size={23} aria-hidden="true"/>
+   <span>Push-уведомления</span>
+   <input type="checkbox" role="switch" checked={!!current} disabled={busy||!ready||requiresInstall||!supported} onChange={()=>void toggle()}/>
+  </label>
+  {requiresInstall?<p>Чтобы получать уведомления на iPhone, добавьте SIZEY на экран «Домой» через Safari и откройте приложение с иконки.</p>:!supported?<p>Уведомления не поддерживаются этим браузером.</p>:!ready?<p>{message||'Подключаем уведомления…'} <button type="button" onClick={()=>setRetry(value=>value+1)}>Повторить</button></p>:null}
+  {ready&&message&&<p role="status">{message}</p>}
+ </div>;
 }
