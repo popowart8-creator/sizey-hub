@@ -21,7 +21,7 @@ self.addEventListener('activate',event=>{
  self.clients.claim();
 });
 async function cacheResponse(cache,request,response){
- if(response.ok&&response.type!=='opaque')await cache.put(request,response.clone());
+ if(response.ok&&response.type!=='opaque'&&(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))await cache.put(request,response.clone());
  return response;
 }
 self.addEventListener('fetch',event=>{
@@ -60,9 +60,10 @@ self.addEventListener('fetch',event=>{
  if(url.pathname.startsWith('/assets/')){
   event.respondWith((async()=>{
    const cache=await caches.open(CACHE);
-   const saved=await cache.match(request);
-   if(saved)return saved;
-   try{return await cacheResponse(cache,request,await fetch(request))}catch{return Response.error()}
+   try{
+    const response=await fetch(request,{cache:'no-store'});
+    return await cacheResponse(cache,request,response);
+   }catch{return await cache.match(request)||Response.error()}
   })());
   return;
  }
