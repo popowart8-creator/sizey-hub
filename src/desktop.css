@@ -265,12 +265,6 @@
     animation: none;
   }
 
-  #root .search-screen,
-  body > .password-screen,
-  .sizey-blog .sizey-blog-article {
-    box-shadow: 0 0 0 100vmax #17171b66;
-  }
-
   .product-screen[role=dialog] {
     --product-popup-height: min(calc(100dvh - 40px), calc((100vw - 40px) / 1.4));
     inset: 20px;

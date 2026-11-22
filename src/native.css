@@ -559,12 +559,14 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 }
 /* The image favorite gets its spring pop and little red sparkles back. */
 .productgrid .productimage > .heart.favorite-burst svg,
-.search-screen .productimage > .heart.favorite-burst svg{
+.search-screen .productimage > .heart.favorite-burst svg,
+.detail-favorite-action.favorite-burst svg{
  animation:sizey-heart-pop .62s cubic-bezier(.18,.89,.32,1.28) both!important;
  transform-origin:center;
 }
 .productgrid .productimage > .heart.favorite-burst::after,
-.search-screen .productimage > .heart.favorite-burst::after{
+.search-screen .productimage > .heart.favorite-burst::after,
+.detail-favorite-action.favorite-burst::after{
  content:''!important;position:absolute;left:50%;top:50%;
  width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
  pointer-events:none;
@@ -583,8 +585,10 @@ body>.nav-anchor--hidden>nav.tabbar{visibility:hidden!important;pointer-events:n
 @media(prefers-reduced-motion:reduce){
  .productgrid .productimage > .heart.favorite-burst svg,
  .search-screen .productimage > .heart.favorite-burst svg,
+ .detail-favorite-action.favorite-burst svg,
  .productgrid .productimage > .heart.favorite-burst::after,
- .search-screen .productimage > .heart.favorite-burst::after{animation:none!important}
+ .search-screen .productimage > .heart.favorite-burst::after,
+ .detail-favorite-action.favorite-burst::after{animation:none!important}
 }
 
 /* Tighter hierarchy in the product detail content. */
