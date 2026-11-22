@@ -3,6 +3,8 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  const [current,setCurrent]=useState(src);
  const [status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
  useEffect(()=>{setCurrent(src);setStatus('loading')},[src]);
+ // Read cached media directly on iOS when the service worker has not yet taken control.
+ useEffect(()=>{if(navigator.onLine||!('caches' in window))return;let active=true;let objectUrl:string|undefined;(async()=>{for(const url of [src,src.replace('-360.webp','.webp')]){try{const saved=await caches.match(url);if(!saved||!saved.ok)continue;const blob=await saved.blob();if(!active)return;objectUrl=URL.createObjectURL(blob);setCurrent(objectUrl);return}catch{}}})();return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl)}},[src]);
  // Offline WebKit may leave image requests pending forever without firing onError.
  useEffect(()=>{if(status!=='loading')return;const timeout=setTimeout(()=>setStatus('error'),navigator.onLine?12000:2500);return()=>clearTimeout(timeout)},[current,status]);
  const failed=()=>{
