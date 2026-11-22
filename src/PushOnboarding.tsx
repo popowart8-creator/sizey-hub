@@ -1,7 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {Bell,Gift,Sparkles,Shirt} from 'lucide-react';
-import CustomerSheet from './CustomerSheet';
-import MenuRow from './MenuRow';
+import {Gift,Sparkles,Shirt} from 'lucide-react';
 import {platform} from './Navigation';
 import PushArtwork from './PushArtwork';
 
@@ -31,8 +29,6 @@ export default function PushOnboarding({onboardingEnabled=true}:{onboardingEnabl
   (navigator as Navigator&{standalone?:boolean}).standalone;
  const requiresInstall=ios&&!standalone;
  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
- const [retry,setRetry]=useState(0);
- const [open,setOpen]=useState(false);
  const [onboarding,setOnboarding]=useState(false);
  const onboardingDialog=useRef<HTMLDialogElement>(null);
  function dismissOnboarding(){
@@ -66,7 +62,7 @@ export default function PushOnboarding({onboardingEnabled=true}:{onboardingEnabl
   }
   void setup().catch(()=>{if(active)setMessage('Не удалось подключиться к сервису уведомлений.')});
   return()=>{active=false};
- },[requiresInstall,supported,retry]);
+ },[requiresInstall,supported]);
 
  async function toggle(){
   if(!ready||busy)return;
@@ -82,7 +78,7 @@ export default function PushOnboarding({onboardingEnabled=true}:{onboardingEnabl
     return;
    }
    if(Notification.permission==='denied'){
-    setMessage('Разрешите уведомления для SIZEY в настройках устройства или браузера.');
+    setMessage('Разрешите уведомления для Сайзи в настройках устройства или браузера.');
     return;
    }
    if(Notification.permission==='default'){
