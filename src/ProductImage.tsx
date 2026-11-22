@@ -1,3 +1,4 @@
+import {cachedAdminPhoto,persistAdminPhoto,isAdminPhoto} from './offlineMedia';
 import {useEffect,useState} from 'react';
 
 // Keep already decoded images visible immediately when switching tabs and remounting cards.
@@ -16,17 +17,19 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  const [status,setStatus]=useState<'loading'|'ready'|'error'>(()=>loadedImages.has(src)?'ready':'loading');
  useEffect(()=>{setCurrent(src);setStatus(loadedImages.has(src)?'ready':'loading')},[src]);
  useEffect(()=>{
-  if(!('caches' in window)||!sameOrigin(src)||!src.startsWith('/hub-api/media/'))return;
+  if(!isAdminPhoto(src))return;
   let active=true;let objectUrl:string|undefined;
-  (async()=>{for(const url of [src,src.replace('-360.webp','.webp')]){
-   try{const saved=await caches.match(url);if(!saved||!saved.ok)continue;
-    const blob=await saved.blob();if(!active)return;
-    objectUrl=URL.createObjectURL(blob);setCurrent(objectUrl);setStatus('ready');return;
-   }catch{}
-  }})();
+  (async()=>{
+   const blob=await cachedAdminPhoto(src);
+   if(!blob||!active)return;
+   objectUrl=URL.createObjectURL(blob);
+   setCurrent(objectUrl);
+   setStatus('ready');
+  })();
   return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl)};
  },[src]);
  const persist=(url:string)=>{
+  if(isAdminPhoto(url)){void persistAdminPhoto(url);return}
   if(!sameOrigin(url)||!('caches' in window)||url.startsWith('blob:'))return;
   void (async()=>{try{
    const cache=await caches.open(imageCache);
@@ -38,6 +41,7 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  useEffect(()=>{if(status!=='loading')return;const timeout=setTimeout(()=>setStatus('error'),navigator.onLine?12000:2500);return()=>clearTimeout(timeout)},[current,status]);
  const failed=()=>{
   if(current.includes('-360.webp')){setCurrent(current.replace('-360.webp','.webp'));setStatus('loading');return}
+  if(isAdminPhoto(src)){void cachedAdminPhoto(src).then(blob=>{if(blob){setCurrent(URL.createObjectURL(blob));setStatus('ready')}else setStatus('error')});return}
   setStatus('error');
  };
  return <span className={'image-loading-wrap '+(className==='detailphoto'?'image-loading-detail':'')+(status==='loading'?' is-loading':'')+(status==='error'?' image-unavailable':'')}>
