@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node deploy/offline-assets.mjs",
     "test:auth": "node --test server/*.test.mjs",
     "test:bonus-cabinet": "node --test integrations/bonus-cabinet/*.test.mjs",
     "prebuild": "node deploy/catalog-preview.mjs",
