@@ -942,3 +942,13 @@ html[data-hero-tone="dark"] .home-logo img {
 
 /* Give the install confirmation button more breathing room below the instructions. */
 .install-sheet .install-actions {margin-top:18px;}
+
+/* Keep the home hero and cards perfectly stationary: only the detail layer slides. */
+@media(max-width:800px){
+ .tab-screen[data-current-tab="shop"]{animation:none!important;transform:none!important;opacity:1!important}
+ .tab-screen[data-current-tab="shop"] .home-logo img{transition:none!important}
+ /* The navigation remains at its original viewport coordinates behind the sliding product screen. */
+ body:has(.product-screen) .product-screen{z-index:1100!important}
+ body:has(.product-screen)>.product-back,
+ body:has(.product-screen)>.product-favorite-toolbar{z-index:1101!important}
+}
