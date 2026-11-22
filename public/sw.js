@@ -79,8 +79,6 @@ self.addEventListener('fetch',event=>{
  if(url.pathname.startsWith('/assets/')){
   event.respondWith((async()=>{
    const cache=await caches.open(CACHE);
-   const saved=await cache.match(request);
-   if(saved)return saved;
    try{
     const response=await fetch(request,{cache:'no-store'});
     return await cacheResponse(cache,request,response);
