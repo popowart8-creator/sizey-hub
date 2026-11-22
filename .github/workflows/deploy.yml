@@ -9,6 +9,11 @@ on:
         required: false
         type: boolean
         default: false
+      deploy_catalog_api:
+        description: 'Deploy the catalog API changes before publishing the admin interface'
+        required: false
+        type: boolean
+        default: false
       deploy_qwen_api:
         description: 'Explicitly deploy Qwen API to production'
         required: false
@@ -255,7 +260,7 @@ jobs:
         run: rm -f ~/.ssh/id_ed25519
 
   deploy_notifications_api:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'deploy-notification-inbox-trigger')
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'push' && contains(github.event.head_commit.message, 'deploy-notification-inbox-trigger')) || (github.event_name == 'workflow_dispatch' && inputs.deploy_catalog_api == true))
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -283,7 +288,20 @@ jobs:
           target="/root/sizey-notifications-$GITHUB_RUN_ID"
           sshpass -e ssh "${options[@]}" root@95.181.213.9 "umask 077; mkdir -p '$target'"
           tar --exclude=node_modules -czf - server | sshpass -e ssh "${options[@]}" root@95.181.213.9 "tar -xzf - -C '$target'"
-          sshpass -e ssh "${options[@]}" root@95.181.213.9 "set -eu; cp -a '$target/server/.' /opt/sizey/hub-api/server/; cd /opt/sizey/hub-api; docker compose build auth; docker compose up -d --no-deps auth"
+          sshpass -e ssh "${options[@]}" root@95.181.213.9 bash -s -- "$target" <<'REMOTE'
+          set -euo pipefail
+          cd /opt/sizey/hub-api
+          configs=$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project.config_files"}}' sizey-hub-api)
+          IFS=, read -r -a files <<< "$configs"
+          compose=(docker compose)
+          for file in "${files[@]}"; do
+            test -f "$file"
+            compose+=(-f "$file")
+          done
+          cp -a "$1/server/." server/
+          "${compose[@]}" build auth
+          "${compose[@]}" up -d --no-deps auth
+          REMOTE
       - name: Verify API after restart and inspect failures
         env:
           SSHPASS: ${{ secrets.SERVER_ROOT_PASSWORD }}

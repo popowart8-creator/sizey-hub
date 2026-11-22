@@ -203,6 +203,7 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
    else if(req.method==='GET'&&path==='/hub-api/admin/clients')reply(200,{clients:(await listClients()).map(c=>({id:c.id,name:c.name,phone:'+'+c.phone_normalized,loyalty:c.hasLoyalty!==false}))});
    else if(path==='/hub-api/admin/options'&&req.method==='GET')reply(200,{options:store.options()});
    else if(path==='/hub-api/admin/options'&&req.method==='POST')reply(200,store.mutateOptions(await body(req),user.id));
+   else if(path==='/hub-api/admin/products/delete'&&req.method==='POST')reply(200,store.deleteProduct(await body(req),user.id));
    else if(path==='/hub-api/admin/products/order'&&req.method==='POST')reply(200,store.moveProduct(await body(req),user.id));
    else if(req.method==='GET'&&path==='/hub-api/admin/orders')reply(200,{orders:store.orders()});
    else if(req.method==='GET'&&path==='/hub-api/admin/activity')reply(200,{activity:store.summary().recent});
