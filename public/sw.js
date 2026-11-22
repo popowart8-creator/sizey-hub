@@ -1,4 +1,4 @@
-const CACHE='sizey-v30';
+const CACHE='sizey-v31';
 const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -10,20 +10,15 @@ self.addEventListener('install',event=>{
   const html=await home.text();
   // Cache the app entrypoint first. Optional admin/media assets must not prevent SW installation.
   const entry=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g)].map(match=>match[1]);
-  const urls=['/brand/logo.svg','/brand/857220148072.webp','/brand/943151810212.webp','/brand/673427758392.webp','/manifest.webmanifest','/offline.html',...entry];
-  const manifest=await fetch('/offline-assets.json',{cache:'no-store'}).catch(()=>null);
-  if(manifest?.ok){
-   const assets=await manifest.json().catch(()=>[]);
-   if(Array.isArray(assets))urls.push(...assets.filter(x=>typeof x==='string'&&x.startsWith('/assets/')));
-  }
-  for(const url of [...new Set(urls)]){
-   try{
-    const response=await fetch(url,{cache:'no-store'});
-    if(!response.ok)continue;
-    if((url.endsWith('.js')||url.endsWith('.css'))&&!['javascript','text/css'].some(type=>(response.headers.get('content-type')||'').includes(type)))continue;
-    await cache.put(url,response);
-   }catch{}
-  }
+  // iOS terminates long install events. Precache only the boot shell; media is cached after activation.
+  const urls=['/brand/logo.svg','/offline.html',...entry];
+  const results=await Promise.allSettled([...new Set(urls)].map(async url=>{
+   const response=await fetch(url,{cache:'no-store'});
+   if(!response.ok)throw Error('Offline boot asset unavailable: '+url);
+   if((url.endsWith('.js')||url.endsWith('.css'))&&!['javascript','text/css'].some(type=>(response.headers.get('content-type')||'').includes(type)))throw Error('Invalid offline boot asset: '+url);
+   await cache.put(url,response);
+  }));
+  if(results.some(result=>result.status==='rejected'))throw Error('Offline boot precache incomplete');
   // Do not activate an incomplete shell: the initial JS/CSS is required offline.
   for(const url of entry)if(!await cache.match(url))throw Error('Offline entry asset unavailable: '+url);
  })());
@@ -77,9 +72,9 @@ self.addEventListener('fetch',event=>{
  if(request.mode==='navigate'){
   event.respondWith((async()=>{
    const cache=await caches.open(CACHE);
-   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),1800);
    try{
-    const response=await fetch(request,{cache:'no-store',signal:controller.signal});
+    const cached=await cache.match('/');\n    if(cached){event.waitUntil(fetch(request,{cache:'no-store'}).then(response=>response.ok?cache.put('/',response):undefined).catch(()=>{}));return cached;}\n    const response=await fetch(request,{cache:'no-store',signal:controller.signal});
     if(response.ok)await cache.put('/',response.clone());
     return response.ok?response:(await cache.match('/')||await cache.match('/offline.html')||response);
    }catch{return await cache.match('/')||await cache.match('/offline.html')||Response.error()}
