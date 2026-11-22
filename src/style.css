@@ -86,5 +86,5 @@
 /* New-arrival badge: reference-sized violet-to-purple pill, no shadow. */
 .productimage .tag{z-index:2;display:inline-flex;align-items:center;justify-content:center;top:14px;left:13px;min-height:24px;box-sizing:border-box;padding:4px 7px;border:0;border-radius:999px;background:linear-gradient(110deg,#d116ed 0%,#b00cd5 48%,#8708ad 100%);color:#fff!important;font-size:11px;font-weight:750;letter-spacing:.015em;line-height:1.1;text-transform:uppercase;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-shadow:none}
 .productimage .tag::before{content:none}
-@media(max-width:600px){.productimage .tag{top:11px;left:10px;min-height:22px;padding:4px 6px;font-size:9px;letter-spacing:.01em}}
+@media(max-width:600px){.productimage .tag{top:11px;left:10px;height:22px;min-height:0;padding:2px 6px 0;font-size:9px;line-height:1;letter-spacing:.01em}}
 @media(prefers-color-scheme:dark){.productimage .tag{background:linear-gradient(110deg,#d116ed 0%,#b00cd5 48%,#8708ad 100%);color:#fff!important;border:0;box-shadow:none}}
