@@ -2,16 +2,44 @@ import {useEffect,useState} from 'react';
 import {Wifi,WifiOff} from 'lucide-react';
 import './NetworkToast.css';
 
+// iOS installed PWAs do not reliably dispatch online/offline events.
 export default function NetworkToast(){
  const [online,setOnline]=useState(navigator.onLine);
  const [visible,setVisible]=useState(!navigator.onLine);
  useEffect(()=>{
-  let timer:number|undefined;
-  const offline=()=>{window.clearTimeout(timer);setOnline(false);setVisible(true)};
-  const restored=()=>{window.clearTimeout(timer);setOnline(true);setVisible(true);timer=window.setTimeout(()=>setVisible(false),3500)};
+  let hideTimer:number|undefined;
+  let stopped=false;
+  let checking=false;
+  let lastKnown=navigator.onLine;
+  const update=(connected:boolean)=>{
+   if(stopped||connected===lastKnown)return;
+   lastKnown=connected;
+   window.clearTimeout(hideTimer);
+   setOnline(connected);
+   setVisible(true);
+   if(connected)hideTimer=window.setTimeout(()=>setVisible(false),3500);
+  };
+  const check=async()=>{
+   if(checking||stopped)return;
+   if(!navigator.onLine){update(false);return}
+   checking=true;
+   const controller=new AbortController();
+   const timeout=window.setTimeout(()=>controller.abort(),4500);
+   try{
+    // The SW deliberately bypasses /sw.js; a unique URL prevents HTTP cache hits.
+    const response=await fetch('/sw.js?connection_probe='+Date.now(),{cache:'no-store',signal:controller.signal});
+    update(response.ok&&(response.headers.get('content-type')||'').includes('javascript'));
+   }catch{update(false)}
+   finally{window.clearTimeout(timeout);checking=false}
+  };
+  const offline=()=>update(false);
+  const restored=()=>void check();
   window.addEventListener('offline',offline);
   window.addEventListener('online',restored);
-  return()=>{window.clearTimeout(timer);window.removeEventListener('offline',offline);window.removeEventListener('online',restored)};
+  document.addEventListener('visibilitychange',restored);
+  void check();
+  const interval=window.setInterval(()=>void check(),10000);
+  return()=>{stopped=true;window.clearTimeout(hideTimer);window.clearInterval(interval);window.removeEventListener('offline',offline);window.removeEventListener('online',restored);document.removeEventListener('visibilitychange',restored)};
  },[]);
  if(!visible)return null;
  return <div className={'network-toast '+(online?'network-toast--online':'network-toast--offline')} role="status" aria-live="polite">
