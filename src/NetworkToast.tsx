@@ -6,8 +6,10 @@ import './NetworkToast.css';
 export default function NetworkToast(){
  const [online,setOnline]=useState(navigator.onLine);
  const [visible,setVisible]=useState(!navigator.onLine);
+ const [leaving,setLeaving]=useState(false);
  useEffect(()=>{
   let hideTimer:number|undefined;
+  let exitTimer:number|undefined;
   let stopped=false;
   let checking=false;
   let lastKnown=navigator.onLine;
@@ -15,9 +17,11 @@ export default function NetworkToast(){
    if(stopped||connected===lastKnown)return;
    lastKnown=connected;
    window.clearTimeout(hideTimer);
+   window.clearTimeout(exitTimer);
+   setLeaving(false);
    setOnline(connected);
    setVisible(true);
-   if(connected)hideTimer=window.setTimeout(()=>setVisible(false),3500);
+   if(connected)hideTimer=window.setTimeout(()=>{setLeaving(true);exitTimer=window.setTimeout(()=>setVisible(false),320)},3500);
   };
   const check=async()=>{
    if(checking||stopped)return;
@@ -39,10 +43,10 @@ export default function NetworkToast(){
   document.addEventListener('visibilitychange',restored);
   void check();
   const interval=window.setInterval(()=>void check(),10000);
-  return()=>{stopped=true;window.clearTimeout(hideTimer);window.clearInterval(interval);window.removeEventListener('offline',offline);window.removeEventListener('online',restored);document.removeEventListener('visibilitychange',restored)};
+  return()=>{stopped=true;window.clearTimeout(hideTimer);window.clearTimeout(exitTimer);window.clearInterval(interval);window.removeEventListener('offline',offline);window.removeEventListener('online',restored);document.removeEventListener('visibilitychange',restored)};
  },[]);
  if(!visible)return null;
- return <div className={'network-toast '+(online?'network-toast--online':'network-toast--offline')} role="status" aria-live="polite">
+ return <div className={'network-toast '+(online?'network-toast--online':'network-toast--offline')+(leaving?' network-toast--leaving':'')} role="status" aria-live="polite">
   <span className="network-toast__icon">{online?<Wifi size={19} strokeWidth={2.6}/>:<WifiOff size={19} strokeWidth={2.6}/>}</span>
   <span>{online?'Интернет появился':'Нет интернета'}</span>
  </div>;
