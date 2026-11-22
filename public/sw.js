@@ -1,15 +1,77 @@
-const CACHE='sizey-v23';
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(['/','/brand/logo.svg'])));self.skipWaiting()});
-self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
-async function remember(request,response){if(response.ok){const type=response.headers.get('content-type')||'';if(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(type)){const cache=await caches.open(CACHE);await cache.put(request,response.clone())}}return response}
+const CACHE='sizey-v24';
+const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
+self.addEventListener('install',event=>{
+ event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE);
+  const home=await fetch('/',{cache:'no-store'});
+  if(!home.ok)throw Error('Offline shell unavailable');
+  await cache.put('/',home.clone());
+  const html=await home.text();
+  const urls=['/brand/logo.svg','/manifest.webmanifest'];
+  for(const match of html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g))urls.push(match[1]);
+  await Promise.allSettled([...new Set(urls)].map(async url=>{
+   const response=await fetch(url,{cache:'no-store'});
+   if(response.ok)await cache.put(url,response);
+  }));
+ })());
+ self.skipWaiting();
+});
+self.addEventListener('activate',event=>{
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE).map(key=>caches.delete(key)))));
+ self.clients.claim();
+});
+async function cacheResponse(cache,request,response){
+ if(response.ok&&response.type!=='opaque')await cache.put(request,response.clone());
+ return response;
+}
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
- if(request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/hub-api/'))return;
- if(url.pathname.startsWith('/assets/')||url.pathname==='/sw.js'){event.respondWith(fetch(request,{cache:'no-store'}).catch(async()=>{const cache=await caches.open(CACHE);return await cache.match(request)||Response.error()}));return;}
- if(request.mode==='navigate'){
-  event.respondWith((async()=>{const cache=await caches.open(CACHE);const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),4000);try{const response=await fetch(request,{cache:'no-store',signal:controller.signal});if(response.ok)await cache.put('/',response.clone());return response}catch{return await cache.match('/')||new Response('Нет подключения к интернету. Повторите вход после восстановления сети.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}})}finally{clearTimeout(timer)}})());return;
+ if(request.method!=='GET'||url.origin!==self.location.origin)return;
+ if(url.pathname.startsWith('/hub-api/')){
+  // Cache only public, anonymous catalog/blog data; never store private API responses.
+  if(!OFFLINE_API.has(url.pathname)||request.headers.has('authorization'))return;
+  event.respondWith((async()=>{
+   const cache=await caches.open(CACHE);
+   try{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);
+    try{
+     const response=await fetch(request,{cache:'no-store',credentials:'omit',signal:controller.signal});
+     if(response.ok)await cacheResponse(cache,request,response);
+     return response.ok?response:(await cache.match(request))||response;
+    }finally{clearTimeout(timer)}
+   }catch{return await cache.match(request)||Response.error()}
+  })());
+  return;
  }
- event.respondWith((async()=>{const cache=await caches.open(CACHE);const cached=await cache.match(request);if(cached)return cached;try{return await remember(request,await fetch(request))}catch{return Response.error()}})());
+ if(url.pathname==='/sw.js')return;
+ if(request.mode==='navigate'){
+  event.respondWith((async()=>{
+   const cache=await caches.open(CACHE);
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
+   try{
+    const response=await fetch(request,{cache:'no-store',signal:controller.signal});
+    if(response.ok)await cache.put('/',response.clone());
+    return response;
+   }catch{return await cache.match('/')||Response.error()}
+   finally{clearTimeout(timer)}
+  })());
+  return;
+ }
+ if(url.pathname.startsWith('/assets/')){
+  event.respondWith((async()=>{
+   const cache=await caches.open(CACHE);
+   const saved=await cache.match(request);
+   if(saved)return saved;
+   try{return await cacheResponse(cache,request,await fetch(request))}catch{return Response.error()}
+  })());
+  return;
+ }
+ event.respondWith((async()=>{
+  const cache=await caches.open(CACHE);
+  const saved=await cache.match(request);
+  if(saved)return saved;
+  try{return await cacheResponse(cache,request,await fetch(request))}catch{return Response.error()}
+ })());
 });
 
 function reportPush(id,kind){
