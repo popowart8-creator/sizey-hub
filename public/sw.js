@@ -1,4 +1,4 @@
-const CACHE='sizey-v34';
+const CACHE='sizey-v35';
 const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -36,7 +36,7 @@ async function cacheResponse(cache,request,response){
 // Keep catalog thumbnails on disk, even if their cards were not scrolled into view.
 self.addEventListener('message',event=>{
  if(event.data?.type!=='CACHE_CATALOG_IMAGES'||!Array.isArray(event.data.urls))return;
- const urls=[...new Set(event.data.urls)].filter(url=>typeof url==='string'&&url.startsWith('/brand/')&&!url.includes('..')).slice(0,500);
+ const urls=[...new Set(event.data.urls)].filter(value=>{if(typeof value!=='string'||value.includes('..'))return false;try{const url=new URL(value,self.location.origin);return url.origin===self.location.origin&&url.protocol==='https:'&&url.pathname!=='/sw.js'&&!url.pathname.startsWith('/hub-api/')&&/\.(webp|png|jpe?g|avif|gif)(?:$|\?)/i.test(url.pathname+url.search)}catch{return false}}).slice(0,500);
  event.waitUntil((async()=>{
   const cache=await caches.open(MEDIA_CACHE);
   let index=0;
