@@ -9,7 +9,7 @@ export default function Navigation({page,count,favoritePulse,cartPulse,onNavigat
  const [cartPulsing,setCartPulsing]=useState(false);
  useEffect(()=>{if(!cartPulse)return;setCartPulsing(false);const frame=requestAnimationFrame(()=>setCartPulsing(true));const timer=setTimeout(()=>setCartPulsing(false),850);return()=>{cancelAnimationFrame(frame);clearTimeout(timer)}},[cartPulse]);
  useEffect(()=>{if(!favoritePulse)return;setPulsing(false);const frame=requestAnimationFrame(()=>setPulsing(true));const timer=setTimeout(()=>setPulsing(false),900);return()=>{cancelAnimationFrame(frame);clearTimeout(timer)}},[favoritePulse]);
- return <nav className={'tabbar tabbar--'+os} aria-label="Основная навигация">{tabs.map(({id,label,icon:Icon})=>{
+ return <nav className={'tabbar tabbar--'+os} aria-label="Основная навигация"><button type="button" className="desktop-brand" aria-label="SIZEY — главная" onClick={()=>onNavigate('shop')}><img src="/brand/logo.svg" alt=""/></button>{tabs.map(({id,label,icon:Icon})=>{
   const content=<><span className={"tab-icon"+(id==="favorites"&&pulsing?" tab-favorite-pulse":"")}><Icon size={25} strokeWidth={1.7} fill={id==="favorites"&&pulsing?"currentColor":"none"} aria-hidden="true"/>{id==='cart'&&count>0&&<span key={count} className={"tab-badge"+(cartPulsing?" tab-badge-pop":"")} aria-label={count+' товаров'}>{count>99?'99+':count}</span>}</span><span>{label}</span></>;
   const className='tab '+(page===id?'is-active':'');
   // Real finger contact with a native switch is required for the experimental iOS haptic.

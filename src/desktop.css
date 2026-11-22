@@ -1,0 +1,187 @@
+.desktop-brand,
+.desktop-gallery-controls {
+  display: none;
+}
+
+@media (min-width: 960px) and (hover: hover) and (pointer: fine) {
+  :root {
+    --storefront-width: 1280px;
+    --storefront-gutter: max(32px, calc((100vw - var(--storefront-width)) / 2));
+    --storefront-header: 72px;
+  }
+
+  body:has(> .nav-anchor > .tabbar--web) {
+    padding-top: var(--storefront-header);
+    padding-bottom: 0;
+  }
+
+  body > .nav-anchor > nav.tabbar--web {
+    top: 0 !important;
+    bottom: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: var(--storefront-header) !important;
+    padding: 0 calc(var(--storefront-gutter) + 112px) !important;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    border: 0 !important;
+    border-bottom: 1px solid var(--dark-line, #e9e9e9) !important;
+    border-radius: 0 !important;
+    background: var(--dark-canvas, #fff) !important;
+    box-shadow: none !important;
+  }
+
+  .tabbar--web .desktop-brand {
+    position: absolute;
+    left: var(--storefront-gutter);
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 48px;
+    padding: 0;
+  }
+
+  .desktop-brand img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: brightness(0);
+  }
+
+  body > .nav-anchor > .tabbar--web .tab {
+    flex: 0 0 auto;
+    flex-direction: row;
+    min-height: 44px;
+    height: 44px;
+    padding-inline: 12px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  .tabbar--web .tab-icon > svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tabbar--web .tab:hover,
+  .desktop-gallery-controls button:hover {
+    background: var(--dark-control, #f2f2f2);
+  }
+
+  body:has(> .nav-anchor > .tabbar--web) .home-logo {
+    display: none;
+  }
+
+  body:has(> .nav-anchor > .tabbar--web) .global-search {
+    top: 12px;
+    right: var(--storefront-gutter);
+    z-index: 31;
+  }
+
+  .page-top > .icon-control {
+    position: static !important;
+    flex: 0 0 44px;
+  }
+
+  .page-top,
+  .page-top:has(> .icon-control) {
+    padding: 28px 16px 4px !important;
+    justify-content: flex-start;
+    gap: 16px;
+  }
+
+  body > .nav-anchor--hidden:not(.nav-anchor--immersive) > nav.tabbar--web {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body:has(> .nav-anchor > .tabbar--web) :is(#root, .tab-screen) {
+    min-height: calc(100dvh - var(--storefront-header));
+  }
+
+  .home-intro {
+    max-width: var(--storefront-width);
+    margin: 24px auto 0;
+    margin-inline: var(--storefront-gutter);
+  }
+
+  .home-intro .editorial-hero {
+    height: clamp(280px, 39vw, 500px);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .home-intro .carousel-slide > img {
+    height: 100%;
+  }
+
+  .home-intro .hero-bottom-content {
+    inset-inline: 24px;
+    max-width: none;
+    bottom: 16px !important;
+  }
+
+  .tab-screen:has(> .home-intro) > .home-products {
+    width: auto;
+    max-width: var(--storefront-width);
+    margin-top: 0;
+    padding: 24px 0 48px !important;
+  }
+
+  .home-products {
+    margin-inline: var(--storefront-gutter);
+  }
+
+  .tab-screen:has(> .home-intro) > .home-products > .filterbar {
+    width: 100% !important;
+    margin-inline: 0 !important;
+    overflow: visible !important;
+  }
+
+  .tab-screen:has(> .home-intro) > .home-products > .filterbar > .chips {
+    flex-wrap: wrap;
+    padding-inline: 0 !important;
+  }
+
+  .productgrid {
+    gap: 24px;
+  }
+
+  .catalog-categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 36px;
+  }
+
+  .empty-screen .empty-state {
+    padding-bottom: 32px;
+  }
+
+  .desktop-gallery-controls {
+    position: absolute;
+    inset: 50% 16px auto;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .desktop-gallery-controls button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--dark-surface, #fff);
+    pointer-events: auto;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .desktop-brand img {
+      filter: brightness(0) invert(1);
+    }
+  }
+}
