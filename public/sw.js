@@ -78,7 +78,7 @@ self.addEventListener('fetch',event=>{
     if(cached)return cached;
     const response=await fetch(request,{cache:'no-store',signal:controller.signal});
     // A new HTML shell is safe to persist only when its matching JS/CSS are cached.
-    if(response.ok){const html=await response.clone().text();const assets=[...html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g)].map(match=>match[1]);if((await Promise.all(assets.map(asset=>cache.match(asset)))).every(Boolean))await cache.put('/',response.clone());}
+    if(response.ok){const html=await response.clone().text();const assets=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g)].map(match=>match[1]);if((await Promise.all(assets.map(asset=>cache.match(asset)))).every(Boolean))await cache.put('/',response.clone());}
     return response.ok?response:(await cache.match('/')||await cache.match('/offline.html')||response);
    }catch{return await cache.match('/')||await cache.match('/offline.html')||Response.error()}
    finally{clearTimeout(timer)}
