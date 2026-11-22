@@ -1,4 +1,4 @@
-const CACHE='sizey-v27';
+const CACHE='sizey-v28';
 const MEDIA_CACHE='sizey-media-v1';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -8,7 +8,7 @@ self.addEventListener('install',event=>{
   if(!home.ok)throw Error('Offline shell unavailable');
   await cache.put('/',home.clone());
   const html=await home.text();
-  const urls=['/brand/logo.svg','/manifest.webmanifest'];
+  const urls=['/brand/logo.svg','/manifest.webmanifest','/offline.html'];
   const manifest=await fetch('/offline-assets.json',{cache:'no-store'});
   if(!manifest.ok)throw Error('Offline asset inventory unavailable');
   const assets=await manifest.json();
@@ -76,8 +76,8 @@ self.addEventListener('fetch',event=>{
    try{
     const response=await fetch(request,{cache:'no-store',signal:controller.signal});
     if(response.ok)await cache.put('/',response.clone());
-    return response.ok?response:(await cache.match('/')||response);
-   }catch{return await cache.match('/')||Response.error()}
+    return response.ok?response:(await cache.match('/')||await cache.match('/offline.html')||response);
+   }catch{return await cache.match('/')||await cache.match('/offline.html')||Response.error()}
    finally{clearTimeout(timer)}
   })());
   return;
