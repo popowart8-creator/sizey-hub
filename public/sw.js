@@ -1,4 +1,4 @@
-const CACHE='sizey-v32';
+const CACHE='sizey-v33';
 const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -6,7 +6,6 @@ self.addEventListener('install',event=>{
   const cache=await caches.open(CACHE);
   const home=await fetch('/',{cache:'no-store'});
   if(!home.ok)throw Error('Offline shell unavailable');
-  await cache.put('/',home.clone());
   const html=await home.text();
   // Cache the app entrypoint first. Optional admin/media assets must not prevent SW installation.
   const entry=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g)].map(match=>match[1]);
@@ -21,12 +20,13 @@ self.addEventListener('install',event=>{
   if(results.some(result=>result.status==='rejected'))throw Error('Offline boot precache incomplete');
   // Do not activate an incomplete shell: the initial JS/CSS is required offline.
   for(const url of entry)if(!await cache.match(url))throw Error('Offline entry asset unavailable: '+url);
+  // Publish the shell only after every entrypoint asset is safely on disk.
+  await cache.put('/',new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));
  })());
  self.skipWaiting();
 });
 self.addEventListener('activate',event=>{
- event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('sizey-')&&key!==CACHE&&key!==MEDIA_CACHE).map(key=>caches.delete(key)))));
- self.clients.claim();
+ event.waitUntil((async()=>{await self.clients.claim();const keys=await caches.keys();const old=keys.filter(key=>/^sizey-v\\d+$/.test(key)&&key!==CACHE);const current=await caches.open(CACHE);if(await current.match('/'))await Promise.all(old.map(key=>caches.delete(key)));})());
 });
 async function cacheResponse(cache,request,response){
  if(response.ok&&response.type!=='opaque'&&(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))await cache.put(request,response.clone());
@@ -86,12 +86,12 @@ self.addEventListener('fetch',event=>{
   return;
  }
  if(url.pathname.startsWith('/assets/')){
+  // Immutable Vite hashed assets: prefer disk, never block a cached asset on a dead network.
   event.respondWith((async()=>{
    const cache=await caches.open(CACHE);
-   try{
-    const response=await fetch(request,{cache:'no-store'});
-    return await cacheResponse(cache,request,response);
-   }catch{return await cache.match(request)||Response.error()}
+   const saved=await cache.match(request);
+   if(saved)return saved;
+   try{const response=await fetch(request);return await cacheResponse(cache,request,response)}catch{return Response.error()}
   })());
   return;
  }
