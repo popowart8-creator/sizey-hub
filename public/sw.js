@@ -20,7 +20,7 @@ self.addEventListener('install',event=>{
    try{
     const response=await fetch(url,{cache:'no-store'});
     if(!response.ok)continue;
-    if(/\\.(?:js|css)(?:\\?|$)/.test(url)&&!/(javascript|text\\/css)/.test(response.headers.get('content-type')||''))continue;
+    if((url.endsWith('.js')||url.endsWith('.css'))&&!['javascript','text/css'].some(type=>(response.headers.get('content-type')||'').includes(type)))continue;
     await cache.put(url,response);
    }catch{}
   }
