@@ -102,6 +102,12 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
     reply(result.status,result.data);return true;
    }
    if(req.method==='GET'&&path==='/hub-api/admin/me')reply(200,{user:{id:user.id,name:user.name,role:user.role}});
+   else if(req.method==='POST'&&path==='/hub-api/admin/analytics/reset'){
+    if(!analytics)throw new ContentError(503,'Аналитика не подключена');
+    const payload=await body(req,1024);
+    if(payload?.confirmation!=='DELETE_ANALYTICS')throw new ContentError(400,'Подтвердите очистку аналитики');
+    analytics.reset();reply(200,{ok:true});
+   }
    else if(req.method==='GET'&&path==='/hub-api/admin/analytics'){
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
     const params=new URL(req.url,'http://internal').searchParams,days=Number(params.get('days')||30),report=analytics.report(days,params.has('from')||params.has('to')?{from:params.get('from'),to:params.get('to')}:undefined),catalog=new Map(store.list('products').map(p=>[p.id,p])),blogTitles=new Map((blog?.list()||[]).map(a=>[a.slug,a.title]));
