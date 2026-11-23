@@ -4,6 +4,7 @@ import {Share,PlusSquare,ArrowDownToLine,X,Copy,Check,EllipsisVertical} from 'lu
 export function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||(navigator as Navigator&{standalone?:boolean}).standalone===true}
 type InstallEvent=Event&{prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
 // Only real mobile browsers may show installation onboarding. A narrow desktop window is not a phone.
+// Desktop installation onboarding is intentionally disabled in the production storefront.
 const isMobileDevice=()=>/Android|iPhone|iPod|Mobile/i.test(navigator.userAgent)||(/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
 export default function InstallPrompt({onVisibilityChange}:{onVisibilityChange?:(open:boolean)=>void}={}){
  const [desktop,setDesktop]=useState(()=>!isMobileDevice()||window.matchMedia('(min-width: 768px)').matches);
