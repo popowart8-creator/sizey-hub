@@ -45,7 +45,7 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
     const rate=ingestRates.get(key);if(rate?.minute===minute&&rate.count>=120)throw new ContentError(429,'Слишком много событий');
     if(rate?.minute===minute)rate.count++;else ingestRates.set(key,{minute,count:1});
     if(ingestRates.size>10000)for(const[k,v]of ingestRates)if(v.minute!==minute)ingestRates.delete(k);
-    reply(202,{accepted:analytics.collect(await body(req),{ip:String(req.headers['x-real-ip']||req.socket.remoteAddress)})});return true;
+    reply(202,{accepted:analytics.collect(await body(req),{ip:String(req.headers['x-real-ip']||req.socket.remoteAddress),userAgent:String(req.headers['user-agent']||''),referer:String(req.headers.referer||''),host:String(req.headers.host||'')})});return true;
    }
    if(path==='/hub-api/blog'&&req.method==='GET'){reply(200,{articles:blog?.publicList()||[]});return true}
     if(path.startsWith('/hub-api/blog/')&&req.method==='GET'){const slug=path.slice('/hub-api/blog/'.length);const article=blog?.publicOne(slug);if(!article)throw new ContentError(404,'Статья не найдена');reply(200,{article});return true}
