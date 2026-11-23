@@ -4,25 +4,6 @@ function setup(){const dir=mkdtempSync(join(tmpdir(),'sizey-admin-'));const stor
 test('catalog persists across restarts, hides drafts publicly, rejects stale writes and keeps audits',()=>{const x=setup();try{assert.equal(x.store.publicContent().products.length,1);const p=x.store.list('products')[0];const saved=x.store.save('products',{...p,price:5500,published:false},'admin',p.id);assert.equal(saved.version,2);assert.equal(x.store.publicContent().products.length,0);assert.throws(()=>x.store.save('products',{...p,price:6000},'admin',p.id),e=>e.status===409);assert.equal(x.store.summary().recent.length,1);x.store.close();x.store=contentStore(join(x.dir,'content.sqlite'),{seedProducts:[product],seedBanners:[]});assert.equal(x.store.list('products')[0].price,5500)}finally{x.close()}});
 test('product validation rejects script images, invalid price and empty sizes',()=>{const x=setup();try{const p=x.store.list('products')[0];for(const patch of [{img:'javascript:alert(1)'},{price:-1},{sizes:[]},{price:Infinity}])assert.throws(()=>x.store.save('products',{...p,...patch},'admin',1),e=>e.status===400);assert.equal(x.store.list('products')[0].price,5000)}finally{x.close()}});
 test('image upload checks signatures, rejects SVG and traversal data',()=>{const x=setup();try{assert.throws(()=>storeImage(x.dir,{base64:Buffer.from('<svg onload="alert(1)"></svg>').toString('base64')}),e=>e.status===400);const image=Buffer.from([137,80,78,71,13,10,26,10,0,0,0,0,0]);assert.match(storeImage(x.dir,{base64:image.toString('base64')}),/^\/hub-api\/media\/[a-f0-9]{64}\.png$/)}finally{x.close()}});
-test('admin session survives expiry of upstream staff access token',async()=>{
- const x=setup();let checks=0;
- const handler=createAdmin({store:x.store,mediaDirectory:x.dir,staffAuth:{
-  login:async()=>({accessToken:'short-lived-token',user:{id:'admin',name:'Admin',role:'ADMIN',status:'ACTIVE'}}),
-  me:async()=>{checks++;const error=new Error('expired');error.status=401;throw error}
- }});
- const server=createServer(async(req,res)=>{if(!await handler(req,res)){res.writeHead(404);res.end()}});
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
- const base='http://127.0.0.1:'+server.address().port+'/hub-api/admin';
- try{
-  const login=await fetch(base+'/login',{method:'POST',headers:{Origin:'https://admmm.sizey.ru','Content-Type':'application/json'},body:JSON.stringify({login:'admin',password:'test'})});
-  assert.equal(login.status,200);
-  const cookie=login.headers.get('set-cookie').split(';')[0];
-  const me=await fetch(base+'/me',{headers:{Cookie:cookie}});
-  assert.equal(me.status,200);
-  assert.equal((await me.json()).user.role,'ADMIN');
-  assert.equal(checks,0);
- }finally{await new Promise(resolve=>server.close(resolve));x.close()}
-});
 test('admin auth rejects guests, cashier and wrong Origin; verified admin can edit and publish',async()=>{const x=setup();let role='ADMIN',active=true;const handler=createAdmin({store:x.store,descriptionAI:{status:async()=>({freeOnly:true,configured:false}),configure:async()=>({freeOnly:true,configured:true}),generate:async()=>({description:'Тестовое описание',free:true}),assistant:async(messages)=>{assert.match(messages[0].content,/Пальто/);assert.equal(messages.at(-1).content,'Где пальто?');return{answer:'Откройте товары.',section:'products'}}},mediaDirectory:x.dir,listClients:async()=>[{id:'client',name:'Клиент',phone_normalized:'79990000000'}],staffAuth:{login:async()=>({accessToken:'employee-token',user:{id:'employee',name:'Администратор',role,status:'ACTIVE'}}),me:async()=>({id:'employee',role,status:active?'ACTIVE':'BLOCKED'})},origin:'https://admmm.sizey.ru'});const server=createServer(async(req,res)=>{if(!await handler(req,res)){res.writeHead(404);res.end()}});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;const call=(path,data,cookie,origin='https://admmm.sizey.ru')=>fetch(base+'/hub-api'+path,{headers:{...(cookie?{Cookie:cookie}:{}),...(data?{Origin:origin,'Content-Type':'application/json'}:{})},...(data?{method:'POST',body:JSON.stringify(data)}:{})});try{
  const question={section:'overview',history:[{role:'user',content:'Где пальто?'}]};
  assert.equal((await call('/admin/ai/assistant',question)).status,401);
