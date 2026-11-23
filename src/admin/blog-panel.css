@@ -59,3 +59,13 @@
 .blog-product-picker-results button span{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
 .blog-product-picker-results button small{opacity:.65}
 .blog-product-picker-results p{padding:10px}
+
+.blog-product-picker-label{font-weight:650}
+.blog-product-chips{display:flex;flex-wrap:wrap;gap:8px}
+.blog-product-chips>small{opacity:.65}
+.blog-product-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:5px 7px;border:1px solid #8885;border-radius:12px;background:rgba(128,128,128,.09);font-size:12px}
+.blog-product-chip>img{width:32px;height:38px;object-fit:cover;border-radius:6px}
+.blog-product-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}
+.blog-product-chip>button{border:0;background:transparent;color:inherit;display:grid;place-items:center;cursor:pointer;padding:3px}
+.blog-product-option-image{width:38px;height:46px;object-fit:cover;border-radius:7px;flex-shrink:0}
+.blog-product-picker-results button span{flex:1}
