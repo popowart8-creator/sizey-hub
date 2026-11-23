@@ -3,12 +3,14 @@ import {useEffect,useRef,useState} from 'react';
 import {Share,PlusSquare,ArrowDownToLine,X,Copy,Check,EllipsisVertical} from 'lucide-react';
 export function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||(navigator as Navigator&{standalone?:boolean}).standalone===true}
 type InstallEvent=Event&{prompt:()=>Promise<void>;userChoice:Promise<{outcome:string}>};
+// Only real mobile browsers may show installation onboarding. A narrow desktop window is not a phone.
+const isMobileDevice=()=>/Android|iPhone|iPod|Mobile/i.test(navigator.userAgent)||(/iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
 export default function InstallPrompt({onVisibilityChange}:{onVisibilityChange?:(open:boolean)=>void}={}){
- const [desktop,setDesktop]=useState(()=>window.matchMedia('(min-width: 768px)').matches);
- useEffect(()=>{const query=window.matchMedia('(min-width: 768px)');const sync=()=>setDesktop(query.matches);query.addEventListener('change',sync);return()=>query.removeEventListener('change',sync)},[]);
+ const [desktop,setDesktop]=useState(()=>!isMobileDevice()||window.matchMedia('(min-width: 768px)').matches);
+ useEffect(()=>{const query=window.matchMedia('(min-width: 768px)');const sync=()=>setDesktop(!isMobileDevice()||query.matches);query.addEventListener('change',sync);return()=>query.removeEventListener('change',sync)},[]);
  const[ios]=useState(()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
  const[safari]=useState(()=>/Safari/.test(navigator.userAgent)&&!/CriOS|FxiOS|EdgiOS|OPiOS|GSA|Instagram|FBAN|FBAV|Telegram|YaBrowser|DuckDuckGo/i.test(navigator.userAgent));
- const[visible,setVisible]=useState(()=>!isStandalone()&&!window.matchMedia('(min-width: 768px)').matches),[event,setEvent]=useState<InstallEvent|null>(null),[copied,setCopied]=useState(false),[help,setHelp]=useState('');const dialog=useRef<HTMLDialogElement>(null);
+ const[visible,setVisible]=useState(()=>!isStandalone()&&isMobileDevice()&&!window.matchMedia('(min-width: 768px)').matches),[event,setEvent]=useState<InstallEvent|null>(null),[copied,setCopied]=useState(false),[help,setHelp]=useState('');const dialog=useRef<HTMLDialogElement>(null);
  useEffect(()=>{const install=(e:Event)=>{e.preventDefault();setEvent(e as InstallEvent)};const done=()=>{track('install_accept',{screen:'install'});setVisible(false)};window.addEventListener('beforeinstallprompt',install);window.addEventListener('appinstalled',done);return()=>{window.removeEventListener('beforeinstallprompt',install);window.removeEventListener('appinstalled',done)}},[]);
  useEffect(()=>{onVisibilityChange?.(visible&&!desktop);if(visible&&!desktop)track('install_prompt',{screen:'install'})},[visible,desktop,onVisibilityChange]);
  useEffect(()=>{if(!visible||desktop)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';dialog.current?.showModal();dialog.current?.focus();return()=>{dialog.current?.close();document.body.style.overflow=previous}},[visible,desktop]);
