@@ -25,7 +25,7 @@ test('blog keeps drafts private and enforces score, independent sources and link
   assert.equal(store.publicList().length,1);
   assert.equal(store.publicOne(high.slug).title,high.title);
   assert.equal(store.publicOne(low.slug),undefined);
-  const edited=store.save(fixture({title:'Обновлённый гид по выбору пальто',sections:['## Как выбрать пальто','Свободный текст без ограничения длины. '.repeat(180)]}),high.id);
+  const edited=store.save(fixture({slug:high.slug,title:'Обновлённый гид по выбору пальто',sections:['## Как выбрать пальто','Свободный текст без ограничения длины. '.repeat(180)]}),high.id);
   assert.equal(edited.published,true);
   assert.equal(store.publicOne(high.slug).title,'Обновлённый гид по выбору пальто');
   assert.equal(edited.sections[1].length>2500,true);
