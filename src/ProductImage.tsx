@@ -17,14 +17,19 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
  const [status,setStatus]=useState<'loading'|'ready'|'error'>(()=>loadedImages.has(src)?'ready':'loading');
  useEffect(()=>{setCurrent(src);setStatus(loadedImages.has(src)?'ready':'loading')},[src]);
  useEffect(()=>{
-  if(!isAdminPhoto(src))return;
   let active=true;let objectUrl:string|undefined;
   (async()=>{
-   const blob=await cachedAdminPhoto(src);
-   if(!blob||!active)return;
-   objectUrl=URL.createObjectURL(blob);
-   setCurrent(objectUrl);
-   setStatus('ready');
+   try{
+    let blob=isAdminPhoto(src)?await cachedAdminPhoto(src):undefined;
+    if(!blob&&sameOrigin(src)&&'caches' in window){
+     const cached=await caches.match(src);
+     if(cached?.ok&&cached.headers.get('content-type')?.startsWith('image/'))blob=await cached.blob();
+    }
+    if(!blob||!active)return;
+    objectUrl=URL.createObjectURL(blob);
+    setCurrent(objectUrl);
+    setStatus('ready');
+   }catch{}
   })();
   return()=>{active=false;if(objectUrl)URL.revokeObjectURL(objectUrl)};
  },[src]);
@@ -38,10 +43,10 @@ export default function ProductImage({src,alt,className,width,height,loading}:{s
    if(response.ok&&response.type!=='opaque'&&(response.headers.get('content-type')||'').startsWith('image/'))await cache.put(url,response);
   }catch{}})();
  };
- useEffect(()=>{if(status!=='loading')return;const timeout=setTimeout(()=>setStatus('error'),navigator.onLine?12000:2500);return()=>clearTimeout(timeout)},[current,status]);
+ useEffect(()=>{if(status!=='loading')return;const timeout=setTimeout(()=>setStatus('error'),navigator.onLine?8000:1800);return()=>clearTimeout(timeout)},[current,status]);
  const failed=()=>{
   if(current.includes('-360.webp')){setCurrent(current.replace('-360.webp','.webp'));setStatus('loading');return}
-  if(isAdminPhoto(src)){void cachedAdminPhoto(src).then(blob=>{if(blob){setCurrent(URL.createObjectURL(blob));setStatus('ready')}else setStatus('error')});return}
+  if(isAdminPhoto(src)){void cachedAdminPhoto(src).then(blob=>{if(blob&&current===src){setCurrent(URL.createObjectURL(blob));setStatus('ready')}else setStatus('error')});return}
   setStatus('error');
  };
  return <span className={'image-loading-wrap '+(className==='detailphoto'?'image-loading-detail':'')+(status==='loading'?' is-loading':'')+(status==='error'?' image-unavailable':'')}>
