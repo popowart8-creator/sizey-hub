@@ -53,7 +53,7 @@ async function scanBonusNotifications(){
    const title=birthday?settings.birthdayTitle:settings.purchaseTitle;
    const template=birthday?settings.birthdayMessage:settings.purchaseMessage;
    const message=template.replaceAll('{amount}',String(amount));
-   push.enqueue({id:randomUUID(),title,message,path:'/?tab=profile',audience:'selected',customers:[customer]},'loyalty-automation');
+   push.enqueue({id:randomUUID(),title,message,path:birthday?settings.birthdayPath:settings.purchasePath,audience:'selected',customers:[customer]},'loyalty-automation');
    push.markEvent(key);
   }
   automationSince=new Date();
