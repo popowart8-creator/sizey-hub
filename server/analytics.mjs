@@ -63,7 +63,7 @@ export function analyticsStore(path,{now=Date.now,geoLookup=null,geoProvider=nul
  const sessionVolume=db.prepare("SELECT COUNT(*) total,SUM(kind='screen_view') views FROM events WHERE session=? AND created>=?");
  function collect(body,{ip,userAgent='',referer='',host=''}={}){const events=validateEvents(body),time=now();
   // Keep suspect requests out of reports without altering any historical events.
-  if(botPattern.test(userAgent)||/\\b(?:admmm|admin)\\.sizey\\.ru\\b/i.test(referer)||/^admmm\\.sizey\\.ru(?::\\d+)?$/i.test(host)){
+  if(botPattern.test(userAgent)||/admmm\.sizey\.ru/i.test(referer)||/^admmm\.sizey\.ru(?::[0-9]+)?$/i.test(host)){
    diagnostics.run('filtered_automated_batches');return 0;
   }
   const totals=new Map();
