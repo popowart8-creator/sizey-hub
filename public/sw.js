@@ -1,4 +1,4 @@
-const CACHE='sizey-v37';
+const CACHE='sizey-shell-__BUILD_VERSION__';
 const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
@@ -27,7 +27,7 @@ self.addEventListener('install',event=>{
  event.waitUntil(self.skipWaiting());
 });
 self.addEventListener('activate',event=>{
- event.waitUntil((async()=>{await self.clients.claim();const keys=await caches.keys();const old=keys.filter(key=>/^sizey-v\\d+$/.test(key)&&key!==CACHE);const current=await caches.open(CACHE);if(await current.match('/'))await Promise.all(old.map(key=>caches.delete(key)));})());
+ event.waitUntil((async()=>{await self.clients.claim();const keys=await caches.keys();const old=keys.filter(key=>/^(?:sizey-v\\d+|sizey-shell-[a-zA-Z0-9._-]+)$/.test(key)&&key!==CACHE);const current=await caches.open(CACHE);if(await current.match('/'))await Promise.all(old.map(key=>caches.delete(key)));})());
 });
 async function cacheResponse(cache,request,response){
  if(response.ok&&response.type!=='opaque'&&(!new URL(request.url).pathname.startsWith('/assets/')||/(javascript|text\/css)/.test(response.headers.get('content-type')||'')))try{await cache.put(request,response.clone())}catch{/* Storage quota must never prevent displaying the fetched asset. */}
@@ -76,17 +76,25 @@ self.addEventListener('fetch',event=>{
  }
  if(url.pathname==='/sw.js')return;
  if(request.mode==='navigate'){
+  // Network-first HTML on every launch. Only commit HTML when all matching boot assets are cached.
+  // If offline or an incomplete release is served, keep the last fully working shell.
   event.respondWith((async()=>{
    const cache=await caches.open(CACHE);
-   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),1800);
+   const fallback=()=>cache.match('/') .then(response=>response||cache.match('/offline.html')||Response.error());
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
    try{
-    const cached=await cache.match('/');
-    if(cached)return cached;
     const response=await fetch(request,{cache:'no-store',signal:controller.signal});
-    // A new HTML shell is safe to persist only when its matching JS/CSS are cached.
-    if(response.ok){const html=await response.clone().text();const assets=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g)].map(match=>match[1]);if((await Promise.all(assets.map(asset=>cache.match(asset)))).every(Boolean))await cache.put('/',response.clone());}
-    return response.ok?response:(await cache.match('/')||await cache.match('/offline.html')||response);
-   }catch{return await cache.match('/')||await cache.match('/offline.html')||Response.error()}
+    if(!response.ok)return await fallback();
+    const html=await response.clone().text();
+    const assets=[...new Set([...html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g)].map(match=>match[1]))];
+    const complete=await Promise.all(assets.map(async asset=>{
+     if(await cache.match(asset))return true;
+     try{const res=await fetch(asset,{cache:'no-store',signal:controller.signal});if(!res.ok)return false;await cacheResponse(cache,new Request(asset,{credentials:'same-origin'}),res);return !!(await cache.match(asset))}catch{return false}
+    }));
+    if(!complete.every(Boolean))return await fallback();
+    await cache.put('/',new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8'}}));
+    return response;
+   }catch{return await fallback()}
    finally{clearTimeout(timer)}
   })());
   return;
