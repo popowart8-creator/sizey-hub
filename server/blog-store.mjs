@@ -13,7 +13,7 @@ function normalize(value){
  const title=clean(value.title,140),slug=(clean(value.slug,100)||autoSlug(title)).toLowerCase();
  const sections=value.sections,links=value.sources,productIds=value.productIds;
  const image=typeof value.image==='string'?value.image.trim():'';
- if(image&&(!image.startsWith('/media/')&&!image.startsWith('/uploads/')&&!/^https:\/\/[^\s]+$/.test(image)))fail('Неверная ссылка на иллюстрацию');
+ if(image&&(!image.startsWith('/hub-api/media/')&&!/^https:\/\/[^\s]+$/.test(image)))fail('Неверная ссылка на иллюстрацию');
  if(title.length<12||!slugPattern.test(slug))fail('Проверьте заголовок и адрес статьи');
  if(!Array.isArray(sections)||sections.length<1||sections.some(s=>typeof s!=='string'||!s.trim()))fail('Добавьте текст статьи');
  if(!Array.isArray(links)||links.length>12||(links.length===1))fail('Для статьи с источниками нужны минимум два независимых сайта');
