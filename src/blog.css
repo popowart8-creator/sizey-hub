@@ -38,3 +38,7 @@
 .sizey-blog-card:hover,.sizey-blog-card:focus-visible{color:inherit;text-decoration:none}
 .sizey-blog-product-action,.sizey-blog-more,.sizey-blog-sources,.sizey-blog-cta{display:none}
 @media(max-width:600px){.sizey-blog-article{padding:calc(env(safe-area-inset-top,0px) + 78px) 20px 100px}.sizey-blog-back{left:16px}}
+
+.sizey-blog-hero{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:18px;margin:0 0 28px}
+.sizey-blog-prose h3{font-size:clamp(23px,3vw,30px);font-weight:700;line-height:1.3;margin:16px 0 0}
+.sizey-blog-prose h4{font-size:clamp(19px,2.5vw,24px);font-weight:650;line-height:1.4;margin:12px 0 0}
