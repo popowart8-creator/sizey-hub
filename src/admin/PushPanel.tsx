@@ -4,7 +4,7 @@ import type {PushCounts} from './analytics-types';
 type Campaign=PushCounts&{id:string;title:string;created:number};
 type Status={subscribers:number;campaigns:Campaign[]};
 type Customer={id:string;name:string;phone:string};
-type Automation={birthdayTitle:string;birthdayMessage:string;purchaseTitle:string;purchaseMessage:string};
+type Automation={birthdayTitle:string;birthdayMessage:string;purchaseTitle:string;purchaseMessage:string;birthdayPath:string;purchasePath:string};
 const formatDate=new Intl.DateTimeFormat('ru-RU',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Moscow'});
 
 export default function PushPanel({request,onError}:{request:<T>(path:string,data?:unknown)=>Promise<T>;onError:(error:unknown)=>void}){
@@ -90,9 +90,13 @@ export default function PushPanel({request,onError}:{request:<T>(path:string,dat
     <h3>День рождения</h3>
     <label>Заголовок<input maxLength={80} value={automation.birthdayTitle} onChange={event=>{setAutomation({...automation,birthdayTitle:event.target.value});setAutomationMessage('')}}/></label>
     <label>Текст<textarea maxLength={240} rows={3} value={automation.birthdayMessage} onChange={event=>{setAutomation({...automation,birthdayMessage:event.target.value});setAutomationMessage('')}}/></label>
+    <label>Куда перейти<select value={['/','/?tab=catalog','/?tab=cart','/?tab=favorites','/?tab=profile','/?tab=wardrobe','/?blog=1'].includes(automation.birthdayPath)?automation.birthdayPath:'custom'} onChange={event=>{setAutomation({...automation,birthdayPath:event.target.value==='custom'?'/?tab=profile':event.target.value});setAutomationMessage('')}}><option value="/">Главная</option><option value="/?tab=catalog">Каталог</option><option value="/?tab=cart">Корзина</option><option value="/?tab=favorites">Избранное</option><option value="/?tab=profile">Профиль</option><option value="/?tab=wardrobe">Гардероб</option><option value="/?blog=1">Блог и новости</option><option value="custom">Своя ссылка</option></select></label>
+    {!['/','/?tab=catalog','/?tab=cart','/?tab=favorites','/?tab=profile','/?tab=wardrobe','/?blog=1'].includes(automation.birthdayPath)&&<label>Ссылка внутри приложения<input value={automation.birthdayPath} onChange={event=>{setAutomation({...automation,birthdayPath:event.target.value});setAutomationMessage('')}} placeholder="/?product=123"/></label>}
     <h3>После покупки</h3>
     <label>Заголовок<input maxLength={80} value={automation.purchaseTitle} onChange={event=>{setAutomation({...automation,purchaseTitle:event.target.value});setAutomationMessage('')}}/></label>
     <label>Текст<textarea maxLength={240} rows={3} value={automation.purchaseMessage} onChange={event=>{setAutomation({...automation,purchaseMessage:event.target.value});setAutomationMessage('')}}/></label>
+    <label>Куда перейти<select value={['/','/?tab=catalog','/?tab=cart','/?tab=favorites','/?tab=profile','/?tab=wardrobe','/?blog=1'].includes(automation.purchasePath)?automation.purchasePath:'custom'} onChange={event=>{setAutomation({...automation,purchasePath:event.target.value==='custom'?'/?tab=profile':event.target.value});setAutomationMessage('')}}><option value="/">Главная</option><option value="/?tab=catalog">Каталог</option><option value="/?tab=cart">Корзина</option><option value="/?tab=favorites">Избранное</option><option value="/?tab=profile">Профиль</option><option value="/?tab=wardrobe">Гардероб</option><option value="/?blog=1">Блог и новости</option><option value="custom">Своя ссылка</option></select></label>
+    {!['/','/?tab=catalog','/?tab=cart','/?tab=favorites','/?tab=profile','/?tab=wardrobe','/?blog=1'].includes(automation.purchasePath)&&<label>Ссылка внутри приложения<input value={automation.purchasePath} onChange={event=>{setAutomation({...automation,purchasePath:event.target.value});setAutomationMessage('')}} placeholder="/?product=123"/></label>}
     <button type="button" className="primary" disabled={savingAutomation} onClick={()=>void saveAutomation()}>{savingAutomation?'Сохраняем…':'Сохранить настройки'}</button>
     {automationMessage&&<p role="status">{automationMessage}</p>}
    </div>:<p>Загружаем настройки…</p>}
