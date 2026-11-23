@@ -409,3 +409,21 @@
     background: transparent;
   }
 }
+
+/* Real checkout and immersive order confirmation */
+.order-checkout-sheet{max-height:min(92dvh,850px);overflow-y:auto}
+.order-checkout-sheet form{display:grid;gap:16px}
+.order-checkout-sheet label{display:grid;gap:7px;font-weight:600}
+.order-checkout-sheet input,.order-checkout-sheet textarea{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #d6d6d6;border-radius:12px;font:inherit;background:#fff;color:#171717}
+.order-checkout-sheet textarea{resize:vertical}
+.order-checkout-legal,.order-checkout-account{font-size:12px;line-height:1.55;color:#777}
+.order-checkout-legal a{color:inherit;text-decoration:underline}
+.order-success-screen{position:fixed;inset:0;z-index:10020;background:radial-gradient(ellipse at 50% 38%,#f7f1eb 0%,#fff 66%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;box-sizing:border-box}
+.order-success-screen h1{font-size:clamp(30px,6vw,46px);letter-spacing:-.05em;margin:22px 0 8px}
+.order-success-screen p{font-size:16px;color:#666;margin:0 0 36px}
+.order-success-screen .blackbtn{min-width:min(100%,310px);justify-content:center}
+.order-success-art{width:230px;height:210px;position:relative;perspective:700px;filter:drop-shadow(0 24px 18px #c9b8ab66)}
+.order-success-box{position:absolute;left:45px;top:85px;width:140px;height:105px;background:linear-gradient(140deg,#e6c9ad,#b98f70);border-radius:8px 8px 15px 15px;transform:rotate(-7deg) rotateY(-16deg);box-shadow:inset -22px -4px 30px #8f654a44,12px 12px 0 #9d785e}
+.order-success-box span{display:block;margin-top:40px;font-size:25px;letter-spacing:.17em;font-weight:800;color:#fff9f2}
+.order-success-lid{position:absolute;left:36px;top:62px;width:165px;height:40px;background:linear-gradient(120deg,#f7dec3,#c49a79);border-radius:9px;transform:rotate(-10deg) skewX(10deg);z-index:2;box-shadow:0 9px 12px #8b6b5544}
+.order-success-spark{position:absolute;color:#c49a79;font-size:40px}.spark-one{right:5px;top:13px}.spark-two{left:5px;top:52px;font-size:29px}
