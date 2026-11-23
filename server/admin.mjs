@@ -74,6 +74,13 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
    if(path==='/hub-api/admin/push/customers'&&req.method==='GET'){
     reply(200,{customers:await listPushCustomers()});return true;
    }
+   if(path==='/hub-api/admin/device-push'){
+    if(!push)throw new ContentError(503,'Уведомления недоступны');
+    if(req.method==='GET'){reply(200,{key:push.publicKey});return true}
+    if(req.method==='POST'){if(req.headers.origin!==origin)throw new ContentError(403,'Недопустимый источник запроса');reply(200,push.subscribeAdmin(await body(req,4096)));return true}
+    if(req.method==='DELETE'){if(req.headers.origin!==origin)throw new ContentError(403,'Недопустимый источник запроса');reply(200,push.unsubscribeAdmin(await body(req,4096)));return true}
+    throw new ContentError(405,'Метод не поддерживается');
+   }
    if(path==='/hub-api/admin/push/automation'){
     if(!push)throw new ContentError(503,'Уведомления недоступны');
     if(req.method==='GET'){reply(200,{settings:push.automationSettings()});return true}
