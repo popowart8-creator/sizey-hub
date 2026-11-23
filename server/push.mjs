@@ -125,7 +125,7 @@ const columns=db.prepare('PRAGMA table_info(push_subscriptions)').all().map(row=
   setAutomationSettings(data){
    const fields=['birthdayTitle','birthdayMessage','purchaseTitle','purchaseMessage'];
    const paths=['birthdayPath','purchasePath'];
-   if(paths.some(key=>typeof data[key]!=='string'||!validPath(data[key])))throw new ContentError(400,'Некорректный переход для автоматического уведомления');
+   if(paths.some(key=>typeof data[key]!=='string'||!validPushPath(data[key])))throw new ContentError(400,'Некорректный переход для автоматического уведомления');
    if(fields.some(key=>typeof data[key]!=='string'||!data[key].trim()||data[key].length>(key.endsWith('Title')?80:240)))throw new ContentError(400,'Проверьте заголовки и тексты уведомлений');
    db.prepare(`INSERT INTO push_automation_settings(id,birthday,purchase,birthday_title,birthday_message,purchase_title,purchase_message,birthday_path,purchase_path)
      VALUES(1,1,1,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET birthday=1,purchase=1,birthday_title=excluded.birthday_title,birthday_message=excluded.birthday_message,purchase_title=excluded.purchase_title,purchase_message=excluded.purchase_message,birthday_path=excluded.birthday_path,purchase_path=excluded.purchase_path`).run(...fields.map(key=>data[key].trim()),...paths.map(key=>data[key]));
