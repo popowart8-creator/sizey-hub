@@ -13,7 +13,7 @@ function normalize(value){
  const title=clean(value.title,140),slug=(clean(value.slug,100)||autoSlug(title)).toLowerCase();
  const sections=value.sections,links=value.sources,productIds=value.productIds;
  if(title.length<12||!slugPattern.test(slug))fail('Проверьте заголовок и адрес статьи');
- if(!Array.isArray(sections)||sections.length<2||sections.length>16||sections.some(s=>typeof s!=='string'||s.trim().length<50||s.length>2500))fail('Добавьте от 2 до 16 содержательных абзацев');
+ if(!Array.isArray(sections)||sections.length<1||sections.some(s=>typeof s!=='string'||!s.trim()))fail('Добавьте текст статьи');
  if(!Array.isArray(links)||links.length>12||(links.length===1))fail('Для статьи с источниками нужны минимум два независимых сайта');
  const sources=links.map(s=>{if(!s||typeof s!=='object')fail('Проверьте источники');let url;try{url=new URL(s.url)}catch{fail('Неверная ссылка на источник')}if(url.protocol!=='https:'||url.username||url.password||url.hostname.length>200)fail('Источники должны использовать HTTPS');const label=clean(s.title,180);if(label.length<5)fail('Укажите название источника');return{title:label,url:url.href}});
  if(sources.length&&new Set(sources.map(s=>new URL(s.url).hostname.replace(/^www\./,'').toLowerCase())).size<2)fail('Источники должны быть с разных сайтов');
@@ -41,7 +41,6 @@ export function blogStore(path,{now=Date.now}={}){
   const old=id?find(id):null;
   const article=normalize({...value,slug:value?.slug||old?.slug});
   if(id&&!old)fail('Статья не найдена',404);
-  if(old?.published)fail('Снимите статью с публикации перед редактированием',409);
   const used=db.prepare('SELECT id FROM blog_articles WHERE slug=?').get(article.slug);
   if(used&&used.id!==id)fail('Такой адрес статьи уже используется',409);
   const timestamp=now(),key=id||randomUUID();
