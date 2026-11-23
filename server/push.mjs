@@ -33,6 +33,7 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
  CREATE TABLE IF NOT EXISTS push_automation_settings(id INTEGER PRIMARY KEY CHECK(id=1), birthday INTEGER NOT NULL DEFAULT 0, purchase INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS push_automation_events(id TEXT PRIMARY KEY, created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_config(id INTEGER PRIMARY KEY CHECK(id=1), keys TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS admin_push_subscriptions(id TEXT PRIMARY KEY,data TEXT NOT NULL,created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_analytics_meta(key TEXT PRIMARY KEY,value INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_subscriptions(id TEXT PRIMARY KEY, data TEXT NOT NULL, analytics INTEGER NOT NULL, created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_inbox(id TEXT PRIMARY KEY, customer TEXT NOT NULL, campaign TEXT NOT NULL, title TEXT NOT NULL, message TEXT NOT NULL, path TEXT NOT NULL, created INTEGER NOT NULL, read INTEGER NOT NULL DEFAULT 0);
@@ -118,6 +119,24 @@ const columns=db.prepare('PRAGMA table_info(push_subscriptions)').all().map(row=
  const stateTimes=()=>Array(2).fill(now()-60000);
  return {
   publicKey:vapidDetails.publicKey,
+  subscribeAdmin(data){
+   const item=subscription(data),id=hash(item.endpoint);
+   db.prepare('INSERT INTO admin_push_subscriptions(id,data,created) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,created=excluded.created').run(id,JSON.stringify(item),now());
+   return {ok:true};
+  },
+  unsubscribeAdmin(data){
+   const item=subscription(data);
+   db.prepare('DELETE FROM admin_push_subscriptions WHERE id=?').run(hash(item.endpoint));
+   return {ok:true};
+  },
+  async notifyAdmins(order){
+   const subscribers=db.prepare('SELECT id,data FROM admin_push_subscriptions').all();
+   const title='Новый заказ SIZEY',body='Заказ № '+order.id.slice(0,8)+' · '+order.total.toLocaleString('ru-RU')+' ₽';
+   await Promise.allSettled(subscribers.map(async row=>{
+    try{await send(JSON.parse(row.data),JSON.stringify({title,body,path:'/?section=orders'}),{vapidDetails,TTL:86400,timeout:10000})}
+    catch(error){if(error.statusCode===404||error.statusCode===410)db.prepare('DELETE FROM admin_push_subscriptions WHERE id=?').run(row.id);else console.error('Admin order push:',error.message)}
+   }));
+  },
   automationSettings(){
    const row=db.prepare('SELECT birthday_title,birthday_message,purchase_title,purchase_message,birthday_path,purchase_path FROM push_automation_settings WHERE id=1').get();
    return {birthdayTitle:row?.birthday_title||defaults.birthdayTitle,birthdayMessage:row?.birthday_message||defaults.birthdayMessage,purchaseTitle:row?.purchase_title||defaults.purchaseTitle,purchaseMessage:row?.purchase_message||defaults.purchaseMessage,birthdayPath:row?.birthday_path||'/?tab=profile',purchasePath:row?.purchase_path||'/?tab=profile'};
