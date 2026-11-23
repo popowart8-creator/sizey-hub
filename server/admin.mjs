@@ -106,7 +106,7 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
     const payload=await body(req,1024);
     if(payload?.confirmation!=='DELETE_ANALYTICS')throw new ContentError(400,'Подтвердите очистку аналитики');
-    analytics.reset();reply(200,{ok:true});
+    analytics.reset();push?.resetAnalytics();reply(200,{ok:true});
    }
    else if(req.method==='GET'&&path==='/hub-api/admin/analytics'){
     if(!analytics)throw new ContentError(503,'Аналитика не подключена');
