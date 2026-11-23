@@ -97,3 +97,6 @@
 .sizey-offline-refresh{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;min-height:36px;padding:0 10px;border:1px solid var(--color-tertiary,#d6d6d9);border-radius:10px;background:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer}
 .sizey-offline-refresh:disabled{opacity:.5;cursor:default}
 @media(max-width:360px){.sizey-offline-notice{margin-inline:10px;padding:10px;gap:8px}.sizey-offline-refresh{padding-inline:8px;font-size:11px}.sizey-offline-notice-copy span{font-size:10px}}
+
+/* Installation onboarding is exclusively for narrow mobile viewports. */
+@media (min-width:768px){dialog.install-modal.install-sheet,dialog.install-modal.install-sheet[open]{display:none!important;visibility:hidden!important;pointer-events:none!important}}
