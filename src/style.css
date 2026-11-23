@@ -123,3 +123,10 @@
  html:root .sizey-contact-copy>span{color:inherit;opacity:.7}
 }
 @media(prefers-reduced-motion:reduce){.sizey-contact-item{transition:none}}
+
+/* Customer sheets: only the content area scrolls; handle and heading stay in place. */
+.delivery-swipe-sheet.customer-sheet{display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:contain;touch-action:auto;min-height:0}
+.customer-sheet .delivery-swipe-handle,.customer-sheet .customer-sheet-header{flex-shrink:0}
+.customer-sheet .customer-sheet-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.customer-sheet .customer-sheet-header h2{min-width:0}
+.customer-sheet .customer-sheet-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
