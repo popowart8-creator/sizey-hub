@@ -69,3 +69,9 @@
 .blog-product-chip>button{border:0;background:transparent;color:inherit;display:grid;place-items:center;cursor:pointer;padding:3px}
 .blog-product-option-image{width:38px;height:46px;object-fit:cover;border-radius:7px;flex-shrink:0}
 .blog-product-picker-results button span{flex:1}
+
+.blog-image-field{display:grid;gap:10px}
+.blog-image-field>span{font-weight:650}
+.blog-image-preview{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px}
+.blog-image-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+.blog-image-upload{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:11px 16px;border-radius:10px}
