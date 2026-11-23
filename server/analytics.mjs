@@ -96,5 +96,6 @@ export function analyticsStore(path,{now=Date.now,geoLookup=null,geoProvider=nul
  const filterStats=Object.fromEntries(db.prepare("SELECT key,value FROM analytics_meta WHERE key LIKE 'filtered_%'").all().map(row=>[row.key,row.value]));
  return{filterStats,days,startedAt,updatedAt:now(),retentionDays:90,timezone:'Europe/Moscow',from:new Date(start+offset).toISOString().slice(0,10),to:new Date(end+offset).toISOString().slice(0,10),metrics:row,daily,hourly,products,blogArticles,devices,formFactors:formFactors(start,end),pages:pages.map(p=>({...p,...(byScreen.get(p.screen)||{measuredViews:0,measuredSessions:0,activeMs:0,engagedSessions:0,scroll25:0,scroll50:0,scroll75:0,scroll100:0})})),actions,sources,sourceDetails,countries,cities,geography:{enabled:!!geoLookup,provider:geoProvider,...geoCount},comparison:{available:previousStart>=Math.max(startedAt,now()-90*DAY),metrics:metrics(previousStart,previousEnd),formFactors:formFactors(previousStart,previousEnd),from:new Date(previousStart+offset).toISOString().slice(0,10),to:new Date(previousEnd+offset).toISOString().slice(0,10)}};
  }
- return{collect,report,close:()=>{clearInterval(timer);db.close()}};
+ function reset(){db.exec('BEGIN');try{db.exec('DELETE FROM event_details;DELETE FROM blog_event_articles;DELETE FROM events;DELETE FROM analytics_sessions;DELETE FROM analytics_meta;');db.prepare("INSERT INTO analytics_meta(key,value) VALUES('started',?)").run(now());db.exec('COMMIT')}catch(error){db.exec('ROLLBACK');throw error}}
+ return{collect,report,reset,close:()=>{clearInterval(timer);db.close()}};
 }
