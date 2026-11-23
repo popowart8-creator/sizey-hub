@@ -7,13 +7,13 @@ import {ContentError,storeImage} from './content-store.mjs';
 import {prepareAssistantReply,saveAssistantAnswer} from './admin-assistant.mjs';
 import {ApiError} from './auth.mjs';
 import {loyaltyAdminRequest} from './loyalty-admin.mjs';
-export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=async()=>[],descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
+export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=async()=>[],descriptionAI,keywordSuggestions,staffAuth,listClients,mediaDirectory,sessionDatabase=':memory:',origin='https://admmm.sizey.ru',eventOrigin='https://hub.sizey.ru',now=Date.now}){
  const ingestRates=new Map();
  const blogJobs=new Map();
  const jobExpiry=30*60*1000;
  const cleanBlogJobs=()=>{for(const [id,job] of blogJobs)if(job.created+jobExpiry<now()&&job.state!=='running')blogJobs.delete(id)};
  const adminSessionAge=12*60*60*1000;
- const sessionDb=new DatabaseSync(joinPath(dirname(mediaDirectory),'admin-sessions.sqlite'));
+ const sessionDb=new DatabaseSync(sessionDatabase);
  sessionDb.exec("PRAGMA busy_timeout=5000;CREATE TABLE IF NOT EXISTS admin_sessions(hash TEXT PRIMARY KEY,access_token TEXT NOT NULL,expires INTEGER NOT NULL)");
  const sessionGet=sessionDb.prepare('SELECT access_token accessToken,expires FROM admin_sessions WHERE hash=?');
  const sessionPut=sessionDb.prepare('INSERT OR REPLACE INTO admin_sessions(hash,access_token,expires) VALUES(?,?,?)');
