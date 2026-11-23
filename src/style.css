@@ -100,3 +100,26 @@
 
 /* Installation onboarding is exclusively for narrow mobile viewports. */
 @media (min-width:768px){dialog.install-modal.install-sheet,dialog.install-modal.install-sheet[open]{display:none!important;visibility:hidden!important;pointer-events:none!important}}
+
+/* SIZEY contact sheet: every contact method is a full-width action. */
+.sizey-contact{padding:4px 0 10px}
+.sizey-contact-intro{padding:20px 20px 22px;border-radius:22px;background:linear-gradient(135deg,#242028 0%,#413348 60%,#65406c 100%);color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
+.sizey-contact-intro:after{content:"✳";position:absolute;right:10px;top:-35px;font-size:150px;opacity:.09;pointer-events:none}
+.sizey-contact-eyebrow{font-size:10px;letter-spacing:.18em;font-weight:750;color:#eac4f3}
+.sizey-contact-intro h3{font-size:25px;line-height:1.1;margin:10px 0 9px;letter-spacing:-.04em;color:#fff}
+.sizey-contact-intro p{font-size:13px;line-height:1.5;margin:0;max-width:300px;color:#f4e8f4}
+.sizey-contact-list{display:grid;gap:9px}
+.sizey-contact-item{display:flex;align-items:center;gap:13px;min-width:0;min-height:84px;padding:14px 13px;border:1px solid var(--color-tertiary,#e6e3e8);border-radius:17px;background:var(--color-secondary,#f8f7f9);color:inherit!important;text-decoration:none!important;transition:transform .18s,border-color .18s,background .18s}
+.sizey-contact-item:hover{transform:translateY(-2px);border-color:#b37cc2;background:var(--color-secondary,#f8f7f9)}
+.sizey-contact-item:focus-visible{outline:3px solid #a65db9;outline-offset:2px}
+.sizey-contact-address{border-color:#bb91c7;background:linear-gradient(110deg,rgba(176,95,201,.14),rgba(176,95,201,.035))}
+.sizey-contact-symbol{display:grid;place-items:center;flex:0 0 46px;height:46px;border-radius:14px;background:rgba(147,76,167,.12);color:#9342a9;font-weight:850;font-size:19px}
+.sizey-contact-address .sizey-contact-symbol{background:#9246a7;color:white}
+.sizey-contact-copy{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}
+.sizey-contact-copy small{font-size:9px;font-weight:800;letter-spacing:.1em;opacity:.65}
+.sizey-contact-copy strong{font-size:14px;font-weight:750;line-height:1.35;overflow-wrap:anywhere}
+.sizey-contact-copy>span{font-size:11px;opacity:.67;line-height:1.4}
+.sizey-contact-arrow{flex:0 0 auto;opacity:.6}
+.sizey-contact-privacy{display:flex;align-items:center;justify-content:center;gap:5px;margin:18px 0 4px;color:inherit;opacity:.62;font-size:11px;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:420px){.sizey-contact-intro{padding:18px}.sizey-contact-item{padding:12px 10px;gap:10px}.sizey-contact-symbol{flex-basis:42px;height:42px}.sizey-contact-copy strong{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.sizey-contact-item{transition:none}}
