@@ -12,6 +12,8 @@ function normalize(value){
  if(!value||typeof value!=='object'||Array.isArray(value))fail('Некорректная статья');
  const title=clean(value.title,140),slug=(clean(value.slug,100)||autoSlug(title)).toLowerCase();
  const sections=value.sections,links=value.sources,productIds=value.productIds;
+ const image=typeof value.image==='string'?value.image.trim():'';
+ if(image&&(!image.startsWith('/media/')&&!image.startsWith('/uploads/')&&!/^https:\/\/[^\s]+$/.test(image)))fail('Неверная ссылка на иллюстрацию');
  if(title.length<12||!slugPattern.test(slug))fail('Проверьте заголовок и адрес статьи');
  if(!Array.isArray(sections)||sections.length<1||sections.some(s=>typeof s!=='string'||!s.trim()))fail('Добавьте текст статьи');
  if(!Array.isArray(links)||links.length>12||(links.length===1))fail('Для статьи с источниками нужны минимум два независимых сайта');
@@ -21,7 +23,7 @@ function normalize(value){
  const score=Number(value.score);
  if(!Number.isInteger(score)||score<0||score>100)fail('Некорректный рейтинг');
  const summary=sections[0].trim().slice(0,450);
- return{title,slug,summary,sections:sections.map(s=>s.trim()),sources,productIds:[...new Set(productIds)],score};
+ return{title,slug,image,summary,sections:sections.map(s=>s.trim()),sources,productIds:[...new Set(productIds)],score};
 }
 export function blogStore(path,{now=Date.now}={}){
  mkdirSync(dirname(path),{recursive:true});const db=new DatabaseSync(path);chmodSync(path,0o600);
@@ -32,7 +34,8 @@ export function blogStore(path,{now=Date.now}={}){
  published INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL,updated INTEGER NOT NULL,published_at INTEGER
  );
  CREATE INDEX IF NOT EXISTS blog_articles_public ON blog_articles(published,published_at);`);
- const decode=r=>r&&({id:r.id,slug:r.slug,title:r.title,summary:r.summary,sections:JSON.parse(r.sections),sources:JSON.parse(r.sources),productIds:JSON.parse(r.product_ids),score:r.score,published:!!r.published,created:r.created,updated:r.updated,publishedAt:r.published_at});
+ if(!db.prepare('PRAGMA table_info(blog_articles)').all().some(col=>col.name==='image'))db.exec("ALTER TABLE blog_articles ADD COLUMN image TEXT NOT NULL DEFAULT ''");
+ const decode=r=>r&&({id:r.id,slug:r.slug,title:r.title,summary:r.summary,image:r.image||'',sections:JSON.parse(r.sections),sources:JSON.parse(r.sources),productIds:JSON.parse(r.product_ids),score:r.score,published:!!r.published,created:r.created,updated:r.updated,publishedAt:r.published_at});
  const find=id=>decode(db.prepare('SELECT * FROM blog_articles WHERE id=?').get(id));
  const list=()=>db.prepare('SELECT * FROM blog_articles ORDER BY updated DESC LIMIT 200').all().map(decode);
  const publicList=()=>db.prepare('SELECT * FROM blog_articles WHERE published=1 ORDER BY published_at DESC LIMIT 100').all().map(decode);
@@ -44,11 +47,11 @@ export function blogStore(path,{now=Date.now}={}){
   const used=db.prepare('SELECT id FROM blog_articles WHERE slug=?').get(article.slug);
   if(used&&used.id!==id)fail('Такой адрес статьи уже используется',409);
   const timestamp=now(),key=id||randomUUID();
-  db.prepare(`INSERT INTO blog_articles(id,slug,title,summary,sections,sources,product_ids,score,published,created,updated,published_at)
-   VALUES(?,?,?,?,?,?,?,?,0,?,?,NULL)
+  db.prepare(`INSERT INTO blog_articles(id,slug,title,summary,sections,sources,product_ids,score,published,created,updated,published_at,image)
+   VALUES(?,?,?,?,?,?,?,?,0,?,?,NULL,?)
    ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,title=excluded.title,summary=excluded.summary,
-   sections=excluded.sections,sources=excluded.sources,product_ids=excluded.product_ids,score=excluded.score,updated=excluded.updated`)
-   .run(key,article.slug,article.title,article.summary,JSON.stringify(article.sections),JSON.stringify(article.sources),JSON.stringify(article.productIds),article.score,old?.created||timestamp,timestamp);
+   sections=excluded.sections,sources=excluded.sources,product_ids=excluded.product_ids,score=excluded.score,image=excluded.image,updated=excluded.updated`)
+   .run(key,article.slug,article.title,article.summary,JSON.stringify(article.sections),JSON.stringify(article.sources),JSON.stringify(article.productIds),article.score,old?.created||timestamp,timestamp,article.image);
   return find(key);
  }
  function publish(id,published,products){
