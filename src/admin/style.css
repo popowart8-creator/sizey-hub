@@ -43,3 +43,13 @@
 .push-audience-list label{min-width:0}
 .push-audience-list span{min-width:0;overflow-wrap:anywhere}
 @media(max-width:600px){.push-settings-screen .page-heading{padding:8px 16px}.push-settings-screen .push-settings-back{margin-left:16px}.push-settings-screen .push-audience{padding:16px}.push-admin .panel{overflow:hidden}}
+
+.admin-push-onboarding{position:fixed;inset:0;z-index:10000;background:radial-gradient(ellipse at 50% 30%,#f4eee9,#fff 65%);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:28px;box-sizing:border-box}
+.admin-push-onboarding h1{font-size:clamp(28px,6vw,44px);line-height:1.1;max-width:440px;margin:24px 0 12px;letter-spacing:-.04em}
+.admin-push-onboarding p{max-width:370px;color:#777;line-height:1.55;margin:0 0 25px}
+.admin-push-onboarding .primary{min-width:260px;justify-content:center}
+.admin-push-onboarding .secondary{margin-top:12px;min-width:260px;justify-content:center}
+.admin-push-onboarding .admin-push-error{color:#ad3939;font-size:13px;margin:0 0 14px}
+.admin-push-art{height:205px;width:230px;position:relative;perspective:700px}
+.admin-push-art-box{position:absolute;top:50px;left:46px;width:145px;height:135px;display:grid;place-items:center;background:linear-gradient(145deg,#f2dac7,#c7a68d);border-radius:26px;transform:rotate(-9deg) rotateY(-18deg);box-shadow:17px 19px 0 #b18b70,22px 30px 30px #bfa28c66;color:#fff}
+.admin-push-art-bell{position:absolute;right:7px;top:17px;width:68px;height:68px;display:grid;place-items:center;border-radius:50%;background:#191919;color:#fff;box-shadow:0 13px 25px #0003;transform:rotate(13deg)}
