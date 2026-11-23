@@ -86,7 +86,7 @@ self.addEventListener('fetch',event=>{
     const response=await fetch(request,{cache:'no-store',signal:controller.signal});
     if(!response.ok)return await fallback();
     const html=await response.clone().text();
-    const assets=[...new Set([...html.matchAll(/(?:src|href)=["'](\\/assets\\/[^"'?#]+)["']/g)].map(match=>match[1]))];
+    const assets=[...new Set([...html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g)].map(match=>match[1]))];
     const complete=await Promise.all(assets.map(async asset=>{
      if(await cache.match(asset))return true;
      try{const res=await fetch(asset,{cache:'no-store',signal:controller.signal});if(!res.ok)return false;await cacheResponse(cache,new Request(asset,{credentials:'same-origin'}),res);return !!(await cache.match(asset))}catch{return false}
