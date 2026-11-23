@@ -33,6 +33,7 @@ export function createPushStore(file,{now=Date.now,send=(...args)=>webPush.sendN
  CREATE TABLE IF NOT EXISTS push_automation_settings(id INTEGER PRIMARY KEY CHECK(id=1), birthday INTEGER NOT NULL DEFAULT 0, purchase INTEGER NOT NULL DEFAULT 0);
  CREATE TABLE IF NOT EXISTS push_automation_events(id TEXT PRIMARY KEY, created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_config(id INTEGER PRIMARY KEY CHECK(id=1), keys TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS push_analytics_meta(key TEXT PRIMARY KEY,value INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_subscriptions(id TEXT PRIMARY KEY, data TEXT NOT NULL, analytics INTEGER NOT NULL, created INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS push_inbox(id TEXT PRIMARY KEY, customer TEXT NOT NULL, campaign TEXT NOT NULL, title TEXT NOT NULL, message TEXT NOT NULL, path TEXT NOT NULL, created INTEGER NOT NULL, read INTEGER NOT NULL DEFAULT 0);
  CREATE INDEX IF NOT EXISTS push_inbox_customer ON push_inbox(customer,created DESC);
@@ -173,8 +174,10 @@ const columns=db.prepare('PRAGMA table_info(push_subscriptions)').all().map(row=
      ORDER BY c.created DESC LIMIT 50`).all(...stateTimes())
    };
   },
+  resetAnalytics(){db.prepare("INSERT INTO push_analytics_meta(key,value) VALUES('reset_at',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").run(now())},
   report(from,to){
-   const start=Date.parse(from+'T00:00:00+03:00'),end=Date.parse(to+'T00:00:00+03:00')+86400000;
+   const resetAt=db.prepare("SELECT value FROM push_analytics_meta WHERE key='reset_at'").get()?.value||0;
+   const start=Math.max(resetAt,Date.parse(from+'T00:00:00+03:00')),end=Date.parse(to+'T00:00:00+03:00')+86400000;
    return db.prepare(`SELECT COUNT(DISTINCT c.id) campaigns,${counts}
     FROM push_campaigns c LEFT JOIN push_deliveries d ON d.campaign=c.id WHERE c.created>=? AND c.created<?`).get(...stateTimes(),start,end);
   },
