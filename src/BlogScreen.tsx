@@ -7,7 +7,7 @@ import useLayerBack from './useLayerBack';
 import './blog.css';
 
 export type BlogArticle={
- id:string;slug:string;title:string;summary:string;sections:string[];
+ id:string;slug:string;title:string;summary:string;image?:string;sections:string[];
  sources:{title:string;url:string}[];productIds:number[];publishedAt:number|null;score:number
 };
 type Item={id:number;name:string;price:number;img:string};
@@ -34,7 +34,8 @@ export default function BlogScreen({products,initialSlug,onExplore,onProduct,onA
 
     <h2>{active.title}</h2>
 
-    <div className="sizey-blog-prose">{active.sections.flatMap((section,i)=>section.split(/\n/).map((line,j)=>({line:line.trim(),key:i+'-'+j}))).filter(x=>x.line).map(({line,key})=>line.startsWith('### ')?<h4 key={key}>{line.slice(4)}</h4>:line.startsWith('## ')?<h3 key={key}>{line.slice(3)}</h3>:<p key={key}>{line}</p>)}</div>
+    {active.image&&<img className="sizey-blog-hero" src={active.image} alt={active.title} loading="eager"/>}
+    <div className="sizey-blog-prose">{active.sections.flatMap((section,i)=>section.split(/\n/).map((line,j)=>({line:line.trim(),key:i+'-'+j}))).filter(x=>x.line).map(({line,key})=>{const heading=line.match(/^#{1,6}\s*(.+)$/);return heading?(heading[0].startsWith('###')?<h4 key={key}>{heading[1]}</h4>:<h3 key={key}>{heading[1]}</h3>):<p key={key}>{line}</p>})}</div>
     {related(active).length>0&&<section className="sizey-blog-products" aria-label="Товары по теме">
       <h3>Подобрать образ в SIZEY</h3>
       <div className="sizey-blog-productgrid">{related(active).map(product=><button className="sizey-blog-product" key={product.id} onClick={()=>{track('blog_product_click',{articleSlug:active.slug,productId:product.id});onProduct(product.id,active.slug)}}>
@@ -51,7 +52,7 @@ export default function BlogScreen({products,initialSlug,onExplore,onProduct,onA
     {loading?<LoadingSkeleton variant="blog"/>:error?<div className="sizey-blog-state" role="alert">{error}<button onClick={()=>location.reload()}>Повторить</button></div>:
     articles.length===0?<div className="sizey-blog-empty"><BookOpen size={34}/><h3>Готовим полезные материалы</h3><p>Здесь появятся только проверенные статьи, которые помогут сделать выбор.</p></div>:
     <div className="sizey-blog-grid">{articles.map(article=><a className="sizey-blog-card" href={'/?blog='+encodeURIComponent(article.slug)} key={article.id} onClick={event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;event.preventDefault();open(article)}}>
-      {related(article)[0]&&<img src={related(article)[0].img} alt="" loading="lazy"/>}
+      {(article.image||related(article)[0]?.img)&&<img src={article.image||related(article)[0]?.img} alt="" loading="lazy"/>}
       <span className="sizey-blog-card-info"><strong>{article.title}</strong></span>
     </a>)}</div>}
    </section>}
