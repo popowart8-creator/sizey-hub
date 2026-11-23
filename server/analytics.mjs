@@ -58,7 +58,7 @@ export function analyticsStore(path,{now=Date.now,geoLookup=null,geoProvider=nul
  const details=db.prepare('INSERT INTO event_details VALUES(?,?,?,?)');
   const blogDetails=db.prepare('INSERT INTO blog_event_articles VALUES(?,?)');
  const newSession=db.prepare('INSERT OR IGNORE INTO analytics_sessions VALUES(?,?,?,?,?,?,?,?,?,?)');
- const botPattern=/(?:bot|crawler|spider|headless|lighthouse|pagespeed|pingdom|uptimerobot|statuscake|python-requests|curl\\/|wget\\/|httpclient|playwright|puppeteer|selenium|googleother|facebookexternalhit|whatsapp|telegrambot|yandeximages)/i;
+ const botPattern=/(?:bot|crawler|spider|headless|lighthouse|pagespeed|pingdom|uptimerobot|statuscake|python-requests|curl/|wget\\/|httpclient|playwright|puppeteer|selenium|googleother|facebookexternalhit|whatsapp|telegrambot|yandeximages)/i;
  const diagnostics=db.prepare("INSERT INTO analytics_meta(key,value) VALUES(?,1) ON CONFLICT(key) DO UPDATE SET value=value+1");
  const sessionVolume=db.prepare("SELECT COUNT(*) total,SUM(kind='screen_view') views FROM events WHERE session=? AND created>=?");
  function collect(body,{ip,userAgent='',referer='',host=''}={}){const events=validateEvents(body),time=now();
