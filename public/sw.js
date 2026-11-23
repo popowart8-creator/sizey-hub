@@ -1,4 +1,4 @@
-const CACHE='sizey-v36';
+const CACHE='sizey-v37';
 const MEDIA_CACHE='sizey-media-v2';
 const OFFLINE_API=new Set(['/hub-api/content','/hub-api/blog']);
 self.addEventListener('install',event=>{
