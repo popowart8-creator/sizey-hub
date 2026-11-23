@@ -34,7 +34,7 @@ export default function BlogScreen({products,initialSlug,onExplore,onProduct,onA
 
     <h2>{active.title}</h2>
 
-    <div className="sizey-blog-prose">{active.sections.map((section,i)=><p key={i}>{section}</p>)}</div>
+    <div className="sizey-blog-prose">{active.sections.flatMap((section,i)=>section.split(/\n/).map((line,j)=>({line:line.trim(),key:i+'-'+j}))).filter(x=>x.line).map(({line,key})=>line.startsWith('### ')?<h4 key={key}>{line.slice(4)}</h4>:line.startsWith('## ')?<h3 key={key}>{line.slice(3)}</h3>:<p key={key}>{line}</p>)}</div>
     {related(active).length>0&&<section className="sizey-blog-products" aria-label="Товары по теме">
       <h3>Подобрать образ в SIZEY</h3>
       <div className="sizey-blog-productgrid">{related(active).map(product=><button className="sizey-blog-product" key={product.id} onClick={()=>{track('blog_product_click',{articleSlug:active.slug,productId:product.id});onProduct(product.id,active.slug)}}>
