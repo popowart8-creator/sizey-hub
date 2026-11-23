@@ -111,6 +111,11 @@ test('only unpublished drafts can be deleted and public articles stay accessible
  }finally{store.close();rmSync(dir,{recursive:true,force:true})}
 });
 
+test('manual blog accepts a single unrestricted long-form section with SEO headings',()=>{
+ const dir=room(),store=blogStore(join(dir,'blog.sqlite'));
+ try{const article=store.save(fixture({sections:['## Как выбрать одежду\\n\\n'+('Свободное описание. '.repeat(500))]}));assert.equal(article.sections.length,1);assert.match(article.sections[0],/^## /);assert.ok(article.sections[0].length>2500)}finally{store.close();rmSync(dir,{recursive:true,force:true})}
+});
+
 test('manual articles get automatic stable URL when slug is omitted',()=>{
  const dir=room(),store=blogStore(join(dir,'blog.sqlite'));
  try{
