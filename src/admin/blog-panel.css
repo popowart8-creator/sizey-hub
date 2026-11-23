@@ -47,3 +47,15 @@
 @media(max-width:650px){.blog-admin-toolbar{align-items:stretch;flex-direction:column}.blog-admin-tabs button{padding:12px 10px}.blog-admin-drawer-head,.blog-admin-drawer-body{padding:18px}}
 
 .blog-admin-table tbody tr{cursor:pointer}.blog-admin-table tbody tr:hover{background:#f7f8f6}.blog-admin-table tbody tr:focus-visible{outline:2px solid #263d30;outline-offset:-2px}.blog-admin-mode{margin-bottom:20px}
+
+.blog-product-picker{position:relative;display:grid;gap:9px}
+.blog-product-picker-toggle{justify-content:space-between;width:100%;display:flex;align-items:center}
+.blog-product-picker-menu{border:1px solid var(--color-tertiary,#d9d9dd);border-radius:14px;padding:10px;background:var(--dark-surface,#fff);color:inherit}
+.blog-product-picker-search{display:flex!important;align-items:center;gap:8px;padding:0 10px;border:1px solid #8885;border-radius:10px}
+.blog-product-picker-search input{flex:1;min-width:0;border:0!important;background:transparent!important;outline:none}
+.blog-product-picker-results{max-height:250px;overflow-y:auto;display:grid;gap:3px;margin-top:8px}
+.blog-product-picker-results button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:10px;border:0;border-radius:9px;background:transparent;color:inherit;cursor:pointer}
+.blog-product-picker-results button:hover,.blog-product-picker-results button.is-selected{background:rgba(128,128,128,.16)}
+.blog-product-picker-results button span{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
+.blog-product-picker-results button small{opacity:.65}
+.blog-product-picker-results p{padding:10px}
