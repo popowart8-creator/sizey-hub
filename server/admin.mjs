@@ -14,16 +14,28 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
  const cleanBlogJobs=()=>{for(const [id,job] of blogJobs)if(job.created+jobExpiry<now()&&job.state!=='running')blogJobs.delete(id)};
  const adminSessionAge=12*60*60*1000;
  const sessionDb=new DatabaseSync(sessionDatabase);
- sessionDb.exec("PRAGMA busy_timeout=5000;CREATE TABLE IF NOT EXISTS admin_sessions(hash TEXT PRIMARY KEY,access_token TEXT NOT NULL,expires INTEGER NOT NULL)");
- const sessionGet=sessionDb.prepare('SELECT access_token accessToken,expires FROM admin_sessions WHERE hash=?');
- const sessionPut=sessionDb.prepare('INSERT OR REPLACE INTO admin_sessions(hash,access_token,expires) VALUES(?,?,?)');
+ sessionDb.exec("PRAGMA busy_timeout=5000;CREATE TABLE IF NOT EXISTS admin_sessions(hash TEXT PRIMARY KEY,access_token TEXT NOT NULL,expires INTEGER NOT NULL,identity TEXT)");
+ if(!sessionDb.prepare('PRAGMA table_info(admin_sessions)').all().some(column=>column.name==='identity'))sessionDb.exec('ALTER TABLE admin_sessions ADD COLUMN identity TEXT');
+ const sessionGet=sessionDb.prepare('SELECT access_token accessToken,expires,identity FROM admin_sessions WHERE hash=?');
+ const sessionPut=sessionDb.prepare('INSERT OR REPLACE INTO admin_sessions(hash,access_token,expires,identity) VALUES(?,?,?,?)');
  const sessionDelete=sessionDb.prepare('DELETE FROM admin_sessions WHERE hash=?');
  const sessionPrune=sessionDb.prepare('DELETE FROM admin_sessions WHERE expires<=?');
  const attempts=new Map(),hash=value=>createHash('sha256').update(value).digest('hex');
  const cookie=(value,age)=>`__Host-sizey_admin=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${age}`;
  const token=req=>String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('__Host-sizey_admin='))?.split('=')[1];
  async function body(req,limit=32768){let size=0,parts=[];for await(const part of req){size+=part.length;if(size>limit)throw new ContentError(413,'Запрос слишком большой');parts.push(part)}try{const data=JSON.parse(Buffer.concat(parts).toString());if(!data||typeof data!=='object'||Array.isArray(data))throw Error();return data}catch{throw new ContentError(400,'Некорректные данные')}}
- async function actor(req){const sid=token(req),session=sid&&sessionGet.get(hash(sid));if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');let user;try{user=await staffAuth.me(session.accessToken)}catch(error){if(error.status===401||error.status===403){sessionDelete.run(hash(sid));throw new ContentError(401,'Сессия сотрудника истекла. Войдите снова.')}throw new ContentError(503,'Сервис авторизации временно недоступен. Повторите попытку.')}if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');return user}
+ async function actor(req){
+  const sid=token(req),session=sid&&sessionGet.get(hash(sid));
+  if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');
+  // The staff backend issues a shorter-lived access token than the admin cookie.
+  // Trust the identity checked at login until this server-side admin session expires.
+  // Staff access revocation takes effect when the admin session expires or is logged out.
+  let user;
+  try{user=session.identity&&JSON.parse(session.identity)}catch{}
+  if(!user){try{user=await staffAuth.me(session.accessToken)}catch(error){if(error.status===401||error.status===403){sessionDelete.run(hash(sid));throw new ContentError(401,'Сессия сотрудника истекла. Войдите снова.')}throw new ContentError(503,'Сервис авторизации временно недоступен. Повторите попытку.')}}
+  if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');
+  return user;
+ }
  return async(req,res,customerAccess)=>{
   const path=new URL(req.url,'http://internal').pathname;
   if(!path.startsWith('/hub-api/blog')&&path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/')&&!path.startsWith('/hub-api/push/'))return false;
@@ -63,10 +75,10 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
    if(['POST','PATCH','PUT','DELETE'].includes(req.method)){if(req.headers.origin!==origin)throw new ContentError(403,'Недопустимый источник запроса');if(!String(req.headers['content-type']).startsWith('application/json'))throw new ContentError(415,'Ожидается JSON')}
    if(path==='/hub-api/admin/login'&&req.method==='POST'){
     const key=String(req.headers['x-real-ip']||req.socket.remoteAddress),list=(attempts.get(key)||[]).filter(t=>t>now()-900000);if(list.length>=10)throw new ContentError(429,'Слишком много попыток входа. Попробуйте позже.');list.push(now());attempts.set(key,list);for(const[k,v]of attempts)if(v.every(t=>t<=now()-900000))attempts.delete(k);
-    const b=await body(req);if(typeof b.login!=='string'||typeof b.password!=='string'||b.login.length>128||b.password.length>256)throw new ContentError(400,'Укажите логин и пароль');let login;try{login=await staffAuth.login(b.login,b.password)}catch{throw new ContentError(401,'Неверный логин или пароль')};if(!login.accessToken||login.user?.role!=='ADMIN'||login.user.status&&login.user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');const sid=randomBytes(32).toString('hex');sessionPrune.run(now());sessionPut.run(hash(sid),login.accessToken,now()+adminSessionAge);reply(200,{user:{id:login.user.id,name:login.user.name,role:'ADMIN'}},cookie(sid,adminSessionAge/1000));return true;
+    const b=await body(req);if(typeof b.login!=='string'||typeof b.password!=='string'||b.login.length>128||b.password.length>256)throw new ContentError(400,'Укажите логин и пароль');let login;try{login=await staffAuth.login(b.login,b.password)}catch{throw new ContentError(401,'Неверный логин или пароль')};if(!login.accessToken||login.user?.role!=='ADMIN'||login.user.status&&login.user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');const sid=randomBytes(32).toString('hex');sessionPrune.run(now());sessionPut.run(hash(sid),login.accessToken,now()+adminSessionAge,JSON.stringify({id:login.user.id,name:login.user.name,role:login.user.role,status:login.user.status}));reply(200,{user:{id:login.user.id,name:login.user.name,role:'ADMIN'}},cookie(sid,adminSessionAge/1000));return true;
    }
    if(path==='/hub-api/admin/session'&&req.method==='POST'){
-    const match=/^Bearer ([A-Za-z0-9._~-]{1,8192})$/.exec(String(req.headers.authorization||''));if(!match)throw new ContentError(401,'Требуется вход сотрудника');let user;try{user=await staffAuth.me(match[1])}catch{throw new ContentError(401,'Сессия завершилась')};if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');const sid=randomBytes(32).toString('hex');sessionPut.run(hash(sid),match[1],now()+adminSessionAge);reply(200,{user:{id:user.id,name:user.name,role:user.role}},cookie(sid,adminSessionAge/1000));return true;
+    const match=/^Bearer ([A-Za-z0-9._~-]{1,8192})$/.exec(String(req.headers.authorization||''));if(!match)throw new ContentError(401,'Требуется вход сотрудника');let user;try{user=await staffAuth.me(match[1])}catch{throw new ContentError(401,'Сессия завершилась')};if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');const sid=randomBytes(32).toString('hex');sessionPut.run(hash(sid),match[1],now()+adminSessionAge,JSON.stringify({id:user.id,name:user.name,role:user.role,status:user.status}));reply(200,{user:{id:user.id,name:user.name,role:user.role}},cookie(sid,adminSessionAge/1000));return true;
    }
    if(path==='/hub-api/admin/logout'&&req.method==='POST'){const sid=token(req);if(sid)sessionDelete.run(hash(sid));reply(200,{ok:true},cookie('',0));return true}
    const user=await actor(req);
