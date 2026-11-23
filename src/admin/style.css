@@ -53,3 +53,5 @@
 .admin-push-art{height:205px;width:230px;position:relative;perspective:700px}
 .admin-push-art-box{position:absolute;top:50px;left:46px;width:145px;height:135px;display:grid;place-items:center;background:linear-gradient(145deg,#f2dac7,#c7a68d);border-radius:26px;transform:rotate(-9deg) rotateY(-18deg);box-shadow:17px 19px 0 #b18b70,22px 30px 30px #bfa28c66;color:#fff}
 .admin-push-art-bell{position:absolute;right:7px;top:17px;width:68px;height:68px;display:grid;place-items:center;border-radius:50%;background:#191919;color:#fff;box-shadow:0 13px 25px #0003;transform:rotate(13deg)}
+
+@media(min-width:768px){.admin-scan-dock--mobile{display:none!important}}
