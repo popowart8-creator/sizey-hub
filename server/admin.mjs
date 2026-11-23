@@ -24,18 +24,7 @@ export function createAdmin({store,blog,blogAI,analytics,push,listPushCustomers=
  const cookie=(value,age)=>`__Host-sizey_admin=${value}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${age}`;
  const token=req=>String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('__Host-sizey_admin='))?.split('=')[1];
  async function body(req,limit=32768){let size=0,parts=[];for await(const part of req){size+=part.length;if(size>limit)throw new ContentError(413,'Запрос слишком большой');parts.push(part)}try{const data=JSON.parse(Buffer.concat(parts).toString());if(!data||typeof data!=='object'||Array.isArray(data))throw Error();return data}catch{throw new ContentError(400,'Некорректные данные')}}
- async function actor(req){
-  const sid=token(req),session=sid&&sessionGet.get(hash(sid));
-  if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');
-  // The staff backend issues a shorter-lived access token than the admin cookie.
-  // Trust the identity checked at login until this server-side admin session expires.
-  // Staff access revocation takes effect when the admin session expires or is logged out.
-  let user;
-  try{user=session.identity&&JSON.parse(session.identity)}catch{}
-  if(!user){try{user=await staffAuth.me(session.accessToken)}catch(error){if(error.status===401||error.status===403){sessionDelete.run(hash(sid));throw new ContentError(401,'Сессия сотрудника истекла. Войдите снова.')}throw new ContentError(503,'Сервис авторизации временно недоступен. Повторите попытку.')}}
-  if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');
-  return user;
- }
+ async function actor(req){const sid=token(req),session=sid&&sessionGet.get(hash(sid));if(!session||session.expires<=now())throw new ContentError(401,'Войдите в панель управления');let user;try{user=await staffAuth.me(session.accessToken)}catch(error){if(error.status===401||error.status===403){sessionDelete.run(hash(sid));throw new ContentError(401,'Сессия сотрудника истекла. Войдите снова.')}throw new ContentError(503,'Сервис авторизации временно недоступен. Повторите попытку.')}if(user.role!=='ADMIN'||user.status&&user.status!=='ACTIVE')throw new ContentError(403,'Доступ только администратору');return user}
  return async(req,res,customerAccess)=>{
   const path=new URL(req.url,'http://internal').pathname;
   if(!path.startsWith('/hub-api/blog')&&path!=='/hub-api/events'&&path!=='/hub-api/content'&&!path.startsWith('/hub-api/admin/')&&!path.startsWith('/hub-api/media/')&&!path.startsWith('/hub-api/push/'))return false;
